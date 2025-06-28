@@ -1,3 +1,4 @@
+// 📁 src/pages/Dashboard.js
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -10,11 +11,8 @@ import {
   ListItemText,
   useTheme,
 } from "@mui/material";
-import { Link } from "react-router-dom";
 import AnnouncementIcon from "@mui/icons-material/Announcement";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-
 import Birthday from "../components/Birthday";
 import axios from "axios";
 
@@ -23,15 +21,27 @@ export default function Dashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [announcements, setAnnouncements] = useState([]);
   const [holidays, setHolidays] = useState([]);
-  const [autoMarkedAbsent, setAutoMarkedAbsent] = useState(0);
+  const [shouldRefreshBirthday, setShouldRefreshBirthday] = useState(false);
 
-  // ⏰ Clock Timer
+  // ⏰ Live Clock
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // 📣 Fetch Announcements
+  // 🎂 Birthday Refresh Once Per Day
+  useEffect(() => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const lastFetch = localStorage.getItem("lastBirthdayFetch");
+    if (lastFetch !== todayStr) {
+      setShouldRefreshBirthday(true);
+      localStorage.setItem("lastBirthdayFetch", todayStr);
+    } else {
+      setShouldRefreshBirthday(false);
+    }
+  }, []);
+
+  // 📣 Load Announcements
   useEffect(() => {
     axios
       .get(`${process.env.REACT_APP_API_URL}/api/admin/broadcasts`)
@@ -39,7 +49,7 @@ export default function Dashboard() {
       .catch((err) => console.error("❌ Failed to load announcements:", err));
   }, []);
 
-  // 📅 Fetch Holidays
+  // 📅 Load Holidays
   useEffect(() => {
     axios
       .get(`${process.env.REACT_APP_API_URL}/api/admin/holidays`)
@@ -54,22 +64,7 @@ export default function Dashboard() {
       .catch((err) => console.error("❌ Failed to load holidays:", err));
   }, []);
 
-  // ❌ Fetch Auto-marked Absent Count
-  useEffect(() => {
-    axios
-      .get(`${process.env.REACT_APP_API_URL}/api/attendance/auto-marked`)
-      .then((res) => setAutoMarkedAbsent(res.data.count || 0))
-      .catch(() => setAutoMarkedAbsent(0));
-  }, []);
-
-  // 📝 Demo Attendance Stats (optional dynamic later)
-  const attendanceToday = {
-    present: 43,
-    absent: 5,
-    late: 2,
-  };
-
-  // 🎁 Reusable Card Section
+  // 🎁 Reusable SectionCard
   const SectionCard = ({ title, color, children }) => (
     <Card
       elevation={4}
@@ -105,7 +100,7 @@ export default function Dashboard() {
         py: 4,
       }}
     >
-      {/* 🔲 Blur Layer */}
+      {/* 🔲 Blur Overlay */}
       <Box
         sx={{
           position: "absolute",
@@ -118,7 +113,7 @@ export default function Dashboard() {
 
       {/* 📦 Dashboard Content */}
       <Box sx={{ position: "relative", zIndex: 1, maxWidth: 900, mx: "auto" }}>
-        {/* 🎉 Welcome Header */}
+        {/* 🎉 Header */}
         <Card
           elevation={6}
           sx={{
@@ -142,68 +137,17 @@ export default function Dashboard() {
           </Typography>
         </Card>
 
-        {/* ✅ Attendance Summary */}
-        <SectionCard title="Attendance Summary (Today)" color="#ff9800">
-          {autoMarkedAbsent > 0 && (
-            <Typography
-              variant="body2"
-              color="error"
-              sx={{ mb: 2, fontWeight: 600 }}
-            >
-              ⚠️ {autoMarkedAbsent} employees were auto-marked Absent today.
-            </Typography>
-          )}
-          <Typography
-            component={Link}
-            to="/attendance?filter=present"
-            sx={{
-              display: "block",
-              color: "inherit",
-              textDecoration: "none",
-              "&:hover": { textDecoration: "underline" },
-              mb: 1,
-            }}
-          >
-            <CheckCircleIcon color="success" sx={{ mr: 1 }} />
-            Present: <strong>{attendanceToday.present}</strong>
-          </Typography>
-          <Typography
-            component={Link}
-            to="/attendance?filter=absent"
-            sx={{
-              display: "block",
-              color: "inherit",
-              textDecoration: "none",
-              "&:hover": { textDecoration: "underline" },
-              mb: 1,
-            }}
-          >
-            <CheckCircleIcon color="error" sx={{ mr: 1 }} />
-            Absent: <strong>{attendanceToday.absent}</strong>
-          </Typography>
-          <Typography
-            component={Link}
-            to="/attendance?filter=halfday"
-            sx={{
-              display: "block",
-              color: "inherit",
-              textDecoration: "none",
-              "&:hover": { textDecoration: "underline" },
-            }}
-          >
-            <CheckCircleIcon color="warning" sx={{ mr: 1 }} />
-            Half Day: <strong>{attendanceToday.late}</strong>
-          </Typography>
-        </SectionCard>
-
         {/* 📣 Announcements */}
         <SectionCard title="Announcements" color="#9c27b0">
-          {announcements.filter(msg =>
-            msg.audience === 'all' || msg.audience === 'employee'
+          {announcements.filter(
+            (msg) => msg.audience === "all" || msg.audience === "employee"
           ).length > 0 ? (
             <List>
               {announcements
-                .filter(msg => msg.audience === 'all' || msg.audience === 'employee')
+                .filter(
+                  (msg) =>
+                    msg.audience === "all" || msg.audience === "employee"
+                )
                 .map((msg, i) => (
                   <ListItem key={i}>
                     <AnnouncementIcon color="secondary" sx={{ mr: 2 }} />
@@ -211,7 +155,9 @@ export default function Dashboard() {
                       primary={msg?.message || "No message"}
                       secondary={
                         new Date(msg?.createdAt).toLocaleString() +
-                        (msg.audience !== 'all' ? ` • (${msg.audience})` : '')
+                        (msg.audience !== "all"
+                          ? ` • (${msg.audience})`
+                          : "")
                       }
                     />
                   </ListItem>
@@ -240,9 +186,9 @@ export default function Dashboard() {
           </List>
         </SectionCard>
 
-        {/* 🎂 Birthdays */}
+        {/* 🎂 Birthdays (Once per day + Manual Refresh) */}
         <SectionCard title="Today's Birthdays" color="#2196f3">
-          <Birthday spinnerSize={20} />
+          <Birthday spinnerSize={20} refresh={shouldRefreshBirthday} />
         </SectionCard>
       </Box>
     </Box>

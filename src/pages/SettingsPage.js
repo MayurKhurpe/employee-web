@@ -21,6 +21,7 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import DevicesIcon from "@mui/icons-material/Devices";
 
+// 🚫 Removed SMS Notification Option
 const settingsOptions = [
   {
     title: "🔐 Change Password",
@@ -54,12 +55,11 @@ const SettingsPage = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: "" });
   const [profilePic, setProfilePic] = useState("");
   const [notifEmail, setNotifEmail] = useState(true);
-  const [notifSMS, setNotifSMS] = useState(false);
 
   useEffect(() => {
     const storedPic = localStorage.getItem("profilePic");
     setProfilePic(
-      storedPic || "https://i.postimg.cc/xTsQJtKN/default-profile.jpg"
+      storedPic || "https://i.postimg.cc/gJBBYsML/Company-Logo.jpg"
     );
   }, []);
 
@@ -70,7 +70,7 @@ const SettingsPage = () => {
 
   return (
     <Box sx={{ position: "relative", minHeight: "100vh", overflow: "hidden" }}>
-      {/* 🌄 Blurred Background */}
+      {/* 🌄 Background */}
       <Box
         sx={{
           position: "absolute",
@@ -82,7 +82,6 @@ const SettingsPage = () => {
           zIndex: 0,
         }}
       />
-      {/* 🌑 Overlay */}
       <Box
         sx={{
           position: "absolute",
@@ -91,7 +90,6 @@ const SettingsPage = () => {
           zIndex: 1,
         }}
       />
-      {/* 🌟 Main Content */}
       <Box
         sx={{
           position: "relative",
@@ -137,26 +135,19 @@ const SettingsPage = () => {
               🔔 Notification Settings
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12}>
                 <Switch
                   checked={notifEmail}
                   onChange={() => setNotifEmail(!notifEmail)}
                 />
                 <Typography display="inline">📧 Email Alerts</Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
-                <Switch
-                  checked={notifSMS}
-                  onChange={() => setNotifSMS(!notifSMS)}
-                />
-                <Typography display="inline">📱 SMS Notifications</Typography>
-              </Grid>
             </Grid>
           </Box>
 
           <Divider sx={{ mb: 3 }} />
 
-          {/* ⚙️ Settings List */}
+          {/* ⚙️ Options List */}
           <List>
             {settingsOptions.map((item, index) => (
               <ListItem

@@ -7,69 +7,106 @@ import {
   Box,
   Typography,
   Chip,
-  Divider
+  Divider,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
-export default function Birthday({ spinnerSize = 20 }) {
+export default function Birthday({ spinnerSize = 20, refresh = true }) {
   const [birthdays, setBirthdays] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const fetchBirthdays = () => {
+  const fetchBirthdays = (isManual = false) => {
     setLoading(true);
     axios
       .get(`${process.env.REACT_APP_API_URL}/api/birthdays`)
-      .then(res => {
-        const sorted = res.data.sort((a, b) => new Date(a.date) - new Date(b.date));
+      .then((res) => {
+        const sorted = res.data.sort(
+          (a, b) => new Date(a.date) - new Date(b.date)
+        );
         setBirthdays(sorted);
-        setLoading(false);
+
+        // Update last fetch only if not manual refresh
+        if (!isManual) {
+          const todayStr = dayjs().format('YYYY-MM-DD');
+          localStorage.setItem('lastBirthdayFetch', todayStr);
+        }
       })
-      .catch(() => setLoading(false));
+      .finally(() => setLoading(false));
   };
 
+  // Auto-fetch only once per day
   useEffect(() => {
-    fetchBirthdays();
-    const interval = setInterval(() => {
-      fetchBirthdays(); // Refresh every 30 mins
-    }, 30 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!refresh) return;
 
-  if (loading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-        <CircularProgress size={spinnerSize} />
-      </Box>
-    );
-  }
+    const todayStr = dayjs().format('YYYY-MM-DD');
+    const lastFetch = localStorage.getItem('lastBirthdayFetch');
 
-  if (!birthdays.length) {
-    return (
-      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 2 }}>
-        🎉 No birthdays today or upcoming.
-      </Typography>
-    );
-  }
+    if (lastFetch !== todayStr) {
+      fetchBirthdays(false);
+    }
+  }, [refresh]);
+
+  // Manual refresh handler
+  const handleManualRefresh = () => {
+    fetchBirthdays(true);
+  };
 
   return (
     <Box>
-      <Typography variant="h6" fontWeight="bold" gutterBottom>🎈 Upcoming Birthdays</Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          mb: 1,
+        }}
+      >
+        <Typography variant="h6" fontWeight="bold">
+          🎈 Upcoming Birthdays
+        </Typography>
+        <Tooltip title="Refresh Birthdays">
+          <IconButton onClick={handleManualRefresh} color="primary">
+            <RefreshIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
+
       <Divider sx={{ mb: 1 }} />
-      <List dense>
-        {birthdays.map((b, i) => {
-          const isToday = dayjs(b.date).isSame(dayjs(), 'day');
-          return (
-            <ListItem key={i} disableGutters>
-              <ListItemText
-                primary={`🎂 ${b.name}`}
-                secondary={dayjs(b.date).format('DD MMM YYYY')}
-              />
-              {isToday && <Chip label="Today 🎉" color="success" size="small" />}
-            </ListItem>
-          );
-        })}
-      </List>
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+          <CircularProgress size={spinnerSize} />
+        </Box>
+      ) : birthdays.length === 0 ? (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ textAlign: 'center', mt: 2 }}
+        >
+          🎉 No birthdays today or upcoming.
+        </Typography>
+      ) : (
+        <List dense>
+          {birthdays.map((b, i) => {
+            const isToday = dayjs(b.date).isSame(dayjs(), 'day');
+            return (
+              <ListItem key={i} disableGutters>
+                <ListItemText
+                  primary={`🎂 ${b.name}`}
+                  secondary={dayjs(b.date).format('DD MMM YYYY')}
+                />
+                {isToday && (
+                  <Chip label="Today 🎉" color="success" size="small" />
+                )}
+              </ListItem>
+            );
+          })}
+        </List>
+      )}
     </Box>
   );
 }

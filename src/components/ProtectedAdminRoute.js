@@ -11,7 +11,7 @@ const ProtectedAdminRoute = ({ children }) => {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (user.userRole !== 'admin') {
+  if (user.role !== 'admin') {
     // Logged in but not admin — redirect to dashboard or unauthorized page
     return <Navigate to="/dashboard" replace />;
   }

@@ -7,7 +7,6 @@ import {
   Box,
   Paper,
   Button,
-  TextField,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
@@ -107,19 +106,6 @@ export default function HelpSupport() {
             <Typography variant="h6" fontWeight="bold">📞 Contact Us</Typography>
             <Typography>Email: hr@seekersautomation.com</Typography>
             <Typography>Support Hours: 9 AM - 6 PM (Mon-Fri)</Typography>
-          </Box>
-
-          {/* ✉️ Feedback Box */}
-          <Box mt={3}>
-            <Typography variant="h6" fontWeight="bold">💬 Leave Feedback</Typography>
-            <TextField
-              multiline
-              rows={3}
-              placeholder="Let us know your thoughts or issues..."
-              fullWidth
-              sx={{ mt: 1 }}
-            />
-            <Button variant="contained" sx={{ mt: 2 }}>Submit Feedback</Button>
           </Box>
 
           <Button

@@ -126,7 +126,7 @@ const Sidebar = ({ collapsed, toggleSidebar, onLogout, navigate, user }) => {
   </IconButton>
 </Tooltip>
         <Tooltip title="LinkedIn">
-          <IconButton href="https://www.linkedin.com/company/96489094/" target="_blank" sx={{ color: '#fff' }}>
+          <IconButton href="https://www.linkedin.com/company/seekers-automation-pvt-ltd/" target="_blank" sx={{ color: '#fff' }}>
             <img src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png" alt="LinkedIn" width={24} height={24} />
           </IconButton>
         </Tooltip>

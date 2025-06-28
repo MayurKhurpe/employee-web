@@ -35,12 +35,6 @@ const features = [
     path: '/more-functions/calculator',
   },
   {
-    icon: '📁',
-    title: 'Document Center',
-    description: 'Manage and access important documents.',
-    path: '/more-functions/documents',
-  },
-  {
     icon: '⛅',
     title: 'Weather Report',
     description: 'Get today’s weather updates for your city.',
