@@ -1,3 +1,4 @@
+// 📁 src/pages/NotificationSettingsPage.js
 import React, { useEffect, useState } from 'react';
 import {
   Paper,
@@ -12,7 +13,7 @@ import {
   CircularProgress,
   Fade,
   Tooltip,
-  Grow
+  Grow,
 } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -21,9 +22,9 @@ import axios from 'axios';
 const NotificationSettingsPage = () => {
   const [settings, setSettings] = useState({
     emailNotif: false,
-    smsNotif: false,
     pushNotif: false,
   });
+
   const [loading, setLoading] = useState(true);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const navigate = useNavigate();
@@ -31,9 +32,12 @@ const NotificationSettingsPage = () => {
   const fetchSettings = async () => {
     try {
       const res = await axios.get('/api/notification-settings', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
-      setSettings(res.data);
+      setSettings({
+        emailNotif: res.data.emailNotif || false,
+        pushNotif: res.data.pushNotif || false,
+      });
     } catch (error) {
       console.error('❌ Error fetching settings:', error);
     } finally {
@@ -45,8 +49,8 @@ const NotificationSettingsPage = () => {
     const updated = { ...settings, [key]: value };
     setSettings(updated);
     try {
-      await axios.post('/api/notification-settings', updated, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      await axios.put('/api/notification-settings', updated, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       setSnackbarOpen(true);
     } catch (error) {
@@ -71,7 +75,7 @@ const NotificationSettingsPage = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          p: 2
+          p: 2,
         }}
       >
         <Paper
@@ -84,7 +88,7 @@ const NotificationSettingsPage = () => {
             background: 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(10px)',
             boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-            textAlign: 'center'
+            textAlign: 'center',
           }}
         >
           <Button
@@ -105,7 +109,7 @@ const NotificationSettingsPage = () => {
               '&:hover': {
                 backgroundColor: '#6a1b9a',
                 boxShadow: '0 6px 20px rgba(106, 27, 154, 0.4)',
-              }
+              },
             }}
           >
             Back to Settings
@@ -121,8 +125,7 @@ const NotificationSettingsPage = () => {
             <FormGroup>
               {[
                 { key: 'emailNotif', label: '📧 Email Alerts', tip: 'Get notified by email' },
-                { key: 'smsNotif', label: '📱 SMS Notifications', tip: 'Receive SMS alerts' },
-                { key: 'pushNotif', label: '🔔 Push Notifications', tip: 'Get push messages on device' },
+                { key: 'pushNotif', label: '🔔 Push Notifications', tip: 'Get push messages on your device' },
               ].map(({ key, label, tip }) => (
                 <Grow in key={key} timeout={500}>
                   <Tooltip title={tip}>

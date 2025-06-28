@@ -20,8 +20,9 @@ import LockResetIcon from "@mui/icons-material/LockReset";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import DevicesIcon from "@mui/icons-material/Devices";
+import axios from "axios";
 
-// 🚫 Removed SMS Notification Option
+// ✅ Settings list
 const settingsOptions = [
   {
     title: "🔐 Change Password",
@@ -54,14 +55,55 @@ const SettingsPage = () => {
   const navigate = useNavigate();
   const [snackbar, setSnackbar] = useState({ open: false, message: "" });
   const [profilePic, setProfilePic] = useState("");
-  const [notifEmail, setNotifEmail] = useState(true);
+  const [notifSettings, setNotifSettings] = useState({
+    emailNotif: false,
+    pushNotif: false,
+  });
+  const [loading, setLoading] = useState(true);
 
+  // ✅ Fetch settings on mount
   useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await axios.get("/api/notification-settings", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        setNotifSettings({
+          emailNotif: res.data.emailNotif || false,
+          pushNotif: res.data.pushNotif || false,
+        });
+      } catch (err) {
+        console.error("Failed to fetch notification settings", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     const storedPic = localStorage.getItem("profilePic");
-    setProfilePic(
-      storedPic || "https://i.postimg.cc/gJBBYsML/Company-Logo.jpg"
-    );
+    setProfilePic(storedPic || "https://i.postimg.cc/gJBBYsML/Company-Logo.jpg");
+
+    fetchSettings();
   }, []);
+
+  // ✅ Toggle handler
+  const handleToggle = async (key) => {
+    const newSettings = { ...notifSettings, [key]: !notifSettings[key] };
+    setNotifSettings(newSettings);
+
+    try {
+      await axios.post(
+        "/api/notification-settings",
+        newSettings,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      setSnackbar({ open: true, message: "✅ Notification setting updated" });
+    } catch (err) {
+      console.error("Failed to update setting", err);
+      setSnackbar({ open: true, message: "❌ Update failed" });
+    }
+  };
 
   const handleOptionClick = (title, path) => {
     setSnackbar({ open: true, message: `Opening ${title}...` });
@@ -137,17 +179,26 @@ const SettingsPage = () => {
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <Switch
-                  checked={notifEmail}
-                  onChange={() => setNotifEmail(!notifEmail)}
+                  checked={notifSettings.emailNotif}
+                  onChange={() => handleToggle("emailNotif")}
+                  color="primary"
                 />
                 <Typography display="inline">📧 Email Alerts</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Switch
+                  checked={notifSettings.pushNotif}
+                  onChange={() => handleToggle("pushNotif")}
+                  color="primary"
+                />
+                <Typography display="inline">📲 Push Notifications</Typography>
               </Grid>
             </Grid>
           </Box>
 
           <Divider sx={{ mb: 3 }} />
 
-          {/* ⚙️ Options List */}
+          {/* ⚙️ Settings List */}
           <List>
             {settingsOptions.map((item, index) => (
               <ListItem

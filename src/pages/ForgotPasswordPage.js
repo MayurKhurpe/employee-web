@@ -13,6 +13,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EmailIcon from '@mui/icons-material/Email';
 import { Link } from 'react-router-dom';
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
@@ -20,7 +22,7 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('https://employee-backend-kifp.onrender.com/api/forgot-password', {
+      const res = await fetch(`${API_URL}/api/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

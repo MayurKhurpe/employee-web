@@ -36,17 +36,15 @@ export default function ChangePassword() {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Not authenticated');
 
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/change-password`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ currentPassword, newPassword }),
-        }
-      );
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${apiUrl}/api/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Password update failed');
@@ -235,3 +233,4 @@ export default function ChangePassword() {
     </Box>
   );
 }
+  

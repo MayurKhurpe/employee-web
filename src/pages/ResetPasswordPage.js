@@ -13,6 +13,8 @@ import {
 import { Visibility, VisibilityOff, LockReset as ResetIcon } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
+
 export default function ResetPasswordPage() {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -23,7 +25,7 @@ export default function ResetPasswordPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`https://employee-backend-kifp.onrender.com/api/reset-password/${token}`, {
+      const res = await fetch(`${API_URL}/api/reset-password/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
@@ -32,9 +34,14 @@ export default function ResetPasswordPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Reset failed');
       setSnackbar({ open: true, message: '✅ Password reset successful!', severity: 'success' });
+
       setTimeout(() => navigate('/'), 2000);
     } catch (err) {
-      setSnackbar({ open: true, message: err.message, severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: err.message.includes('Token') ? '⛔ Token expired or invalid.' : err.message,
+        severity: 'error',
+      });
     }
   };
 
@@ -107,11 +114,7 @@ export default function ResetPasswordPage() {
               />
               <IconButton
                 onClick={() => setShow(!show)}
-                sx={{
-                  position: 'absolute',
-                  right: 10,
-                  top: '32px',
-                }}
+                sx={{ position: 'absolute', right: 10, top: '32px' }}
               >
                 {show ? <VisibilityOff /> : <Visibility />}
               </IconButton>
