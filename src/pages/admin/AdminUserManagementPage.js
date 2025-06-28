@@ -1,3 +1,4 @@
+// 📁 src/pages/admin/AdminUserManagementPage.js
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -10,13 +11,22 @@ import {
   Button,
   Paper,
   Divider,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { CheckCircle, Delete, ArrowBack } from '@mui/icons-material';
+import {
+  CheckCircle,
+  Delete,
+  ArrowBack,
+  Search as SearchIcon,
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const AdminUserManagementPage = () => {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const navigate = useNavigate();
@@ -26,12 +36,26 @@ const AdminUserManagementPage = () => {
       const res = await fetch('/api/admin/users');
       const data = await res.json();
       setUsers(data);
+      setFilteredUsers(data);
     } catch (err) {
-      setSnackbar({ open: true, message: 'Failed to fetch users', severity: 'error' });
+      setSnackbar({ open: true, message: '❌ Failed to fetch users', severity: 'error' });
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // 🔍 Live Filter
+  useEffect(() => {
+    const filtered = users.filter((user) =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredUsers(filtered);
+  }, [searchTerm, users]);
 
   const handleApprove = async (email) => {
     try {
@@ -41,10 +65,10 @@ const AdminUserManagementPage = () => {
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
-      setSnackbar({ open: true, message: data.message, severity: 'success' });
+      setSnackbar({ open: true, message: `✅ ${data.message}`, severity: 'success' });
       fetchUsers();
     } catch (err) {
-      setSnackbar({ open: true, message: 'Approval failed', severity: 'error' });
+      setSnackbar({ open: true, message: '❌ Approval failed', severity: 'error' });
     }
   };
 
@@ -57,31 +81,27 @@ const AdminUserManagementPage = () => {
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
-      setSnackbar({ open: true, message: data.message, severity: 'info' });
+      setSnackbar({ open: true, message: `🗑️ ${data.message}`, severity: 'info' });
       fetchUsers();
     } catch (err) {
-      setSnackbar({ open: true, message: 'Delete failed', severity: 'error' });
+      setSnackbar({ open: true, message: '❌ Delete failed', severity: 'error' });
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
   const columns = [
-    { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
-    { field: 'email', headerName: 'Email', flex: 1.5, minWidth: 200 },
-    { field: 'role', headerName: 'Role', width: 120 },
+    { field: 'name', headerName: '👤 Name', flex: 1, minWidth: 150 },
+    { field: 'email', headerName: '📧 Email', flex: 1.5, minWidth: 200 },
+    { field: 'role', headerName: '🛡️ Role', width: 130 },
     {
       field: 'isApproved',
-      headerName: 'Approved',
-      width: 120,
+      headerName: '✅ Approved',
+      width: 130,
       renderCell: (params) => (params.row.isApproved ? '✅ Yes' : '❌ No'),
     },
     {
       field: 'actions',
-      headerName: 'Actions',
-      width: 140,
+      headerName: '⚙️ Actions',
+      width: 160,
       sortable: false,
       renderCell: (params) => (
         <>
@@ -107,22 +127,19 @@ const AdminUserManagementPage = () => {
       sx={{
         p: 4,
         minHeight: '100vh',
-        background: 'linear-gradient(to bottom right, #d9f4ff, #cfd8dc)',
+        background: 'linear-gradient(to bottom right, #e0f7fa, #f1f8e9)',
         backdropFilter: 'blur(8px)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'stretch',
       }}
     >
-      {/* Header */}
+      {/* 🔙 Header */}
       <Paper
         elevation={3}
         sx={{
-          backdropFilter: 'blur(8px)',
-          backgroundColor: 'rgba(255, 255, 255, 0.7)',
           borderRadius: 3,
           p: 4,
           mb: 4,
+          backgroundColor: 'rgba(255,255,255,0.8)',
+          backdropFilter: 'blur(6px)',
         }}
       >
         <Button
@@ -130,61 +147,79 @@ const AdminUserManagementPage = () => {
           onClick={() => navigate('/admin')}
           sx={{
             mb: 2,
-            px: 2.5,
-            py: 1.2,
-            fontWeight: 'bold',
-            fontSize: '0.95rem',
             background: 'linear-gradient(90deg, #2196f3, #21cbf3)',
             color: '#fff',
+            fontWeight: 'bold',
+            px: 2.5,
+            py: 1.2,
             borderRadius: 2,
-            boxShadow: '0 4px 10px rgba(33, 203, 243, 0.3)',
             '&:hover': {
               background: 'linear-gradient(90deg, #1e88e5, #00bcd4)',
-              boxShadow: '0 6px 12px rgba(0, 188, 212, 0.4)',
             },
           }}
         >
           Back to Admin Panel
         </Button>
 
-        <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ color: '#0d47a1' }}>
+        <Typography variant="h4" fontWeight="bold" gutterBottom color="primary.dark">
           👥 User Management
         </Typography>
         <Typography variant="subtitle1" color="text.secondary">
-          Approve new users, view details, or remove accounts.
+          Approve new users, search, and manage employee accounts.
         </Typography>
         <Divider sx={{ my: 2 }} />
       </Paper>
 
-      {/* Data Table */}
+      {/* 🔍 Search + Table */}
       <Paper
         elevation={2}
         sx={{
-          backdropFilter: 'blur(6px)',
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
           borderRadius: 2,
-          p: 2,
+          p: 3,
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(6px)',
         }}
       >
+        <TextField
+          placeholder="🔍 Search by name or email"
+          fullWidth
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{ mb: 2 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+          }}
+        />
+
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" height={300}>
             <CircularProgress />
           </Box>
         ) : (
-          <Box sx={{ height: 500 }}>
+          <Box sx={{ height: 520 }}>
             <DataGrid
-              rows={users.map((user, index) => ({ id: index + 1, ...user }))}
+              rows={filteredUsers.map((user, index) => ({ id: index + 1, ...user }))}
               columns={columns}
               pageSize={7}
               rowsPerPageOptions={[7]}
               disableSelectionOnClick
               getRowHeight={() => 'auto'}
+              sx={{
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: '#e3f2fd',
+                  fontWeight: 'bold',
+                },
+              }}
             />
           </Box>
         )}
       </Paper>
 
-      {/* Snackbar */}
+      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
@@ -195,7 +230,6 @@ const AdminUserManagementPage = () => {
           severity={snackbar.severity}
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           variant="filled"
-          sx={{ width: '100%' }}
         >
           {snackbar.message}
         </Alert>

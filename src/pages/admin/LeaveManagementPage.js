@@ -14,6 +14,8 @@ import {
   DialogContent,
   DialogActions,
   Chip,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { HowToReg as LeaveIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -24,30 +26,30 @@ const LeaveManagementPage = () => {
   const [note, setNote] = useState('');
   const [action, setAction] = useState('');
   const [open, setOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const navigate = useNavigate();
 
-  // 🧪 Dummy data (replace with API later)
+  const fetchLeaves = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/leave/admin/all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setLeaveRequests(data);
+      } else {
+        throw new Error('Invalid response');
+      }
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Failed to fetch leave requests', severity: 'error' });
+    }
+  };
+
   useEffect(() => {
-    setLeaveRequests([
-      {
-        id: 1,
-        name: 'John Doe',
-        email: 'john@example.com',
-        fromDate: '2025-06-25',
-        toDate: '2025-06-28',
-        reason: 'Medical Leave',
-        status: 'Pending',
-      },
-      {
-        id: 2,
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        fromDate: '2025-06-26',
-        toDate: '2025-06-27',
-        reason: 'Family Event',
-        status: 'Pending',
-      },
-    ]);
+    fetchLeaves();
   }, []);
 
   const handleOpenDialog = (request, actionType) => {
@@ -64,14 +66,33 @@ const LeaveManagementPage = () => {
     setAction('');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedRequest) return;
-    const updatedRequests = leaveRequests.map((req) =>
-      req.id === selectedRequest.id
-        ? { ...req, status: action, adminNote: note }
-        : req
-    );
-    setLeaveRequests(updatedRequests);
+    const token = localStorage.getItem('token');
+    const route = `${process.env.REACT_APP_API_URL}/api/leave/admin/${action.toLowerCase()}/${selectedRequest._id}`;
+
+    try {
+      const res = await fetch(route, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ adminNote: note }),
+      });
+
+      if (!res.ok) throw new Error('Action failed');
+
+      setSnackbar({
+        open: true,
+        message: `Leave ${action.toLowerCase()} successfully.`,
+        severity: action === 'Approved' ? 'success' : 'error',
+      });
+      fetchLeaves();
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Failed to process request', severity: 'error' });
+    }
+
     handleCloseDialog();
   };
 
@@ -82,70 +103,42 @@ const LeaveManagementPage = () => {
       case 'Rejected':
         return <Chip label="❌ Rejected" color="error" />;
       default:
-        return <Chip label="🕒 Pending" color="default" />;
+        return <Chip label="⏳ Pending" color="default" />;
     }
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      {/* 🔙 Back Button */}
+    <Box sx={{ p: 3, minHeight: '100vh', background: 'linear-gradient(to bottom right, #fff1f3, #e0f7fa)' }}>
       <Button
         variant="outlined"
         startIcon={<BackIcon />}
         onClick={() => navigate('/admin')}
-        sx={{ mb: 2 }}
+        sx={{ mb: 2, borderRadius: 2, borderColor: '#e91e63', color: '#e91e63', fontWeight: 'bold', '&:hover': { backgroundColor: '#f8bbd0' } }}
       >
         Back to Admin Panel
       </Button>
 
-      {/* Header */}
-      <Paper
-        elevation={4}
-        sx={{
-          mb: 4,
-          px: 4,
-          py: 3,
-          borderRadius: 3,
-          background: 'linear-gradient(135deg, #e91e63, #f06292)',
-          color: '#fff',
-        }}
-      >
+      <Paper elevation={4} sx={{ mb: 4, px: 4, py: 3, borderRadius: 3, background: 'linear-gradient(135deg, #e91e63, #f06292)', color: '#fff' }}>
         <Typography variant="h4" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center' }}>
-          <LeaveIcon sx={{ mr: 1 }} fontSize="large" />
-          Leave Application Management
+          <LeaveIcon sx={{ mr: 1 }} fontSize="large" /> Leave Application Management
         </Typography>
         <Typography variant="body1" sx={{ mt: 1 }}>
           Review all submitted leave requests and take appropriate actions with notes.
         </Typography>
       </Paper>
 
-      {/* Leave Request Cards */}
       <Grid container spacing={3}>
         {leaveRequests.map((request) => (
-          <Grid item xs={12} sm={6} md={4} key={request.id}>
-            <Card
-              elevation={6}
-              sx={{
-                borderRadius: 3,
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                '&:hover': {
-                  transform: 'scale(1.03)',
-                  boxShadow: 8,
-                },
-              }}
-            >
+          <Grid item xs={12} sm={6} md={4} key={request._id}>
+            <Card elevation={6} sx={{ borderRadius: 3, transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.03)', boxShadow: 8 } }}>
               <CardContent>
-                <Typography variant="h6" color="primary" gutterBottom>
-                  👤 {request.name}
-                </Typography>
-                <Typography variant="body2" gutterBottom>
-                  📧 {request.email}
-                </Typography>
+                <Typography variant="h6" color="primary" gutterBottom> 👤 {request.name}</Typography>
+                <Typography variant="body2" gutterBottom> 📧 {request.email}</Typography>
                 <Typography variant="body2">
-                  📅 <strong>From:</strong> {request.fromDate}
+                  🗓️ <strong>From:</strong> {new Date(request.startDate).toLocaleDateString()}
                 </Typography>
                 <Typography variant="body2" gutterBottom>
-                  📅 <strong>To:</strong> {request.toDate}
+                  🗓️ <strong>To:</strong> {new Date(request.endDate).toLocaleDateString()}
                 </Typography>
                 <Typography variant="body2" gutterBottom>
                   📝 <strong>Reason:</strong> {request.reason}
@@ -185,7 +178,6 @@ const LeaveManagementPage = () => {
         ))}
       </Grid>
 
-      {/* Dialog for Approval/Reject with Note */}
       <Dialog open={open} onClose={handleCloseDialog}>
         <DialogTitle>{action === 'Approved' ? '✅ Approve' : '❌ Reject'} Leave</DialogTitle>
         <DialogContent>
@@ -213,6 +205,22 @@ const LeaveManagementPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

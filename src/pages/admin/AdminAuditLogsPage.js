@@ -23,7 +23,7 @@ const AdminAuditLogsPage = () => {
 
   const fetchLogs = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/audit-logs');
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/admin/audit-logs`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setLogs(data);
@@ -173,7 +173,14 @@ const AdminAuditLogsPage = () => {
         autoHideDuration={4000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
-        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
       </Snackbar>
     </Box>
   );

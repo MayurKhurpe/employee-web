@@ -18,7 +18,8 @@ export default function Birthday({ spinnerSize = 20 }) {
 
   const fetchBirthdays = () => {
     setLoading(true);
-    axios.get('/api/birthdays')
+    axios
+      .get(`${process.env.REACT_APP_API_URL}/api/birthdays`)
       .then(res => {
         const sorted = res.data.sort((a, b) => new Date(a.date) - new Date(b.date));
         setBirthdays(sorted);
@@ -29,11 +30,9 @@ export default function Birthday({ spinnerSize = 20 }) {
 
   useEffect(() => {
     fetchBirthdays();
-
     const interval = setInterval(() => {
       fetchBirthdays(); // Refresh every 30 mins
     }, 30 * 60 * 1000);
-
     return () => clearInterval(interval);
   }, []);
 

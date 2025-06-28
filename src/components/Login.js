@@ -1,3 +1,4 @@
+// 📁 src/pages/LoginPage.js
 import React, { useState } from 'react';
 import {
   Box,
@@ -36,8 +37,8 @@ const LoginPage = ({ onLogin }) => {
 
     try {
       setLoading(true);
-      console.log("API URL:", process.env.REACT_APP_API_URL); // ✅ For debugging
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/login`, {
+
+      const res = await axios.post(`https://employee-backend-kifp.onrender.com/api/login`, {
         email,
         password,
       });
@@ -47,7 +48,7 @@ const LoginPage = ({ onLogin }) => {
       localStorage.setItem('userRole', res.data.user.role);
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      onLogin(); // Notify parent App
+      onLogin(); // Notify parent
       setSnackbar({ open: true, message: '✅ Login successful!', severity: 'success' });
 
       navigate('/dashboard');
@@ -120,6 +121,8 @@ const LoginPage = ({ onLogin }) => {
           label="Email"
           type="email"
           fullWidth
+          required
+          autoComplete="email"
           margin="normal"
           variant="outlined"
           value={email}
@@ -129,6 +132,8 @@ const LoginPage = ({ onLogin }) => {
           label="Password"
           type="password"
           fullWidth
+          required
+          autoComplete="current-password"
           margin="normal"
           variant="outlined"
           value={password}
@@ -165,7 +170,6 @@ const LoginPage = ({ onLogin }) => {
         </Box>
       </Box>
 
-      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

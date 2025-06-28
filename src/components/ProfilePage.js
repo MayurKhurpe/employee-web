@@ -39,9 +39,12 @@ export default function ProfilePage({ updateUser }) {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          `https://employee-backend-kifp.onrender.com/api/profile`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         setProfile(res.data);
         localStorage.setItem('user', JSON.stringify(res.data));
         updateUser && updateUser(res.data);
@@ -49,7 +52,8 @@ export default function ProfilePage({ updateUser }) {
         setSnackbar({
           open: true,
           type: 'error',
-          message: err.response?.data?.error || '❌ Failed to load profile',
+          message:
+            err.response?.data?.error || '❌ Failed to load profile',
         });
       }
     };
@@ -83,7 +87,7 @@ export default function ProfilePage({ updateUser }) {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/profile`,
+        `https://employee-backend-kifp.onrender.com/api/profile`,
         profile,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -101,7 +105,8 @@ export default function ProfilePage({ updateUser }) {
       setSnackbar({
         open: true,
         type: 'error',
-        message: err.response?.data?.error || '❌ Failed to update profile',
+        message:
+          err.response?.data?.error || '❌ Failed to update profile',
       });
     }
   };
@@ -154,8 +159,6 @@ export default function ProfilePage({ updateUser }) {
             My Profile 🧑‍💼
           </Typography>
 
-          {/* ✅ No Avatar or Upload */}
-
           <Box
             component="form"
             onSubmit={handleSubmit}
@@ -164,7 +167,7 @@ export default function ProfilePage({ updateUser }) {
             flexDirection="column"
             gap={2}
           >
-            {[
+            {[ 
               { label: '📝 Name', name: 'name' },
               { label: '📧 Email', name: 'email', type: 'email' },
               { label: '🏠 Address', name: 'address' },

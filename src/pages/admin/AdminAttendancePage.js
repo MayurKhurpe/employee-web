@@ -43,10 +43,10 @@ const AdminAttendancePage = () => {
     const fetchAllAttendance = async () => {
       try {
         const [recordsRes, summaryRes] = await Promise.all([
-          axios.get('/api/attendance/all', {
+          axios.get(`${process.env.REACT_APP_API_URL}/api/attendance/all`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get('/api/attendance/summary', {
+          axios.get(`${process.env.REACT_APP_API_URL}/api/attendance/summary`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
@@ -178,7 +178,14 @@ const AdminAttendancePage = () => {
           autoHideDuration={3000}
           onClose={() => setSnackbar({ ...snackbar, open: false })}
         >
-          <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+          <Alert
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
         </Snackbar>
       </Container>
     </Box>

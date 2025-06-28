@@ -16,36 +16,32 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import axios from 'axios';
+
 const AdminNotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const navigate = useNavigate();
+  const API = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        // You can change this to your actual endpoint
-        // const res = await axios.get('/api/admin/notifications');
-        // setNotifications(res.data);
-
-        // Using static data for now
-        const mock = [
-          { id: 1, message: 'System upgrade at 6 PM', date: '2025-06-25 15:00' },
-          { id: 2, message: 'Office closed on Friday', date: '2025-06-26 10:30' },
-        ];
-        setNotifications(mock);
+        const res = await axios.get(`${API}/api/admin/notifications`);
+        setNotifications(res.data || []);
       } catch (error) {
-        setSnackbar({ open: true, message: 'Failed to load notifications', severity: 'error' });
+        console.error(error);
+        setSnackbar({ open: true, message: '❌ Failed to load notifications', severity: 'error' });
       }
     };
 
     fetchNotifications();
-  }, []);
+  }, [API]);
 
   const exportToCSV = () => {
     const rows = [
       ['Message', 'Date'],
-      ...notifications.map((n) => [n.message, n.date]),
+      ...notifications.map((n) => [n.message, new Date(n.sentAt).toLocaleString()]),
     ];
     const csv = rows.map((r) => r.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -92,9 +88,16 @@ const AdminNotificationsPage = () => {
         variant="contained"
         startIcon={<FileDownloadIcon />}
         onClick={exportToCSV}
-        sx={{ mb: 2, backgroundColor: '#4caf50', color: '#fff' }}
+        sx={{
+          mb: 2,
+          backgroundColor: '#4caf50',
+          color: '#fff',
+          '&:hover': {
+            backgroundColor: '#388e3c',
+          },
+        }}
       >
-        Export to CSV
+        📤 Export to CSV
       </Button>
 
       <Paper elevation={4} sx={{ borderRadius: 3 }}>
@@ -108,13 +111,13 @@ const AdminNotificationsPage = () => {
           <TableBody>
             {notifications.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={2}>No notifications found.</TableCell>
+                <TableCell colSpan={2}>❌ No notifications found.</TableCell>
               </TableRow>
             ) : (
               notifications.map((note) => (
-                <TableRow key={note.id}>
+                <TableRow key={note._id}>
                   <TableCell>{note.message}</TableCell>
-                  <TableCell>{note.date}</TableCell>
+                  <TableCell>{new Date(note.sentAt).toLocaleString()}</TableCell>
                 </TableRow>
               ))
             )}

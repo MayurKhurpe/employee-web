@@ -27,7 +27,7 @@ export default function DailyNews({ spinnerSize = 20 }) {
   const fetchNews = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/news');
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/news`);
       const sorted = res.data.sort((a, b) =>
         new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)
       );

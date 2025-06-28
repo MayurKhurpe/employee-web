@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -23,36 +23,34 @@ const AdminHolidaysPage = () => {
   const [newHoliday, setNewHoliday] = useState({ name: '', date: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
+  const API = process.env.REACT_APP_API_URL;
+
   const fetchHolidays = async () => {
     try {
-      const res = await axios.get('/api/admin/holidays');
-      setHolidays(res.data);
+      const res = await axios.get(`${API}/api/admin/holidays`);
+      setHolidays(res.data || []);
     } catch (err) {
       console.error('Failed to fetch holidays:', err);
-      setSnackbar({ open: true, message: 'Failed to load holidays.', severity: 'error' });
+      setSnackbar({ open: true, message: '❌ Failed to load holidays.', severity: 'error' });
     }
   };
 
   const handleAddHoliday = async () => {
     if (!newHoliday.name.trim() || !newHoliday.date) {
-      setSnackbar({ open: true, message: 'Please enter name and date.', severity: 'warning' });
+      setSnackbar({ open: true, message: '⚠️ Please enter both name and date.', severity: 'warning' });
       return;
     }
 
     try {
-      const res = await axios.post('/api/admin/holidays', newHoliday);
-      setSnackbar({ open: true, message: res.data.message || 'Holiday added!', severity: 'success' });
+      const res = await axios.post(`${API}/api/admin/holidays`, newHoliday);
+      setSnackbar({ open: true, message: res.data.message || '✅ Holiday added!', severity: 'success' });
       setNewHoliday({ name: '', date: '' });
       fetchHolidays();
     } catch (err) {
       console.error('Failed to add holiday:', err);
-      setSnackbar({ open: true, message: 'Failed to add holiday.', severity: 'error' });
+      setSnackbar({ open: true, message: '❌ Failed to add holiday.', severity: 'error' });
     }
   };
-
-  useEffect(() => {
-    fetchHolidays();
-  }, []);
 
   return (
     <Box
@@ -84,7 +82,11 @@ const AdminHolidaysPage = () => {
         Back to Admin Panel
       </Button>
 
-      <Paper elevation={4} sx={{ p: 3, borderRadius: 3, backgroundColor: '#fff8', backdropFilter: 'blur(4px)' }}>
+      {/* Form + List Container */}
+      <Paper
+        elevation={4}
+        sx={{ p: 3, borderRadius: 3, backgroundColor: '#fff8', backdropFilter: 'blur(4px)' }}
+      >
         <Typography variant="h4" gutterBottom fontWeight="bold" color="primary.dark">
           📅 Holiday & Events Manager
         </Typography>
@@ -92,7 +94,7 @@ const AdminHolidaysPage = () => {
           Add and manage upcoming holidays and events.
         </Typography>
 
-        {/* Add Holiday Form */}
+        {/* ➕ Add Holiday Form */}
         <Box sx={{ display: 'flex', gap: 2, my: 2, flexWrap: 'wrap' }}>
           <TextField
             label="Holiday Name"
@@ -126,7 +128,7 @@ const AdminHolidaysPage = () => {
           </Button>
         </Box>
 
-        {/* Holiday List */}
+        {/* 📜 Holiday List */}
         <Divider sx={{ my: 2 }} />
         <List>
           {holidays.length === 0 ? (
@@ -138,8 +140,12 @@ const AdminHolidaysPage = () => {
               <ListItem key={holiday._id}>
                 <EventIcon color="primary" sx={{ mr: 2 }} />
                 <ListItemText
-                  primary={holiday.name}
-                  secondary={new Date(holiday.date).toLocaleDateString()}
+                  primary={holiday.name || 'Unnamed'}
+                  secondary={
+                    holiday.date
+                      ? new Date(holiday.date).toLocaleDateString()
+                      : 'Date not set'
+                  }
                 />
               </ListItem>
             ))
@@ -147,7 +153,7 @@ const AdminHolidaysPage = () => {
         </List>
       </Paper>
 
-      {/* Snackbar */}
+      {/* ✅ Snackbar for actions */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

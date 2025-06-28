@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import {
   Box,
   Typography,
@@ -22,13 +22,11 @@ const AdminBroadcastPage = () => {
   const [history, setHistory] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  useEffect(() => {
-    fetchBroadcasts();
-  }, []);
+  const API_BASE = process.env.REACT_APP_API_URL;
 
   const fetchBroadcasts = async () => {
     try {
-      const res = await fetch('/api/admin/broadcasts');
+      const res = await fetch(`${API_BASE}/api/admin/broadcasts`);
       const data = await res.json();
       if (Array.isArray(data)) {
         setHistory(data);
@@ -46,7 +44,7 @@ const AdminBroadcastPage = () => {
     }
 
     try {
-      const res = await fetch('/api/admin/broadcasts', {
+      const res = await fetch(`${API_BASE}/api/admin/broadcasts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, audience }),
@@ -69,7 +67,7 @@ const AdminBroadcastPage = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this message?')) return;
     try {
-      const res = await fetch(`/api/admin/broadcasts/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/admin/broadcasts/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Delete failed');
       setHistory((prev) => prev.filter((log) => log._id !== id));
       setSnackbar({ open: true, message: '✅ Deleted successfully', severity: 'info' });

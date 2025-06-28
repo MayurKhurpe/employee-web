@@ -41,7 +41,7 @@ import LoginPage from './components/Login';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import VerifyEmailPage from './pages/VerifyEmailPage'; // ✅ NEW
+import VerifyEmailPage from './pages/VerifyEmailPage';
 import ProfilePage from './components/ProfilePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import HelpSupport from './pages/HelpSupport';
@@ -73,6 +73,8 @@ import AdminNotificationsPage from './pages/admin/AdminNotificationsPage';
 import AdminAttendancePage from './pages/admin/AdminAttendancePage';
 import LeaveManagementPage from './pages/admin/LeaveManagementPage';
 
+import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import { EventProvider } from './context/EventContext';
 
 function Sidebar({ collapsed, toggleSidebar, onLogout, navigate, user }) {
@@ -175,10 +177,6 @@ function Layout({ children, onLogout, user }) {
   );
 }
 
-function ProtectedRoute({ children }) {
-  return localStorage.getItem('token') ? children : <Navigate to="/" />;
-}
-
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')));
@@ -233,11 +231,15 @@ export default function App() {
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <Router>
           <Routes>
+            {/* Public */}
             <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" /> : <LoginPage onLogin={handleLogin} />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-            <Route path="/verify-email/:token" element={<VerifyEmailPage />} /> {/* ✅ NEW ROUTE */}
+            <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+
+            {/* Protected User Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><Dashboard /></Layout></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><ProfilePage updateUser={setUser} /></Layout></ProtectedRoute>} />
             <Route path="/attendance" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AttendancePage /></Layout></ProtectedRoute>} />
@@ -256,16 +258,20 @@ export default function App() {
             <Route path="/notification-settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><NotificationSettings /></Layout></ProtectedRoute>} />
             <Route path="/linked-devices" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><LinkedDevices /></Layout></ProtectedRoute>} />
             <Route path="/help-support" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><HelpSupport /></Layout></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute>{user?.role === 'admin' ? <Layout onLogout={handleLogout} user={user}><AdminPage /></Layout> : <Layout onLogout={handleLogout} user={user}><Unauthorized /></Layout>}</ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminUserManagementPage /></Layout></ProtectedRoute>} />
-            <Route path="/admin/reports" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminReportsPage /></Layout></ProtectedRoute>} />
-            <Route path="/admin/settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminSettingsPage /></Layout></ProtectedRoute>} />
-            <Route path="/admin/audit" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminAuditLogsPage /></Layout></ProtectedRoute>} />
-            <Route path="/admin/broadcast" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminBroadcastPage /></Layout></ProtectedRoute>} />
-            <Route path="/admin/holidays" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminHolidaysPage /></Layout></ProtectedRoute>} />
-            <Route path="/admin/notifications" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminNotificationsPage /></Layout></ProtectedRoute>} />
-            <Route path="/admin/attendance" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminAttendancePage /></Layout></ProtectedRoute>} />
-            <Route path="/admin/leave-management" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><LeaveManagementPage /></Layout></ProtectedRoute>} />
+
+            {/* Admin Routes */}
+            <Route path="/admin" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminPage /></Layout></ProtectedAdminRoute>} />
+            <Route path="/admin/users" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminUserManagementPage /></Layout></ProtectedAdminRoute>} />
+            <Route path="/admin/reports" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminReportsPage /></Layout></ProtectedAdminRoute>} />
+            <Route path="/admin/settings" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminSettingsPage /></Layout></ProtectedAdminRoute>} />
+            <Route path="/admin/audit" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminAuditLogsPage /></Layout></ProtectedAdminRoute>} />
+            <Route path="/admin/broadcast" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminBroadcastPage /></Layout></ProtectedAdminRoute>} />
+            <Route path="/admin/holidays" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminHolidaysPage /></Layout></ProtectedAdminRoute>} />
+            <Route path="/admin/notifications" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminNotificationsPage /></Layout></ProtectedAdminRoute>} />
+            <Route path="/admin/attendance" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminAttendancePage /></Layout></ProtectedAdminRoute>} />
+            <Route path="/admin/leave-management" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><LeaveManagementPage /></Layout></ProtectedAdminRoute>} />
+
+            {/* Catch all */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Router>

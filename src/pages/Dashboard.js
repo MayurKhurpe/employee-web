@@ -16,7 +16,6 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 import Birthday from "../components/Birthday";
-import DailyNews from "../components/DailyNews";
 import axios from "axios";
 
 export default function Dashboard() {
@@ -26,36 +25,36 @@ export default function Dashboard() {
   const [holidays, setHolidays] = useState([]);
   const [autoMarkedAbsent, setAutoMarkedAbsent] = useState(0);
 
-  // ⏰ Update clock
+  // ⏰ Clock Timer
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // 📣 Announcements
+  // 📣 Fetch Announcements
   useEffect(() => {
     axios
       .get(`${process.env.REACT_APP_API_URL}/api/admin/broadcasts`)
       .then((res) => setAnnouncements(res.data))
-      .catch((err) => console.error("Failed to load announcements:", err));
+      .catch((err) => console.error("❌ Failed to load announcements:", err));
   }, []);
 
-  // 📅 Upcoming Holidays
+  // 📅 Fetch Holidays
   useEffect(() => {
     axios
       .get(`${process.env.REACT_APP_API_URL}/api/admin/holidays`)
       .then((res) => {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Ensure full-day comparison
+        today.setHours(0, 0, 0, 0);
         const upcoming = res.data.filter(
           (h) => new Date(h.date).setHours(0, 0, 0, 0) >= today.getTime()
         );
         setHolidays(upcoming);
       })
-      .catch((err) => console.error("Failed to load holidays:", err));
+      .catch((err) => console.error("❌ Failed to load holidays:", err));
   }, []);
 
-  // ❌ Auto-marked Absent Count
+  // ❌ Fetch Auto-marked Absent Count
   useEffect(() => {
     axios
       .get(`${process.env.REACT_APP_API_URL}/api/attendance/auto-marked`)
@@ -63,14 +62,14 @@ export default function Dashboard() {
       .catch(() => setAutoMarkedAbsent(0));
   }, []);
 
-  // Demo data (optional: replace with real-time data later)
+  // 📝 Demo Attendance Stats (optional dynamic later)
   const attendanceToday = {
     present: 43,
     absent: 5,
     late: 2,
   };
 
-  // 🎁 Reusable SectionCard
+  // 🎁 Reusable Card Section
   const SectionCard = ({ title, color, children }) => (
     <Card
       elevation={4}
@@ -106,7 +105,7 @@ export default function Dashboard() {
         py: 4,
       }}
     >
-      {/* 🔲 Blur Overlay */}
+      {/* 🔲 Blur Layer */}
       <Box
         sx={{
           position: "absolute",
@@ -117,9 +116,9 @@ export default function Dashboard() {
         }}
       />
 
-      {/* 📦 Main Content */}
+      {/* 📦 Dashboard Content */}
       <Box sx={{ position: "relative", zIndex: 1, maxWidth: 900, mx: "auto" }}>
-        {/* 🎉 Welcome Box */}
+        {/* 🎉 Welcome Header */}
         <Card
           elevation={6}
           sx={{
@@ -197,20 +196,30 @@ export default function Dashboard() {
           </Typography>
         </SectionCard>
 
-        {/* 🗣️ Broadcast Announcements */}
+        {/* 📣 Announcements */}
         <SectionCard title="Announcements" color="#9c27b0">
-          <List>
-            {announcements.length > 0 ? (
-              announcements.map((msg, i) => (
-                <ListItem key={i}>
-                  <AnnouncementIcon color="secondary" sx={{ mr: 2 }} />
-                  <ListItemText primary={msg?.message || "No message"} />
-                </ListItem>
-              ))
-            ) : (
-              <Typography>No announcements to display.</Typography>
-            )}
-          </List>
+          {announcements.filter(msg =>
+            msg.audience === 'all' || msg.audience === 'employee'
+          ).length > 0 ? (
+            <List>
+              {announcements
+                .filter(msg => msg.audience === 'all' || msg.audience === 'employee')
+                .map((msg, i) => (
+                  <ListItem key={i}>
+                    <AnnouncementIcon color="secondary" sx={{ mr: 2 }} />
+                    <ListItemText
+                      primary={msg?.message || "No message"}
+                      secondary={
+                        new Date(msg?.createdAt).toLocaleString() +
+                        (msg.audience !== 'all' ? ` • (${msg.audience})` : '')
+                      }
+                    />
+                  </ListItem>
+                ))}
+            </List>
+          ) : (
+            <Typography>No announcements for you yet.</Typography>
+          )}
         </SectionCard>
 
         {/* 📅 Holidays */}
@@ -234,11 +243,6 @@ export default function Dashboard() {
         {/* 🎂 Birthdays */}
         <SectionCard title="Today's Birthdays" color="#2196f3">
           <Birthday spinnerSize={20} />
-        </SectionCard>
-
-        {/* 📰 News */}
-        <SectionCard title="Daily Office News" color="#4caf50">
-          <DailyNews spinnerSize={20} />
         </SectionCard>
       </Box>
     </Box>

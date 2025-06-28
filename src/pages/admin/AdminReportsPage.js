@@ -18,7 +18,7 @@ const AdminReportsPage = () => {
   const navigate = useNavigate();
   const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'info' });
 
-  // Mock data for export
+  // ⚠️ Replace this with real backend data later
   const reportData = [
     { Name: 'John Doe', Email: 'john@example.com', Status: 'Present' },
     { Name: 'Jane Smith', Email: 'jane@example.com', Status: 'Absent' },
@@ -29,16 +29,17 @@ const AdminReportsPage = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Report');
     XLSX.writeFile(wb, 'report.csv');
-
     setSnackbar({ open: true, message: '📥 CSV Report Downloaded!', severity: 'success' });
   };
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
-    doc.text('System Report', 10, 10);
+    doc.setFontSize(16);
+    doc.text('📊 System Report', 10, 15);
 
     reportData.forEach((item, index) => {
-      doc.text(`${index + 1}. ${item.Name} - ${item.Email} - ${item.Status}`, 10, 20 + index * 10);
+      doc.setFontSize(12);
+      doc.text(`${index + 1}. ${item.Name} - ${item.Email} - ${item.Status}`, 10, 30 + index * 10);
     });
 
     doc.save('report.pdf');
@@ -137,7 +138,11 @@ const AdminReportsPage = () => {
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          sx={{ width: '100%' }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

@@ -1,3 +1,4 @@
+// 📁 src/pages/ResetPasswordPage.js
 import React, { useState } from 'react';
 import {
   Box,
@@ -22,7 +23,7 @@ export default function ResetPasswordPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`http://localhost:5000/api/reset-password/${token}`, {
+      const res = await fetch(`https://employee-backend-kifp.onrender.com/api/reset-password/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),

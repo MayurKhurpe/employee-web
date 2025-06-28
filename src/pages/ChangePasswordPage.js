@@ -36,14 +36,17 @@ export default function ChangePassword() {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Not authenticated');
 
-      const res = await fetch('http://localhost:5000/api/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/change-password`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ currentPassword, newPassword }),
+        }
+      );
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Password update failed');
@@ -164,9 +167,7 @@ export default function ChangePassword() {
 
             {newPassword && (
               <Box sx={{ my: 1 }}>
-                <Typography variant="caption">
-                  Password Strength
-                </Typography>
+                <Typography variant="caption">Password Strength</Typography>
                 <LinearProgress
                   variant="determinate"
                   value={getStrength(newPassword)}
@@ -191,7 +192,9 @@ export default function ChangePassword() {
               fullWidth
               sx={{ mt: 2, py: 1.2, fontWeight: 'bold' }}
               disabled={
-                !currentPassword || !newPassword || !isValidPassword(newPassword)
+                !currentPassword ||
+                !newPassword ||
+                !isValidPassword(newPassword)
               }
             >
               🔄 Update Password

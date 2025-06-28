@@ -1,5 +1,4 @@
-// 📁 src/pages/AdminPage.js
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -8,6 +7,7 @@ import {
   Grid,
   Button,
   Paper,
+  CircularProgress,
 } from '@mui/material';
 import {
   AdminPanelSettings as AdminIcon,
@@ -21,17 +21,46 @@ import {
   TimeToLeave as LeaveIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const AdminPage = () => {
   const navigate = useNavigate();
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ Role-based protection
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user || user.role !== 'admin') {
       navigate('/unauthorized');
     }
   }, [navigate]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get('http://localhost:5000/api/admin/stats', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setStats(res.data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching stats:', err);
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const statCards = [
+    { label: '👥 Total Users', value: stats?.totalUsers, color: 'primary.main' },
+    { label: '🕓 Pending Approvals', value: stats?.pendingUsers, color: 'warning.main' },
+    { label: '⏱ Today’s Check-ins', value: stats?.todayCheckIns, color: 'success.main' },
+    { label: '📋 Total Leaves', value: stats?.totalLeaves, color: 'info.main' },
+    { label: '📩 Pending Leaves', value: stats?.pendingLeaves, color: 'error.main' },
+    { label: '📁 Documents', value: stats?.totalDocuments, color: 'secondary.main' },
+  ];
 
   const features = [
     {
@@ -96,7 +125,7 @@ const AdminPage = () => {
         p: 3,
       }}
     >
-      {/* 🔲 Blur overlay */}
+      {/* Blur Overlay */}
       <Box
         sx={{
           position: 'absolute',
@@ -107,7 +136,7 @@ const AdminPage = () => {
         }}
       />
 
-      {/* 🧩 Main content */}
+      {/* Main Content */}
       <Box sx={{ position: 'relative', zIndex: 1 }}>
         {/* Header */}
         <Paper
@@ -130,7 +159,41 @@ const AdminPage = () => {
           </Typography>
         </Paper>
 
-        {/* Cards */}
+        {/* Admin Stats */}
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          {loading ? (
+            <Grid item xs={12}>
+              <Box textAlign="center" py={5}>
+                <CircularProgress color="inherit" />
+              </Box>
+            </Grid>
+          ) : (
+            statCards.map((card, i) => (
+              <Grid item xs={12} sm={6} md={4} key={i}>
+                <Card
+                  sx={{
+                    borderLeft: `6px solid`,
+                    borderColor: card.color,
+                    borderRadius: 3,
+                    backgroundColor: 'rgba(255,255,255,0.96)',
+                  }}
+                  elevation={4}
+                >
+                  <CardContent>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      {card.label}
+                    </Typography>
+                    <Typography variant="h5" fontWeight="bold">
+                      {card.value}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))
+          )}
+        </Grid>
+
+        {/* Admin Feature Cards */}
         <Grid container spacing={3}>
           {features.map((item, idx) => (
             <Grid item xs={12} sm={6} md={4} key={idx}>

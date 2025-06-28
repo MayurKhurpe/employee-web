@@ -1,3 +1,4 @@
+// 📁 src/pages/admin/AdminSettingsPage.js
 import React, { useState } from 'react';
 import {
   Box,
@@ -61,7 +62,7 @@ const AdminSettingsPage = () => {
         background: 'linear-gradient(to bottom right, #e0f7fa, #eceff1)',
       }}
     >
-      {/* Back Button */}
+      {/* 🔙 Back Button */}
       <Button
         startIcon={<ArrowBack />}
         onClick={() => navigate('/admin')}
@@ -83,6 +84,7 @@ const AdminSettingsPage = () => {
         Back to Admin Panel
       </Button>
 
+      {/* Title */}
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#4a148c' }}>
         ⚙️ Admin Settings
       </Typography>
@@ -97,7 +99,7 @@ const AdminSettingsPage = () => {
           backdropFilter: 'blur(6px)',
         }}
       >
-        {/* Email */}
+        {/* 📧 Update Email */}
         <Typography variant="subtitle1" fontWeight="bold">
           📧 Update Email
         </Typography>
@@ -115,7 +117,7 @@ const AdminSettingsPage = () => {
           </Button>
         </Stack>
 
-        {/* Mobile */}
+        {/* 📱 Update Mobile */}
         <Box mt={3}>
           <Typography variant="subtitle1" fontWeight="bold">
             📱 Update Mobile Number
@@ -135,7 +137,7 @@ const AdminSettingsPage = () => {
           </Stack>
         </Box>
 
-        {/* Notifications Toggle */}
+        {/* 🔔 Notifications Toggle */}
         <Box mt={4}>
           <FormControlLabel
             control={
@@ -154,7 +156,7 @@ const AdminSettingsPage = () => {
           />
         </Box>
 
-        {/* Office Timing */}
+        {/* 🕒 Office Hours */}
         <Box mt={4}>
           <Typography variant="subtitle1" fontWeight="bold">
             🕒 Office Hours
@@ -179,7 +181,7 @@ const AdminSettingsPage = () => {
           </Stack>
         </Box>
 
-        {/* Sync & Holiday Management */}
+        {/* 🔄 Sync & 📅 Holiday Manager */}
         <Box mt={4}>
           <Stack direction="row" spacing={2}>
             <Button
@@ -214,11 +216,12 @@ const AdminSettingsPage = () => {
         </Box>
       </Paper>
 
-      {/* Snackbar */}
+      {/* ✅ Snackbar Feedback */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert
           severity={snackbar.severity}

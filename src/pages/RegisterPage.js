@@ -50,7 +50,6 @@ const RegisterPage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
     if (name === "password") {
       setPasswordStrength(checkPasswordStrength(value));
     }
@@ -95,14 +94,17 @@ const RegisterPage = () => {
     }
 
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL}/api/register-request`, {
-        name,
-        email,
-        password,
-        mobile,
-        department,
-        address,
-      });
+      await axios.post(
+        `https://employee-backend-kifp.onrender.com/api/register-request`,
+        {
+          name,
+          email,
+          password,
+          mobile,
+          department,
+          address,
+        }
+      );
 
       setSnackbar({
         open: true,
@@ -125,7 +127,8 @@ const RegisterPage = () => {
       setSnackbar({
         open: true,
         type: "error",
-        message: err?.response?.data?.error || "❌ Registration failed.",
+        message:
+          err?.response?.data?.error || "❌ Registration failed. Try again.",
       });
     }
   };

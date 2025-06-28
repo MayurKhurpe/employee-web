@@ -15,17 +15,13 @@ import axios from 'axios';
 const VerifyEmailPage = () => {
   const { token } = useParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState('loading'); // loading, success, error
+  const [status, setStatus] = useState('loading'); // 'loading', 'success', 'error'
 
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/auth/verify-email/${token}`);
-        if (res.status === 200) {
-          setStatus('success');
-        } else {
-          setStatus('error');
-        }
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/api/auth/verify-email/${token}`);
+        setStatus(res.status === 200 ? 'success' : 'error');
       } catch (err) {
         setStatus('error');
       }
@@ -34,42 +30,72 @@ const VerifyEmailPage = () => {
   }, [token]);
 
   return (
-    <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
-      <Paper elevation={3} sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}>
-        {status === 'loading' && <CircularProgress />}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(to right, #a1c4fd, #c2e9fb)',
+        p: 2,
+      }}
+    >
+      <Paper
+        elevation={6}
+        sx={{
+          p: 5,
+          maxWidth: 420,
+          width: '100%',
+          borderRadius: 3,
+          textAlign: 'center',
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+        }}
+      >
+        {status === 'loading' && (
+          <>
+            <CircularProgress color="primary" />
+            <Typography mt={2}>Verifying your email...</Typography>
+          </>
+        )}
+
         {status === 'success' && (
           <>
-            <CheckCircleOutlineIcon color="success" sx={{ fontSize: 60 }} />
-            <Typography variant="h5" sx={{ mt: 2 }}>
+            <CheckCircleOutlineIcon sx={{ fontSize: 64, color: 'green' }} />
+            <Typography variant="h5" mt={2} fontWeight="bold">
               Email Verified! 🎉
             </Typography>
-            <Typography variant="body1" sx={{ mt: 1 }}>
-              You can now log in to your account.
+            <Typography variant="body1" mt={1}>
+              Your email has been successfully verified. You can now log in.
             </Typography>
             <Button
               variant="contained"
+              color="success"
               sx={{ mt: 3 }}
               onClick={() => navigate('/')}
             >
-              Go to Login
+              🔐 Go to Login
             </Button>
           </>
         )}
+
         {status === 'error' && (
           <>
-            <ErrorOutlineIcon color="error" sx={{ fontSize: 60 }} />
-            <Typography variant="h5" sx={{ mt: 2 }}>
+            <ErrorOutlineIcon sx={{ fontSize: 64, color: 'red' }} />
+            <Typography variant="h5" mt={2} fontWeight="bold">
               Verification Failed ❌
             </Typography>
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              Invalid or expired token.
+            <Typography variant="body2" mt={1}>
+              The link is invalid or has expired.
             </Typography>
             <Button
               variant="outlined"
+              color="error"
               sx={{ mt: 3 }}
               onClick={() => navigate('/')}
             >
-              Go Back
+              🔙 Back to Home
             </Button>
           </>
         )}

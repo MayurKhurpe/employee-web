@@ -23,25 +23,20 @@ const AdminNotificationHistory = () => {
   const [notifications, setNotifications] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
+  const API = process.env.REACT_APP_API_URL;
+
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        // 🔁 Replace with actual API when backend ready
-        // const res = await axios.get('/api/admin/notifications');
-        // setNotifications(res.data);
-
-        // Using mock data for now
-        const mock = [
-          { id: 1, message: 'Server maintenance tonight at 9 PM', sentAt: '2025-06-20 16:00' },
-          { id: 2, message: 'New ID policy will roll out Monday', sentAt: '2025-06-21 12:30' },
-        ];
-        setNotifications(mock);
+        const res = await axios.get(`${API}/api/admin/notifications`);
+        setNotifications(res.data || []);
       } catch (err) {
-        setSnackbar({ open: true, message: 'Failed to fetch notifications.', severity: 'error' });
+        console.error('Fetch error:', err);
+        setSnackbar({ open: true, message: '❌ Failed to fetch notifications.', severity: 'error' });
       }
     };
     fetchNotifications();
-  }, []);
+  }, [API]);
 
   return (
     <Box
@@ -88,13 +83,20 @@ const AdminNotificationHistory = () => {
           <TableBody>
             {notifications.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={2}>No notifications found.</TableCell>
+                <TableCell colSpan={2} align="center" sx={{ py: 3 }}>
+                  ❌ No notifications found.
+                </TableCell>
               </TableRow>
             ) : (
               notifications.map((note) => (
-                <TableRow key={note.id}>
+                <TableRow key={note._id || note.id}>
                   <TableCell>{note.message}</TableCell>
-                  <TableCell>{note.sentAt}</TableCell>
+                  <TableCell>
+                    {new Date(note.sentAt).toLocaleString(undefined, {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </TableCell>
                 </TableRow>
               ))
             )}
