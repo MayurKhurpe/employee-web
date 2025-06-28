@@ -1,0 +1,275 @@
+// 📁 App.js
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from 'react-router-dom';
+
+import {
+  Box,
+  CssBaseline,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  IconButton,
+  Tooltip,
+  Avatar,
+  Typography,
+  Divider,
+} from '@mui/material';
+
+import {
+  Menu as MenuIcon,
+  Logout,
+  Settings,
+  AccountCircle,
+  Dashboard as DashboardIcon,
+  AccessTime as AccessTimeIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon,
+} from '@mui/icons-material';
+
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+
+import LoginPage from './components/Login';
+import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage'; // ✅ NEW
+import ProfilePage from './components/ProfilePage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
+import HelpSupport from './pages/HelpSupport';
+import SettingsPage from './pages/SettingsPage';
+import AttendancePage from './pages/AttendancePage';
+import NotificationSettings from './pages/NotificationSettingsPage';
+import LinkedDevices from './pages/LinkedDevicesPage';
+import MoreFunctionsPage from './pages/MoreFunctionsPage';
+import MotivationCorner from './pages/MotivationCorner';
+import FunZone from './pages/FunZone';
+import EventCalendar from './pages/EventCalendar';
+import DocumentCenter from './pages/DocumentCenter';
+import WeatherReport from './pages/WeatherReport';
+import MoodTracker from './pages/MoodTracker';
+import TimerPage from './pages/TimerPage';
+import CalculatorPage from './pages/CalculatorPage';
+import Dashboard from './pages/Dashboard';
+import LeaveApplicationPage from './pages/LeaveApplicationPage';
+import AdminPage from './pages/AdminPage';
+import Unauthorized from './pages/Unauthorized';
+
+import AdminUserManagementPage from './pages/admin/AdminUserManagementPage';
+import AdminReportsPage from './pages/admin/AdminReportsPage';
+import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+import AdminAuditLogsPage from './pages/admin/AdminAuditLogsPage';
+import AdminBroadcastPage from './pages/admin/AdminBroadcastPage';
+import AdminHolidaysPage from './pages/admin/AdminHolidaysPage';
+import AdminNotificationsPage from './pages/admin/AdminNotificationsPage';
+import AdminAttendancePage from './pages/admin/AdminAttendancePage';
+import LeaveManagementPage from './pages/admin/LeaveManagementPage';
+
+import { EventProvider } from './context/EventContext';
+
+function Sidebar({ collapsed, toggleSidebar, onLogout, navigate, user }) {
+  const sidebarItems = [
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+    { text: 'Profile', icon: <AccountCircle />, path: '/profile' },
+    { text: 'Attendance', icon: <AccessTimeIcon />, path: '/attendance' },
+    { text: 'Leave Application', icon: <span>📝</span>, path: '/leave-application' },
+    ...(user?.role === 'admin'
+      ? [
+          { text: 'Admin Panel', icon: <AdminPanelSettingsIcon />, path: '/admin' },
+          { text: 'Leave Mgmt', icon: <span>✅</span>, path: '/admin/leave-management' },
+        ]
+      : []),
+    { text: 'More Functions', icon: <span>✨</span>, path: '/more-functions' },
+    { text: 'Settings', icon: <Settings />, path: '/settings' },
+    { text: 'Logout', icon: <Logout />, path: '/logout' },
+  ];
+
+  return (
+    <Drawer
+      variant="permanent"
+      sx={{
+        width: collapsed ? 60 : 240,
+        flexShrink: 0,
+        '& .MuiDrawer-paper': {
+          width: collapsed ? 60 : 240,
+          backgroundColor: '#0B1D3A',
+          color: '#fff',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        },
+      }}
+    >
+      <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', p: 1, justifyContent: collapsed ? 'center' : 'space-between' }}>
+          <IconButton onClick={toggleSidebar} sx={{ color: '#fff' }}>
+            <MenuIcon />
+          </IconButton>
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2 }}>
+          <Avatar src={user?.profilePic || 'https://i.postimg.cc/tCKkWL38/Company-Logo.jpg'} sx={{ width: 50, height: 50, mb: 1 }} />
+          {!collapsed && <Typography variant="subtitle2">{user?.name || 'Welcome'}</Typography>}
+        </Box>
+        <Divider sx={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+        <List>
+          {sidebarItems.map(item => (
+            <Tooltip key={item.text} title={collapsed ? item.text : ''} placement="right">
+              <ListItem
+                button
+                onClick={() => item.path === '/logout' ? onLogout() : navigate(item.path)}
+                sx={{ px: collapsed ? 1 : 2, '&:hover': { backgroundColor: '#132F4C' } }}
+              >
+                <ListItemIcon sx={{ color: '#fff', minWidth: 0, mr: collapsed ? 'auto' : 2 }}>
+                  {item.icon}
+                </ListItemIcon>
+                {!collapsed && <ListItemText primary={item.text} />}
+              </ListItem>
+            </Tooltip>
+          ))}
+        </List>
+      </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, p: 2 }}>
+        <Tooltip title="Instagram">
+          <IconButton href="https://www.instagram.com/seekersautomation/" target="_blank" sx={{ color: '#fff' }}>
+            <img src="https://cdn-icons-png.flaticon.com/512/1384/1384063.png" alt="Instagram" width={24} height={24} />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Website">
+          <IconButton href="https://seekersautomation.com/" target="_blank" sx={{ color: '#fff' }}>
+            <img src="https://cdn-icons-png.flaticon.com/512/1055/1055646.png" alt="Website" width={24} height={24} />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="LinkedIn">
+          <IconButton href="https://www.linkedin.com/company/96489094/" target="_blank" sx={{ color: '#fff' }}>
+            <img src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png" alt="LinkedIn" width={24} height={24} />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Drawer>
+  );
+}
+
+function Layout({ children, onLogout, user }) {
+  const [collapsed, setCollapsed] = useState(localStorage.getItem('sidebar-collapsed') === 'true');
+  const navigate = useNavigate();
+  const toggleSidebar = () => {
+    const newState = !collapsed;
+    localStorage.setItem('sidebar-collapsed', newState);
+    setCollapsed(newState);
+  };
+
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <CssBaseline />
+      <Sidebar collapsed={collapsed} toggleSidebar={toggleSidebar} onLogout={onLogout} navigate={navigate} user={user} />
+      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>{children}</Box>
+    </Box>
+  );
+}
+
+function ProtectedRoute({ children }) {
+  return localStorage.getItem('token') ? children : <Navigate to="/" />;
+}
+
+export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')));
+
+  const handleLogin = () => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+      setIsLoggedIn(true);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setIsLoggedIn(false);
+    setUser(null);
+  };
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get('http://localhost:5000/api/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUser(res.data);
+        localStorage.setItem('user', JSON.stringify(res.data));
+      } catch (err) {
+        console.error('Failed to fetch user profile', err);
+      }
+    };
+
+    if (localStorage.getItem('token')) {
+      fetchUserProfile();
+    }
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const updatedUser = localStorage.getItem('user');
+      if (updatedUser) {
+        const parsed = JSON.parse(updatedUser);
+        setUser((prev) => (JSON.stringify(prev) !== JSON.stringify(parsed) ? parsed : prev));
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <EventProvider>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <Router>
+          <Routes>
+            <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" /> : <LoginPage onLogin={handleLogin} />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/verify-email/:token" element={<VerifyEmailPage />} /> {/* ✅ NEW ROUTE */}
+            <Route path="/dashboard" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><Dashboard /></Layout></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><ProfilePage updateUser={setUser} /></Layout></ProtectedRoute>} />
+            <Route path="/attendance" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AttendancePage /></Layout></ProtectedRoute>} />
+            <Route path="/leave-application" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><LeaveApplicationPage /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><MoreFunctionsPage /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/timer" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><TimerPage /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/calculator" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><CalculatorPage /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/motivation" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><MotivationCorner /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/fun" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><FunZone /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/calendar" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><EventCalendar /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/documents" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><DocumentCenter /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/weather" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><WeatherReport /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/mood" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><MoodTracker /></Layout></ProtectedRoute>} />
+            <Route path="/change-password" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><ChangePasswordPage /></Layout></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><SettingsPage /></Layout></ProtectedRoute>} />
+            <Route path="/notification-settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><NotificationSettings /></Layout></ProtectedRoute>} />
+            <Route path="/linked-devices" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><LinkedDevices /></Layout></ProtectedRoute>} />
+            <Route path="/help-support" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><HelpSupport /></Layout></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute>{user?.role === 'admin' ? <Layout onLogout={handleLogout} user={user}><AdminPage /></Layout> : <Layout onLogout={handleLogout} user={user}><Unauthorized /></Layout>}</ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminUserManagementPage /></Layout></ProtectedRoute>} />
+            <Route path="/admin/reports" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminReportsPage /></Layout></ProtectedRoute>} />
+            <Route path="/admin/settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminSettingsPage /></Layout></ProtectedRoute>} />
+            <Route path="/admin/audit" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminAuditLogsPage /></Layout></ProtectedRoute>} />
+            <Route path="/admin/broadcast" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminBroadcastPage /></Layout></ProtectedRoute>} />
+            <Route path="/admin/holidays" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminHolidaysPage /></Layout></ProtectedRoute>} />
+            <Route path="/admin/notifications" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminNotificationsPage /></Layout></ProtectedRoute>} />
+            <Route path="/admin/attendance" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AdminAttendancePage /></Layout></ProtectedRoute>} />
+            <Route path="/admin/leave-management" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><LeaveManagementPage /></Layout></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </Router>
+      </LocalizationProvider>
+    </EventProvider>
+  );
+}
