@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: 'https://employee-backend-kifp.onrender.com', // 👌 Correct backend URL
-  withCredentials: true, // 👌 For cross-origin credentials (if needed)
+  baseURL: 'https://employee-backend-kifp.onrender.com/api', // ✅ FIXED: added /api
+  withCredentials: true,
 });
 
 // 🔐 Automatically attach token from localStorage
