@@ -1,19 +1,8 @@
 // 📁 src/pages/AttendancePage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Container,
-  Paper,
-  Typography,
-  Stack,
-  Button,
-  Snackbar,
-  Alert,
-  ToggleButtonGroup,
-  ToggleButton,
-  CircularProgress,
-  Pagination,
-  Box,
-  TextField,
+  Container, Paper, Typography, Stack, Button, Snackbar, Alert, ToggleButtonGroup,
+  ToggleButton, CircularProgress, Pagination, Box, TextField,
 } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -22,12 +11,7 @@ import axios from 'api/axios';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import {
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  ResponsiveContainer,
-  Tooltip as RechartsTooltip,
+  PieChart, Pie, Cell, Legend, ResponsiveContainer, Tooltip as RechartsTooltip,
 } from 'recharts';
 
 const PAGE_SIZE = 5;
@@ -36,7 +20,6 @@ const backgroundImageUrl = 'https://i.postimg.cc/7Z3grwLw/MES.jpg';
 
 const AttendancePage = () => {
   const [records, setRecords] = useState([]);
-  const [filteredRecords, setFilteredRecords] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [alreadyMarked, setAlreadyMarked] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -78,54 +61,55 @@ const AttendancePage = () => {
     fetchAttendance();
   }, [token]);
 
-  useEffect(() => {
+  const filteredRecords = useMemo(() => {
     let temp = [...records];
     if (filterStatus !== 'All') temp = temp.filter((r) => r.status === filterStatus);
     if (filterDate) temp = temp.filter((r) => dayjs(r.date).isSame(filterDate, 'day'));
     if (search) temp = temp.filter((r) => r.status.toLowerCase().includes(search.toLowerCase()));
-    setFilteredRecords(temp);
-    setPage(1);
+    return temp;
   }, [records, filterStatus, filterDate, search]);
+
+  const paginatedRecords = useMemo(() => {
+    return filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  }, [filteredRecords, page]);
 
   useEffect(() => {
     const fetchLocationNames = async () => {
-      const promises = records.map(async (rec) => {
-        if (rec.location?.lat && rec.location?.lng && !locationNameMap[rec._id]) {
+      const cache = JSON.parse(localStorage.getItem('locationCache') || '{}');
+      const updatedMap = {};
+
+      for (const rec of paginatedRecords) {
+        if (!rec.location?.lat || !rec.location?.lng) continue;
+
+        if (cache[rec._id]) {
+          updatedMap[rec._id] = cache[rec._id];
+        } else {
           try {
             const res = await axios.get(
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${rec.location.lat}&lon=${rec.location.lng}`
             );
-            return { id: rec._id, name: res.data.display_name };
+            updatedMap[rec._id] = res.data.display_name;
+            cache[rec._id] = res.data.display_name;
           } catch {
-            return { id: rec._id, name: 'Unknown Location' };
+            updatedMap[rec._id] = 'Unknown';
           }
         }
-        return null;
-      });
-
-      const results = await Promise.all(promises);
-      const updatedMap = {};
-      results.forEach((res) => {
-        if (res) updatedMap[res.id] = res.name;
-      });
+      }
 
       setLocationNameMap((prev) => ({ ...prev, ...updatedMap }));
+      localStorage.setItem('locationCache', JSON.stringify(cache));
     };
 
-    if (records.length) fetchLocationNames();
-  }, [records, locationNameMap]);
+    if (paginatedRecords.length) fetchLocationNames();
+  }, [paginatedRecords]);
 
   const isWithinOffice = (lat, lng) => {
-    const officeLat = 18.5204;
-    const officeLng = 73.8567;
-    const radius = 5;
+    const officeLat = 18.5204, officeLng = 73.8567, radius = 0.2;
     const toRad = (val) => (val * Math.PI) / 180;
     const R = 6371;
     const dLat = toRad(officeLat - lat);
     const dLon = toRad(officeLng - lng);
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(lat)) * Math.cos(toRad(officeLat)) * Math.sin(dLon / 2) ** 2;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat)) * Math.cos(toRad(officeLat)) * Math.sin(dLon / 2) ** 2;
     const distance = 2 * R * Math.asin(Math.sqrt(a));
     return distance <= radius;
   };
@@ -204,8 +188,6 @@ const AttendancePage = () => {
     { name: 'Remote Work', value: records.filter((r) => r.status === 'Remote Work').length },
   ];
 
-  const paginatedRecords = filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
   return (
     <>
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundImage: `url(${backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(50px)', zIndex: -1 }} />
@@ -257,11 +239,11 @@ const AttendancePage = () => {
         {loading ? (
           <Box textAlign="center" py={5}><CircularProgress /></Box>
         ) : (
-          filteredRecords.length === 0 ? (
+          paginatedRecords.length === 0 ? (
             <Typography variant="body1" align="center">No attendance records found.</Typography>
           ) : (
             <Paper sx={{ p: 2 }}>
-              {paginatedRecords.map((rec, i) => (
+              {paginatedRecords.map((rec) => (
                 <Box key={rec._id} mb={2} p={2} border={1} borderColor="grey.300" borderRadius={2}>
                   <Typography variant="subtitle2" color="text.secondary">
                     {dayjs(rec.date).format('dddd, DD MMM YYYY')}

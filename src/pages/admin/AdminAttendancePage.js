@@ -17,12 +17,16 @@ import {
   Stack,
   Box,
   Grid,
+  Pagination,
 } from '@mui/material';
 import axios from 'api/axios';
 import dayjs from 'dayjs';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
+
+const PAGE_SIZE = 10;
 
 const AdminAttendancePage = () => {
   const [records, setRecords] = useState([]);
@@ -36,42 +40,62 @@ const AdminAttendancePage = () => {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
+  const fetchAllAttendance = async (pg = 1) => {
+    setLoading(true);
+    try {
+      const [recordsRes, summaryRes] = await Promise.all([
+        axios.get(`/attendance/all?page=${pg}&limit=${PAGE_SIZE}`),
+        axios.get('/attendance/summary'),
+      ]);
+
+      setRecords(recordsRes.data.records || []);
+      setTotalPages(recordsRes.data.totalPages || 1);
+      setSummary(summaryRes.data || {});
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err.response?.data?.error || '❌ Failed to load attendance.',
+        severity: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAllAttendance = async () => {
-      try {
-        const [recordsRes, summaryRes] = await Promise.all([
-          axios.get('/attendance/all'),
-          axios.get('/attendance/summary'),
-        ]);
-        setRecords(recordsRes.data || []);
-        setSummary(summaryRes.data || {});
-      } catch (err) {
-        setSnackbar({
-          open: true,
-          message: err.response?.data?.error || '❌ Failed to load attendance.',
-          severity: 'error',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAllAttendance();
-  }, []);
+    fetchAllAttendance(page);
+  }, [page]);
 
   const exportToPDF = () => {
     setExporting(true);
     const doc = new jsPDF();
     doc.setFontSize(14);
-    doc.text('📋 All Employee Attendance', 10, 10);
-    records.forEach((rec, i) => {
-      doc.text(
-        `${i + 1}. ${rec.name} - ${rec.status} - ${dayjs(rec.date).format('DD MMM YYYY')}`,
-        10,
-        20 + i * 10
-      );
+    doc.text('📋 All Employee Attendance', 14, 20);
+
+    autoTable(doc, {
+      startY: 30,
+      head: [['#', 'Name', 'Email', 'Date', 'Status', 'Location', 'Check In', 'Check Out']],
+      body: records.map((rec, i) => [
+        i + 1,
+        rec.name,
+        rec.email,
+        dayjs(rec.date).format('DD MMM YYYY'),
+        rec.status,
+        typeof rec.location === 'string'
+          ? rec.location
+          : rec.location?.lat
+          ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
+          : 'N/A',
+        rec.checkInTime || 'N/A',
+        rec.checkOutTime || 'N/A',
+      ]),
+      theme: 'striped',
     });
+
     doc.save('all-attendance.pdf');
     setExporting(false);
   };
@@ -83,7 +107,12 @@ const AdminAttendancePage = () => {
       Email: r.email,
       Date: dayjs(r.date).format('DD MMM YYYY'),
       Status: r.status,
-      Location: r.location || 'N/A',
+      Location:
+        typeof r.location === 'string'
+          ? r.location
+          : r.location?.lat
+          ? `${r.location.lat}, ${r.location.lng}`
+          : 'N/A',
       CheckIn: r.checkInTime || 'N/A',
       CheckOut: r.checkOutTime || 'N/A',
     }));
@@ -104,10 +133,8 @@ const AdminAttendancePage = () => {
           </Button>
         </Box>
 
-        {/* 📊 Summary Cards */}
         <Grid container spacing={2} mb={3}>
-          {[
-            { label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
+          {[{ label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
             { label: '❌ Absent', value: summary.todayAbsent, bg: '#ffebee' },
             { label: '🕒 Half Day', value: summary.todayHalfDay, bg: '#fff3e0' },
             { label: '🏃 Remote', value: summary.todayRemote, bg: '#f1f8e9' },
@@ -122,7 +149,6 @@ const AdminAttendancePage = () => {
           ))}
         </Grid>
 
-        {/* 📤 Export Buttons */}
         <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
           <Button variant="outlined" onClick={exportToPDF} disabled={exporting}>
             🧾 Export PDF
@@ -132,49 +158,61 @@ const AdminAttendancePage = () => {
           </Button>
         </Stack>
 
-        {/* 📅 Attendance Table */}
         {loading ? (
-          <Box display="flex" justifyContent="center" mt={5}>
-            <CircularProgress />
-          </Box>
+          <Box display="flex" justifyContent="center" mt={5}><CircularProgress /></Box>
         ) : records.length === 0 ? (
           <Typography variant="body1" color="text.secondary" sx={{ mt: 4 }}>
             No attendance records found.
           </Typography>
         ) : (
-          <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 3 }}>
-            <Table>
-              <TableHead sx={{ backgroundColor: '#bbdefb' }}>
-                <TableRow>
-                  <TableCell>#</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Location</TableCell>
-                  <TableCell>Check In</TableCell>
-                  <TableCell>Check Out</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {records.map((rec, idx) => (
-                  <TableRow key={rec._id}>
-                    <TableCell>{idx + 1}</TableCell>
-                    <TableCell>{rec.name}</TableCell>
-                    <TableCell>{rec.email}</TableCell>
-                    <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
-                    <TableCell>{rec.status}</TableCell>
-                    <TableCell>{rec.location || 'N/A'}</TableCell>
-                    <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
-                    <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
+          <>
+            <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 3 }}>
+              <Table>
+                <TableHead sx={{ backgroundColor: '#bbdefb' }}>
+                  <TableRow>
+                    <TableCell>#</TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Location</TableCell>
+                    <TableCell>Check In</TableCell>
+                    <TableCell>Check Out</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {records.map((rec, idx) => (
+                    <TableRow key={rec._id}>
+                      <TableCell>{(page - 1) * PAGE_SIZE + idx + 1}</TableCell>
+                      <TableCell>{rec.name}</TableCell>
+                      <TableCell>{rec.email}</TableCell>
+                      <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
+                      <TableCell>{rec.status}</TableCell>
+                      <TableCell>
+                        {typeof rec.location === 'string'
+                          ? rec.location
+                          : rec.location?.lat
+                          ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
+                          : 'N/A'}
+                      </TableCell>
+                      <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
+                      <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Stack direction="row" justifyContent="center" mt={3}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(e, value) => setPage(value)}
+                color="primary"
+              />
+            </Stack>
+          </>
         )}
 
-        {/* ✅ Snackbar */}
         <Snackbar
           open={snackbar.open}
           autoHideDuration={3000}
