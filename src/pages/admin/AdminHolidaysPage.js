@@ -24,14 +24,10 @@ const AdminHolidaysPage = () => {
   const [newHoliday, setNewHoliday] = useState({ name: '', date: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  const API = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
-
+  // ✅ Fetch all holidays
   const fetchHolidays = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API}/api/admin/holidays`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get('/admin/holidays');
       setHolidays(res.data || []);
     } catch (err) {
       console.error('Failed to fetch holidays:', err);
@@ -43,6 +39,7 @@ const AdminHolidaysPage = () => {
     fetchHolidays();
   }, []);
 
+  // ✅ Add new holiday
   const handleAddHoliday = async () => {
     if (!newHoliday.name.trim() || !newHoliday.date) {
       return setSnackbar({
@@ -53,12 +50,12 @@ const AdminHolidaysPage = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post(`${API}/api/admin/holidays`, newHoliday, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await axios.post('/admin/holidays', newHoliday);
+      setSnackbar({
+        open: true,
+        message: res.data.message || '✅ Holiday added!',
+        severity: 'success',
       });
-
-      setSnackbar({ open: true, message: res.data.message || '✅ Holiday added!', severity: 'success' });
       setNewHoliday({ name: '', date: '' });
       fetchHolidays();
     } catch (err) {

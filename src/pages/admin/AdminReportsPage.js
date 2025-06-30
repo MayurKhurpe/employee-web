@@ -17,13 +17,13 @@ import {
 } from '@mui/icons-material';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
-// import axios from 'api/axios'; // 🛡️ Enable when backend is ready
+// import axios from 'api/axios'; // Uncomment when backend is ready
 
 const AdminReportsPage = () => {
   const navigate = useNavigate();
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  // 🧪 Replace this with real backend call later
+  // 🔄 Replace with real data from backend when available
   const reportData = [
     { Name: 'John Doe', Email: 'john@example.com', Status: 'Present' },
     { Name: 'Jane Smith', Email: 'jane@example.com', Status: 'Absent' },
@@ -31,24 +31,25 @@ const AdminReportsPage = () => {
   ];
 
   const handleDownloadCSV = () => {
-    const ws = XLSX.utils.json_to_sheet(reportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Report');
-    XLSX.writeFile(wb, 'employee-report.csv');
+    const worksheet = XLSX.utils.json_to_sheet(reportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
+    XLSX.writeFile(workbook, 'employee-attendance-report.csv');
     setSnackbar({ open: true, message: '📥 CSV Report Downloaded!', severity: 'success' });
   };
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(16);
-    doc.text('📊 Employee Attendance Report', 10, 15);
-
+    doc.text('📊 Employee Attendance Report', 14, 20);
     doc.setFontSize(12);
-    reportData.forEach((item, index) => {
-      doc.text(`${index + 1}. ${item.Name} | ${item.Email} | ${item.Status}`, 10, 30 + index * 10);
+
+    reportData.forEach((emp, idx) => {
+      const y = 30 + idx * 10;
+      doc.text(`${idx + 1}. ${emp.Name} | ${emp.Email} | ${emp.Status}`, 14, y);
     });
 
-    doc.save('employee-report.pdf');
+    doc.save('employee-attendance-report.pdf');
     setSnackbar({ open: true, message: '📥 PDF Report Downloaded!', severity: 'success' });
   };
 

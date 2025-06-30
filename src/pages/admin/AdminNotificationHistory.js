@@ -23,15 +23,10 @@ const AdminNotificationHistory = () => {
   const [notifications, setNotifications] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  const API = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
-
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API}/api/admin/notifications`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get('/admin/notifications');
         setNotifications(res.data || []);
       } catch (err) {
         console.error('Fetch error:', err);
@@ -44,7 +39,7 @@ const AdminNotificationHistory = () => {
     };
 
     fetchNotifications();
-  }, [API]);
+  }, []);
 
   return (
     <Box
@@ -102,12 +97,14 @@ const AdminNotificationHistory = () => {
             ) : (
               notifications.map((note) => (
                 <TableRow key={note._id || note.id}>
-                  <TableCell>{note.message}</TableCell>
+                  <TableCell>{note.message || '—'}</TableCell>
                   <TableCell>
-                    {new Date(note.sentAt).toLocaleString(undefined, {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                    })}
+                    {note.sentAt
+                      ? new Date(note.sentAt).toLocaleString(undefined, {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })
+                      : '—'}
                   </TableCell>
                 </TableRow>
               ))

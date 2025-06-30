@@ -23,15 +23,10 @@ const AdminNotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  const API = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
-
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API}/api/admin/notifications`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get('/admin/notifications');
         setNotifications(res.data || []);
       } catch (error) {
         console.error(error);
@@ -40,12 +35,12 @@ const AdminNotificationsPage = () => {
     };
 
     fetchNotifications();
-  }, [API]);
+  }, []);
 
   const exportToCSV = () => {
     const headers = ['Message', 'Date'];
     const rows = notifications.map((n) => [
-      `"${n.message.replace(/"/g, '""')}"`,
+      `"${(n.message || '').replace(/"/g, '""')}"`,
       `"${new Date(n.sentAt).toLocaleString()}"`,
     ]);
     const csvContent = [headers, ...rows].map((r) => r.join(',')).join('\n');
@@ -124,13 +119,22 @@ const AdminNotificationsPage = () => {
           <TableBody>
             {notifications.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={2}>❌ No notifications found.</TableCell>
+                <TableCell colSpan={2} align="center" sx={{ py: 3 }}>
+                  ❌ No notifications found.
+                </TableCell>
               </TableRow>
             ) : (
               notifications.map((note) => (
                 <TableRow key={note._id}>
-                  <TableCell>{note.message}</TableCell>
-                  <TableCell>{new Date(note.sentAt).toLocaleString()}</TableCell>
+                  <TableCell>{note.message || '—'}</TableCell>
+                  <TableCell>
+                    {note.sentAt
+                      ? new Date(note.sentAt).toLocaleString(undefined, {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })
+                      : '—'}
+                  </TableCell>
                 </TableRow>
               ))
             )}

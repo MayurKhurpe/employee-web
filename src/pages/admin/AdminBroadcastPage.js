@@ -1,3 +1,4 @@
+// 📁 src/pages/admin/AdminBroadcastPage.js
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -14,6 +15,7 @@ import {
 } from '@mui/material';
 import { Delete, ArrowBack } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import axios from 'api/axios';
 
 const AdminBroadcastPage = () => {
   const navigate = useNavigate();
@@ -22,8 +24,6 @@ const AdminBroadcastPage = () => {
   const [history, setHistory] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  const API_BASE = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
-
   // 🔁 Fetch Broadcast History on Mount
   useEffect(() => {
     fetchBroadcasts();
@@ -31,13 +31,9 @@ const AdminBroadcastPage = () => {
 
   const fetchBroadcasts = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/api/admin/broadcasts`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setHistory(data);
+      const res = await axios.get('/admin/broadcasts');
+      if (Array.isArray(res.data)) {
+        setHistory(res.data);
       } else {
         throw new Error('Invalid data format');
       }
@@ -52,44 +48,28 @@ const AdminBroadcastPage = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/api/admin/broadcasts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ message, audience }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setSnackbar({ open: true, message: data.message || '✅ Broadcast sent!', severity: 'success' });
-        setMessage('');
-        setAudience('all');
-        setHistory((prev) => [data.data, ...prev]);
-      } else {
-        throw new Error(data.error || 'Failed to send broadcast');
-      }
+      const res = await axios.post('/admin/broadcasts', { message, audience });
+      setSnackbar({ open: true, message: res.data.message || '✅ Broadcast sent!', severity: 'success' });
+      setMessage('');
+      setAudience('all');
+      setHistory((prev) => [res.data.data, ...prev]);
     } catch (err) {
-      setSnackbar({ open: true, message: err.message, severity: 'error' });
+      setSnackbar({
+        open: true,
+        message: err.response?.data?.error || '❌ Failed to send broadcast',
+        severity: 'error',
+      });
     }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('🗑️ Are you sure you want to delete this broadcast?')) return;
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/api/admin/broadcasts/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error('Delete failed');
+      await axios.delete(`/admin/broadcasts/${id}`);
       setHistory((prev) => prev.filter((log) => log._id !== id));
       setSnackbar({ open: true, message: '✅ Deleted successfully', severity: 'info' });
     } catch (err) {
-      setSnackbar({ open: true, message: err.message, severity: 'error' });
+      setSnackbar({ open: true, message: '❌ Failed to delete', severity: 'error' });
     }
   };
 
@@ -101,7 +81,6 @@ const AdminBroadcastPage = () => {
         background: 'linear-gradient(to bottom right, #fce4ec, #e3f2fd)',
       }}
     >
-      {/* 🔙 Back Button */}
       <Button
         startIcon={<ArrowBack />}
         onClick={() => navigate('/admin')}
@@ -127,7 +106,6 @@ const AdminBroadcastPage = () => {
         📢 Broadcast Message
       </Typography>
 
-      {/* 📬 Broadcast Form */}
       <Paper sx={{ mt: 2, p: 3, borderRadius: 3, backgroundColor: '#fff8', backdropFilter: 'blur(4px)' }}>
         <Stack spacing={2}>
           <TextField
@@ -170,7 +148,6 @@ const AdminBroadcastPage = () => {
         </Stack>
       </Paper>
 
-      {/* 📜 Broadcast History */}
       <Typography variant="h6" mt={4} mb={1} fontWeight="bold">
         🕓 Broadcast History
       </Typography>
@@ -205,7 +182,6 @@ const AdminBroadcastPage = () => {
         </Stack>
       )}
 
-      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

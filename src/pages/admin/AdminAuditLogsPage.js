@@ -1,3 +1,4 @@
+// 📁 src/pages/admin/AdminAuditLogsPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
@@ -13,6 +14,7 @@ import { Download, PictureAsPdf, ArrowBack } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import axios from 'api/axios';
 
 const AdminAuditLogsPage = () => {
   const [logs, setLogs] = useState([]);
@@ -20,15 +22,11 @@ const AdminAuditLogsPage = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
   const navigate = useNavigate();
-  const API = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
 
   const fetchLogs = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API}/api/admin/audit-logs`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
+      const res = await axios.get('/admin/audit-logs');
+      const data = res.data;
       if (Array.isArray(data)) {
         setLogs(data);
       } else {
@@ -37,7 +35,7 @@ const AdminAuditLogsPage = () => {
     } catch (err) {
       setSnackbar({ open: true, message: '❌ Failed to fetch audit logs', severity: 'error' });
     }
-  }, [API]);
+  }, []);
 
   useEffect(() => {
     fetchLogs();
@@ -87,7 +85,6 @@ const AdminAuditLogsPage = () => {
         background: 'linear-gradient(to bottom right, #e8f0fe, #f1f8e9)',
       }}
     >
-      {/* 🔙 Back Button */}
       <Button
         startIcon={<ArrowBack />}
         onClick={() => navigate('/admin')}
@@ -113,7 +110,6 @@ const AdminAuditLogsPage = () => {
         📜 Audit Logs
       </Typography>
 
-      {/* 🔍 Filter + Export */}
       <Paper elevation={4} sx={{ p: 3, borderRadius: 3, mt: 2 }}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
@@ -147,7 +143,6 @@ const AdminAuditLogsPage = () => {
           </Button>
         </Stack>
 
-        {/* 🗃️ Logs Display */}
         {filteredLogs.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
             No logs found.
@@ -175,7 +170,6 @@ const AdminAuditLogsPage = () => {
         )}
       </Paper>
 
-      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

@@ -21,14 +21,9 @@ const HolidayManager = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const navigate = useNavigate();
 
-  const API = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
-
   const fetchHolidays = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`${API}/api/admin/holidays`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get('/admin/holidays');
       setHolidays(res.data || []);
     } catch (err) {
       console.error('Failed to fetch holidays', err);
@@ -38,10 +33,7 @@ const HolidayManager = () => {
 
   const handleDelete = async (id) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API}/api/admin/holidays/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`/admin/holidays/${id}`);
       setSnackbar({ open: true, message: '🗑️ Holiday deleted', severity: 'success' });
       fetchHolidays();
     } catch (err) {
@@ -80,7 +72,6 @@ const HolidayManager = () => {
         background: 'linear-gradient(to bottom right, #e1f5fe, #fce4ec)',
       }}
     >
-      {/* 🔙 Back Button */}
       <Button
         startIcon={<ArrowBack />}
         onClick={() => navigate('/admin')}
@@ -161,7 +152,6 @@ const HolidayManager = () => {
         )}
       </Grid>
 
-      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

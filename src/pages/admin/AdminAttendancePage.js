@@ -24,8 +24,6 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
-
 const AdminAttendancePage = () => {
   const [records, setRecords] = useState([]);
   const [summary, setSummary] = useState({
@@ -39,18 +37,13 @@ const AdminAttendancePage = () => {
   const [exporting, setExporting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
 
   useEffect(() => {
     const fetchAllAttendance = async () => {
       try {
         const [recordsRes, summaryRes] = await Promise.all([
-          axios.get(`${API_URL}/api/attendance/all`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`${API_URL}/api/attendance/summary`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
+          axios.get('/attendance/all'),
+          axios.get('/attendance/summary'),
         ]);
         setRecords(recordsRes.data || []);
         setSummary(summaryRes.data || {});
@@ -65,7 +58,7 @@ const AdminAttendancePage = () => {
       }
     };
     fetchAllAttendance();
-  }, [token]);
+  }, []);
 
   const exportToPDF = () => {
     setExporting(true);
