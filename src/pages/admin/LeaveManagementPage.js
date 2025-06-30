@@ -38,8 +38,10 @@ const LeaveManagementPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      if (Array.isArray(res.data)) {
-        setLeaveRequests(res.data);
+
+      // ✅ Fixed: use res.data.leaves instead of res.data
+      if (Array.isArray(res.data.leaves)) {
+        setLeaveRequests(res.data.leaves);
       } else {
         throw new Error('Invalid response');
       }
