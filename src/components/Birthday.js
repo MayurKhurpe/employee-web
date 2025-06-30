@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import axios from 'axios';
+import axios from 'api/axios';
 import dayjs from 'dayjs';
 
 export default function Birthday({ spinnerSize = 20, refresh = true }) {

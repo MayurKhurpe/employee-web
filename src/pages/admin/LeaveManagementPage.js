@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { HowToReg as LeaveIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from '../../api/axios'; // ✅ Centralized Axios
+import axios from 'api/axios'; // ✅ Centralized Axios
 
 const LeaveManagementPage = () => {
   const [leaveRequests, setLeaveRequests] = useState([]);

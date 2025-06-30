@@ -14,7 +14,7 @@ import {
   Alert,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from 'api/axios';
 import EventIcon from '@mui/icons-material/Event';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 

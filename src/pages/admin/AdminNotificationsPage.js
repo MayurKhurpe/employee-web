@@ -16,7 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import axios from 'axios';
+import axios from 'api/axios';
 
 const AdminNotificationsPage = () => {
   const navigate = useNavigate();

@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { History as HistoryIcon, ArrowBack } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from '../axios'; // ✅ Use centralized axios config
+import axios from 'api/axios'; // ✅ Use centralized axios config
 
 const LoginHistoryPage = () => {
   const [history, setHistory] = useState([]);

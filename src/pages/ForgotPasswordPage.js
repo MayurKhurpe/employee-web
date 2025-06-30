@@ -12,7 +12,7 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EmailIcon from '@mui/icons-material/Email';
 import { Link } from 'react-router-dom';
-import axios from '../api/axios'; // ✅ Updated import
+import axios from 'api/axios'; // ✅ Updated import
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');

@@ -14,7 +14,7 @@ import {
 import AnnouncementIcon from "@mui/icons-material/Announcement";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import Birthday from "../components/Birthday";
-import axios from "../api/axios"; // ✅ Use centralized axios
+import axios from 'api/axios'; // ✅ Use centralized axios
 
 export default function Dashboard() {
   const theme = useTheme();

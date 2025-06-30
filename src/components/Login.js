@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useNavigate } from 'react-router-dom';
-import axios from '../api/axios'; // ✅ updated import
+import axios from 'api/axios'; // ✅ updated import
 
 const LoginPage = ({ onLogin }) => {
   const navigate = useNavigate();

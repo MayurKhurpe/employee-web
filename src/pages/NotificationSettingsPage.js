@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from '../axios'; // ✅ Use centralized axios
+import axios from 'api/axios'; // ✅ Use centralized axios
 
 const NotificationSettingsPage = () => {
   const [settings, setSettings] = useState({

@@ -13,7 +13,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Delete, FileDownload, ArrowBack } from '@mui/icons-material';
-import axios from 'axios';
+import axios from 'api/axios';
 import { useNavigate } from 'react-router-dom';
 
 const HolidayManager = () => {

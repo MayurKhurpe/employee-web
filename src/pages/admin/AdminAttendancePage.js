@@ -18,7 +18,7 @@ import {
   Box,
   Grid,
 } from '@mui/material';
-import axios from 'axios';
+import axios from 'api/axios';
 import dayjs from 'dayjs';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';

@@ -16,7 +16,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import SecurityIcon from '@mui/icons-material/Security';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import axios from '../axios'; // ✅ Centralized Axios instance
+import axios from 'api/axios'; // ✅ Centralized Axios instance
 
 const SecuritySettingsPage = () => {
   const navigate = useNavigate();

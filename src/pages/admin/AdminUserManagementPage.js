@@ -22,7 +22,7 @@ import {
   Search as SearchIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from '../../api/axios'; // ✅ Centralized Axios
+import axios from 'api/axios'; // ✅ Centralized Axios
 
 const AdminUserManagementPage = () => {
   const [users, setUsers] = useState([]);

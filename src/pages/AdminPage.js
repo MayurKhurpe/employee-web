@@ -22,7 +22,7 @@ import {
   TimeToLeave as LeaveIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from '../api/axios'; // ✅ Using centralized axios instance
+import axios from 'api/axios'; // ✅ Using centralized axios instance
 
 const AdminPage = () => {
   const navigate = useNavigate();

@@ -17,7 +17,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useNavigate } from 'react-router-dom';
-import axios from '../api/axios'; // ✅ centralized instance
+import axios from 'api/axios'; // ✅ centralized instance
 
 export default function ChangePassword() {
   const [currentPassword, setCurrentPassword] = useState('');

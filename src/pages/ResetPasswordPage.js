@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff, LockReset as ResetIcon } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from '../api/axios'; // ✅ Centralized axios
+import axios from 'api/axios'; // ✅ Centralized axios
 
 export default function ResetPasswordPage() {
   const { token } = useParams();

@@ -15,7 +15,7 @@ import {
   Snackbar,
   Alert,
 } from '@mui/material';
-import axios from '../../api/axios'; // ✅ Centralized Axios
+import axios from 'api/axios'; // ✅ Centralized Axios
 
 const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);

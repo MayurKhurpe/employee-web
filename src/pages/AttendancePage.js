@@ -17,7 +17,7 @@ import {
 import { LocalizationProvider, DatePicker, DateCalendar } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import axios from '../api/axios'; // ✅ CENTRALIZED AXIOS
+import axios from 'api/axios'; // ✅ CENTRALIZED AXIOS
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import {

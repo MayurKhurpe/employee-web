@@ -14,7 +14,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "../api/axios"; // ✅ Updated import
+import axios from 'api/axios'; // ✅ Updated import
 
 const RegisterPage = () => {
   const theme = useTheme();

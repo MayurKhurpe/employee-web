@@ -1,6 +1,6 @@
 // 📁 src/pages/LeaveApplicationPage.js
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from 'api/axios';
 import {
   Box, Card, CardContent, TextField, Typography, Button, MenuItem,
   CircularProgress, Snackbar, Alert, Divider, List, ListItem, ListItemText, Chip

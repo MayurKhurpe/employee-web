@@ -17,7 +17,7 @@ import {
 } from '@mui/icons-material';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
-// import axios from '../../api/axios'; // 🛡️ Enable when backend is ready
+// import axios from 'api/axios'; // 🛡️ Enable when backend is ready
 
 const AdminReportsPage = () => {
   const navigate = useNavigate();

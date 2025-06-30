@@ -22,7 +22,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import LockIcon from '@mui/icons-material/Lock';
 import SecurityIcon from '@mui/icons-material/Security';
-import axios from '../axios'; // ✅ Use centralized axios config
+import axios from 'api/axios'; // ✅ Use centralized axios config
 import { useNavigate } from 'react-router-dom';
 
 const LinkedDevicesPage = () => {

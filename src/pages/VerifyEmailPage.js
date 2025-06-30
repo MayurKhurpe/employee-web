@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import axios from 'axios';
+import axios from 'api/axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
 

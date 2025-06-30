@@ -20,7 +20,7 @@ import LockResetIcon from "@mui/icons-material/LockReset";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import DevicesIcon from "@mui/icons-material/Devices";
-import axios from "../axios"; // ✅ Centralized axios instance
+import axios from 'api/axios'; // ✅ Centralized axios instance
 
 // ✅ Settings list
 const settingsOptions = [

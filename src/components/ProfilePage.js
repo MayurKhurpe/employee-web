@@ -12,7 +12,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import axios from '../api/axios'; // ✅ Centralized axios
+import axios from 'api/axios'; // ✅ Centralized axios
 
 export default function ProfilePage({ updateUser }) {
   const theme = useTheme();

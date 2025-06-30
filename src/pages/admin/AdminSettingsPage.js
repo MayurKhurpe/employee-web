@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, Sync, CalendarToday } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from '../../api/axios'; // ✅ centralized axios
+import axios from 'api/axios'; // ✅ centralized axios
 
 const AdminSettingsPage = () => {
   const navigate = useNavigate();
