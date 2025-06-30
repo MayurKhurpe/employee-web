@@ -52,7 +52,7 @@ export default function Dashboard() {
   // 📅 Load Holidays
   useEffect(() => {
     axios
-      .get("/admin/holidays")
+      .get("/holidays")
       .then((res) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
