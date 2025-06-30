@@ -75,7 +75,7 @@ const LeaveManagementPage = () => {
     try {
       await axios.put(
         `/leave/admin/${action === 'Approved' ? 'approve' : 'reject'}/${selectedRequest._id}`,
-        { adminNote: note },
+        { responseMessage: note },
         {
           headers: {
             Authorization: `Bearer ${token}`,
