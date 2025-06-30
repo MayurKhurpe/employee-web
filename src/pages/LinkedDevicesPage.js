@@ -1,3 +1,4 @@
+// 📁 src/pages/LinkedDevicesPage.js
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -21,7 +22,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBack from '@mui/icons-material/ArrowBack';
 import LockIcon from '@mui/icons-material/Lock';
 import SecurityIcon from '@mui/icons-material/Security';
-import axios from 'axios';
+import axios from '../axios'; // ✅ Use centralized axios config
 import { useNavigate } from 'react-router-dom';
 
 const LinkedDevicesPage = () => {
@@ -34,9 +35,7 @@ const LinkedDevicesPage = () => {
 
   const fetchDevices = async () => {
     try {
-      const res = await axios.get('/api/devices', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await axios.get('/devices');
       setDevices(res.data);
     } catch (err) {
       console.error('❌ Failed to fetch devices:', err);
@@ -47,9 +46,7 @@ const LinkedDevicesPage = () => {
 
   const fetchSecurityLogs = async () => {
     try {
-      const res = await axios.get('/api/security-settings', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await axios.get('/security-settings');
       setSecurityLogs(res.data);
     } catch (err) {
       console.error('❌ Failed to fetch security logs:', err);
@@ -60,11 +57,9 @@ const LinkedDevicesPage = () => {
 
   const unlinkDevice = async (id) => {
     try {
-      await axios.delete(`/api/devices/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      await axios.delete(`/devices/${id}`);
       setDevices(prev => prev.filter(d => d.id !== id));
-      setSnackbar({ open: true, message: 'Device unlinked successfully ✅' });
+      setSnackbar({ open: true, message: '✅ Device unlinked successfully' });
     } catch (err) {
       console.error('❌ Error unlinking device:', err);
     }
@@ -99,28 +94,28 @@ const LinkedDevicesPage = () => {
             boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
           }}
         >
-<Button
-  startIcon={<ArrowBack />}
-  onClick={() => navigate('/settings')}
-  sx={{
-    mb: 3,
-    px: 3,
-    py: 1,
-    fontWeight: 'bold',
-    borderRadius: '999px',
-    background: 'linear-gradient(to right, #667eea, #764ba2)',
-    color: '#fff',
-    textTransform: 'none',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    '&:hover': {
-      background: 'linear-gradient(to right, #5a67d8, #6b46c1)',
-    },
-  }}
->
-  🔙 Back to Settings
-</Button>
+          <Button
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/settings')}
+            sx={{
+              mb: 3,
+              px: 3,
+              py: 1,
+              fontWeight: 'bold',
+              borderRadius: '999px',
+              background: 'linear-gradient(to right, #667eea, #764ba2)',
+              color: '#fff',
+              textTransform: 'none',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              '&:hover': {
+                background: 'linear-gradient(to right, #5a67d8, #6b46c1)',
+              },
+            }}
+          >
+            🔙 Back to Settings
+          </Button>
 
-          {/* Linked Devices Section */}
+          {/* Linked Devices */}
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
             🔗 Linked Devices
           </Typography>
@@ -164,7 +159,7 @@ const LinkedDevicesPage = () => {
 
           <Divider sx={{ my: 3 }} />
 
-          {/* Security Logs Section */}
+          {/* Security Logs */}
           <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
             🛡️ Security Activity Log
           </Typography>
@@ -194,6 +189,7 @@ const LinkedDevicesPage = () => {
             <Typography>No recent security activity found 📭</Typography>
           )}
 
+          {/* ✅ Snackbar */}
           <Snackbar
             open={snackbar.open}
             autoHideDuration={3000}

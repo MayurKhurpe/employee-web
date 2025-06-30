@@ -1,3 +1,4 @@
+// 📁 src/pages/admin/HolidayManager.js
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -20,11 +21,14 @@ const HolidayManager = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const navigate = useNavigate();
 
-  const API = process.env.REACT_APP_API_URL;
+  const API = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
 
   const fetchHolidays = async () => {
     try {
-      const res = await axios.get(`${API}/api/admin/holidays`);
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/api/admin/holidays`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setHolidays(res.data || []);
     } catch (err) {
       console.error('Failed to fetch holidays', err);
@@ -34,7 +38,10 @@ const HolidayManager = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${API}/api/admin/holidays/${id}`);
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/api/admin/holidays/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setSnackbar({ open: true, message: '🗑️ Holiday deleted', severity: 'success' });
       fetchHolidays();
     } catch (err) {
@@ -125,9 +132,11 @@ const HolidayManager = () => {
         ) : (
           holidays.map((holiday) => (
             <Grid item xs={12} sm={6} md={4} key={holiday._id}>
-              <Card elevation={4} sx={{ backgroundColor: '#f9fbe7' }}>
+              <Card elevation={4} sx={{ backgroundColor: '#f9fbe7', borderRadius: 3 }}>
                 <CardContent>
-                  <Typography variant="h6">{holiday.name || 'Untitled Holiday'}</Typography>
+                  <Typography variant="h6" fontWeight="bold">
+                    {holiday.name || 'Untitled Holiday'}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
                     📆 {holiday.date ? new Date(holiday.date).toLocaleDateString() : 'N/A'}
                   </Typography>

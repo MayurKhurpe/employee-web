@@ -1,3 +1,4 @@
+// 📁 src/pages/LeaveApplicationPage.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
@@ -12,6 +13,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dayjs from 'dayjs';
 
 const leaveTypes = ['Casual Leave', 'Sick Leave', 'Earned Leave', 'Maternity Leave', 'Unpaid Leave'];
+const API_URL = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
 
 const LeaveApplicationPage = () => {
   const [leaveType, setLeaveType] = useState('');
@@ -22,8 +24,12 @@ const LeaveApplicationPage = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [leaveHistory, setLeaveHistory] = useState([]);
 
+  // 📥 Fetch leave history on mount
   useEffect(() => {
-    axios.get('/api/leave/user')
+    axios
+      .get(`${API_URL}/api/leave/user`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      })
       .then(res => setLeaveHistory(res.data))
       .catch(() => setLeaveHistory([]));
   }, []);
@@ -34,15 +40,16 @@ const LeaveApplicationPage = () => {
     }
 
     setLoading(true);
-
-    axios.post('/api/leave', {
+    axios.post(`${API_URL}/api/leave`, {
       leaveType,
       startDate: startDate.format('YYYY-MM-DD'),
       endDate: endDate.format('YYYY-MM-DD'),
       reason,
-      status: 'Pending'
+      status: 'Pending',
+    }, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     })
-      .then((res) => {
+      .then(res => {
         setLeaveHistory([res.data, ...leaveHistory]);
         setSnackbar({ open: true, message: '✅ Leave submitted!', severity: 'success' });
         setLeaveType('');
@@ -58,7 +65,7 @@ const LeaveApplicationPage = () => {
 
   return (
     <Box sx={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-      {/* Background Blur */}
+      {/* 🌄 Background */}
       <Box
         sx={{
           position: 'absolute',
@@ -79,6 +86,7 @@ const LeaveApplicationPage = () => {
         }}
       />
 
+      {/* 📄 Content */}
       <Box sx={{ position: 'relative', zIndex: 2, p: 4 }}>
         <Box
           sx={{
@@ -113,13 +121,13 @@ const LeaveApplicationPage = () => {
                 <DatePicker
                   label="Start Date"
                   value={startDate}
-                  onChange={(date) => setStartDate(date)}
+                  onChange={setStartDate}
                   slotProps={{ textField: { fullWidth: true, sx: { mb: 2 } } }}
                 />
                 <DatePicker
                   label="End Date"
                   value={endDate}
-                  onChange={(date) => setEndDate(date)}
+                  onChange={setEndDate}
                   slotProps={{ textField: { fullWidth: true, sx: { mb: 2 } } }}
                 />
               </LocalizationProvider>
@@ -189,7 +197,7 @@ const LeaveApplicationPage = () => {
           </Card>
         </Box>
 
-        {/* 📅 Calendar with white background */}
+        {/* 📅 Calendar */}
         <Box sx={{ mt: 5 }}>
           <Typography variant="h5" gutterBottom>📆 Leave Calendar</Typography>
           <Box sx={{ backgroundColor: '#ffffff', borderRadius: 2, p: 2 }}>
@@ -200,7 +208,7 @@ const LeaveApplicationPage = () => {
               events={leaveHistory.map((leave) => ({
                 title: leave.leaveType,
                 start: leave.startDate,
-                end: leave.endDate,
+                end: dayjs(leave.endDate).add(1, 'day').format('YYYY-MM-DD'), // include full end date
                 color:
                   leave.status === 'Approved'
                     ? '#4caf50'
@@ -213,6 +221,7 @@ const LeaveApplicationPage = () => {
         </Box>
       </Box>
 
+      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}

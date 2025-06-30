@@ -14,9 +14,12 @@ import {
 } from '@mui/material';
 import { ArrowBack, Sync, CalendarToday } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import axios from '../../api/axios'; // ✅ centralized axios
 
 const AdminSettingsPage = () => {
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -27,31 +30,53 @@ const AdminSettingsPage = () => {
     setSnackbar({ open: true, message, severity });
   };
 
-  const handleUpdateEmail = () => {
+  // ✅ Update Email to backend
+  const handleUpdateEmail = async () => {
     const emailRegex = /^\S+@\S+\.\S+$/;
-    if (email.trim() && emailRegex.test(email)) {
+    if (!email.trim() || !emailRegex.test(email)) {
+      return showSnackbar('⚠️ Please enter a valid email address.', 'warning');
+    }
+    try {
+      await axios.put('/admin/settings/email', { email }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       showSnackbar(`📧 Email updated to: ${email}`, 'success');
-    } else {
-      showSnackbar('Please enter a valid email address.', 'warning');
+    } catch {
+      showSnackbar('❌ Failed to update email.', 'error');
     }
   };
 
-  const handleUpdateMobile = () => {
+  // ✅ Update Mobile to backend
+  const handleUpdateMobile = async () => {
     const mobileRegex = /^[6-9]\d{9}$/;
-    if (mobile.trim() && mobileRegex.test(mobile)) {
-      showSnackbar(`📱 Mobile updated to: ${mobile}`, 'success');
-    } else {
-      showSnackbar('Please enter a valid 10-digit mobile number.', 'warning');
+    if (!mobile.trim() || !mobileRegex.test(mobile)) {
+      return showSnackbar('⚠️ Enter valid 10-digit mobile number.', 'warning');
     }
-  };
-
-  const handleSync = () => {
-    showSnackbar('🔄 Company data synced successfully.', 'success');
+    try {
+      await axios.put('/admin/settings/mobile', { mobile }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      showSnackbar(`📱 Mobile updated to: ${mobile}`, 'success');
+    } catch {
+      showSnackbar('❌ Failed to update mobile number.', 'error');
+    }
   };
 
   const handleOfficeHourChange = (e) => {
     const { name, value } = e.target;
     setOfficeHours((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // ✅ Sync Company Data
+  const handleSync = async () => {
+    try {
+      await axios.get('/admin/sync', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      showSnackbar('🔄 Company data synced successfully.', 'success');
+    } catch {
+      showSnackbar('❌ Sync failed.', 'error');
+    }
   };
 
   return (
@@ -71,11 +96,9 @@ const AdminSettingsPage = () => {
           px: 2.5,
           py: 1.2,
           fontWeight: 'bold',
-          fontSize: '0.95rem',
           background: 'linear-gradient(90deg, #7b1fa2, #ba68c8)',
           color: '#fff',
           borderRadius: 2,
-          boxShadow: '0 4px 10px rgba(123, 31, 162, 0.3)',
           '&:hover': {
             background: 'linear-gradient(90deg, #6a1b9a, #ab47bc)',
           },
@@ -84,7 +107,6 @@ const AdminSettingsPage = () => {
         Back to Admin Panel
       </Button>
 
-      {/* Title */}
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#4a148c' }}>
         ⚙️ Admin Settings
       </Typography>
@@ -146,7 +168,9 @@ const AdminSettingsPage = () => {
                 onChange={() => {
                   setNotificationsEnabled((prev) => !prev);
                   showSnackbar(
-                    !notificationsEnabled ? '🔔 Notifications enabled' : '🔕 Notifications disabled',
+                    !notificationsEnabled
+                      ? '🔔 Notifications enabled'
+                      : '🔕 Notifications disabled',
                     'info'
                   );
                 }}
@@ -181,7 +205,7 @@ const AdminSettingsPage = () => {
           </Stack>
         </Box>
 
-        {/* 🔄 Sync & 📅 Holiday Manager */}
+        {/* 🔄 Sync + Holidays */}
         <Box mt={4}>
           <Stack direction="row" spacing={2}>
             <Button
@@ -216,7 +240,7 @@ const AdminSettingsPage = () => {
         </Box>
       </Paper>
 
-      {/* ✅ Snackbar Feedback */}
+      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}

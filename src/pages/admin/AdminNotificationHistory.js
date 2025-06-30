@@ -23,18 +23,26 @@ const AdminNotificationHistory = () => {
   const [notifications, setNotifications] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  const API = process.env.REACT_APP_API_URL;
+  const API = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
 
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await axios.get(`${API}/api/admin/notifications`);
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${API}/api/admin/notifications`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setNotifications(res.data || []);
       } catch (err) {
         console.error('Fetch error:', err);
-        setSnackbar({ open: true, message: '❌ Failed to fetch notifications.', severity: 'error' });
+        setSnackbar({
+          open: true,
+          message: '❌ Failed to fetch notifications.',
+          severity: 'error',
+        });
       }
     };
+
     fetchNotifications();
   }, [API]);
 
@@ -68,11 +76,15 @@ const AdminNotificationHistory = () => {
         Back to Admin Panel
       </Button>
 
-      <Typography variant="h4" fontWeight="bold" gutterBottom>
+      <Typography variant="h4" fontWeight="bold" gutterBottom color="primary.dark">
         🔔 Notification History
       </Typography>
 
-      <TableContainer component={Paper} elevation={4} sx={{ mt: 2, borderRadius: 3 }}>
+      <Typography variant="body1" mb={2}>
+        View all past announcements and broadcasts sent to employees.
+      </Typography>
+
+      <TableContainer component={Paper} elevation={4} sx={{ mt: 1, borderRadius: 3 }}>
         <Table>
           <TableHead sx={{ backgroundColor: '#bbdefb' }}>
             <TableRow>
@@ -110,7 +122,14 @@ const AdminNotificationHistory = () => {
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          sx={{ width: '100%' }}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
       </Snackbar>
     </Box>
   );

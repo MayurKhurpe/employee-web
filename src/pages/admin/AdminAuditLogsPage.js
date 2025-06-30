@@ -20,10 +20,14 @@ const AdminAuditLogsPage = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
   const navigate = useNavigate();
+  const API = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
 
   const fetchLogs = useCallback(async () => {
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/admin/audit-logs`);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API}/api/admin/audit-logs`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       if (Array.isArray(data)) {
         setLogs(data);
@@ -33,7 +37,7 @@ const AdminAuditLogsPage = () => {
     } catch (err) {
       setSnackbar({ open: true, message: '❌ Failed to fetch audit logs', severity: 'error' });
     }
-  }, []);
+  }, [API]);
 
   useEffect(() => {
     fetchLogs();
@@ -83,6 +87,7 @@ const AdminAuditLogsPage = () => {
         background: 'linear-gradient(to bottom right, #e8f0fe, #f1f8e9)',
       }}
     >
+      {/* 🔙 Back Button */}
       <Button
         startIcon={<ArrowBack />}
         onClick={() => navigate('/admin')}
@@ -108,6 +113,7 @@ const AdminAuditLogsPage = () => {
         📜 Audit Logs
       </Typography>
 
+      {/* 🔍 Filter + Export */}
       <Paper elevation={4} sx={{ p: 3, borderRadius: 3, mt: 2 }}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
@@ -141,6 +147,7 @@ const AdminAuditLogsPage = () => {
           </Button>
         </Stack>
 
+        {/* 🗃️ Logs Display */}
         {filteredLogs.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
             No logs found.
@@ -168,6 +175,7 @@ const AdminAuditLogsPage = () => {
         )}
       </Paper>
 
+      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

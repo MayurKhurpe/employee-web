@@ -1,3 +1,4 @@
+// 📁 src/pages/ChangePassword.js
 import React, { useState } from 'react';
 import {
   Box,
@@ -16,6 +17,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useNavigate } from 'react-router-dom';
+import axios from '../api/axios'; // ✅ centralized instance
 
 export default function ChangePassword() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -31,30 +33,24 @@ export default function ChangePassword() {
     e.preventDefault();
     setMessage('');
     setError('');
-
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Not authenticated');
 
-      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-      const res = await fetch(`${apiUrl}/api/change-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Password update failed');
+      const res = await axios.post(
+        '/change-password',
+        { currentPassword, newPassword },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       setMessage('✅ Password changed successfully!');
       setCurrentPassword('');
       setNewPassword('');
       setSnackbarOpen(true);
     } catch (err) {
-      setError(err.message || 'Something went wrong');
+      setError(err.response?.data?.error || err.message || '❌ Something went wrong');
       setSnackbarOpen(true);
     }
   };
@@ -190,9 +186,7 @@ export default function ChangePassword() {
               fullWidth
               sx={{ mt: 2, py: 1.2, fontWeight: 'bold' }}
               disabled={
-                !currentPassword ||
-                !newPassword ||
-                !isValidPassword(newPassword)
+                !currentPassword || !newPassword || !isValidPassword(newPassword)
               }
             >
               🔄 Update Password
@@ -233,4 +227,3 @@ export default function ChangePassword() {
     </Box>
   );
 }
-  

@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../axios'; // ✅ Use centralized axios
 
 const NotificationSettingsPage = () => {
   const [settings, setSettings] = useState({
@@ -31,9 +31,7 @@ const NotificationSettingsPage = () => {
 
   const fetchSettings = async () => {
     try {
-      const res = await axios.get('/api/notification-settings', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
+      const res = await axios.get('/notification-settings');
       setSettings({
         emailNotif: res.data.emailNotif || false,
         pushNotif: res.data.pushNotif || false,
@@ -49,9 +47,7 @@ const NotificationSettingsPage = () => {
     const updated = { ...settings, [key]: value };
     setSettings(updated);
     try {
-      await axios.put('/api/notification-settings', updated, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
+      await axios.put('/notification-settings', updated);
       setSnackbarOpen(true);
     } catch (error) {
       console.error('❌ Error saving settings:', error);

@@ -1,3 +1,4 @@
+// 📁 src/pages/AdminPage.js
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -21,13 +22,14 @@ import {
   TimeToLeave as LeaveIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../api/axios'; // ✅ Using centralized axios instance
 
 const AdminPage = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ✅ Role check
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user || user.role !== 'admin') {
@@ -35,21 +37,21 @@ const AdminPage = () => {
     }
   }, [navigate]);
 
+  // 📊 Fetch Admin Stats
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/admin/stats', {
+        const res = await axios.get('/admin/stats', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setStats(res.data);
-        setLoading(false);
       } catch (err) {
-        console.error('Error fetching stats:', err);
+        console.error('❌ Error fetching stats:', err);
+      } finally {
         setLoading(false);
       }
     };
-
     fetchStats();
   }, []);
 
@@ -125,7 +127,7 @@ const AdminPage = () => {
         p: 3,
       }}
     >
-      {/* Blur Overlay */}
+      {/* 🔲 Blur Layer */}
       <Box
         sx={{
           position: 'absolute',
@@ -136,9 +138,9 @@ const AdminPage = () => {
         }}
       />
 
-      {/* Main Content */}
+      {/* 📦 Content */}
       <Box sx={{ position: 'relative', zIndex: 1 }}>
-        {/* Header */}
+        {/* 🧠 Header */}
         <Paper
           elevation={4}
           sx={{
@@ -159,7 +161,7 @@ const AdminPage = () => {
           </Typography>
         </Paper>
 
-        {/* Admin Stats */}
+        {/* 📊 Admin Stats */}
         <Grid container spacing={3} sx={{ mb: 4 }}>
           {loading ? (
             <Grid item xs={12}>
@@ -171,13 +173,12 @@ const AdminPage = () => {
             statCards.map((card, i) => (
               <Grid item xs={12} sm={6} md={4} key={i}>
                 <Card
+                  elevation={4}
                   sx={{
-                    borderLeft: `6px solid`,
-                    borderColor: card.color,
+                    borderLeft: `6px solid ${card.color}`,
                     borderRadius: 3,
                     backgroundColor: 'rgba(255,255,255,0.96)',
                   }}
-                  elevation={4}
                 >
                   <CardContent>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -193,7 +194,7 @@ const AdminPage = () => {
           )}
         </Grid>
 
-        {/* Admin Feature Cards */}
+        {/* 🛠️ Admin Feature Cards */}
         <Grid container spacing={3}>
           {features.map((item, idx) => (
             <Grid item xs={12} sm={6} md={4} key={idx}>

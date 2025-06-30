@@ -19,15 +19,19 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import axios from 'axios';
 
 const AdminNotificationsPage = () => {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
-  const navigate = useNavigate();
-  const API = process.env.REACT_APP_API_URL;
+
+  const API = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
 
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await axios.get(`${API}/api/admin/notifications`);
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${API}/api/admin/notifications`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setNotifications(res.data || []);
       } catch (error) {
         console.error(error);
@@ -39,16 +43,22 @@ const AdminNotificationsPage = () => {
   }, [API]);
 
   const exportToCSV = () => {
-    const rows = [
-      ['Message', 'Date'],
-      ...notifications.map((n) => [n.message, new Date(n.sentAt).toLocaleString()]),
-    ];
-    const csv = rows.map((r) => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const headers = ['Message', 'Date'];
+    const rows = notifications.map((n) => [
+      `"${n.message.replace(/"/g, '""')}"`,
+      `"${new Date(n.sentAt).toLocaleString()}"`,
+    ]);
+    const csvContent = [headers, ...rows].map((r) => r.join(',')).join('\n');
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'notification_history.csv';
+    a.setAttribute('download', 'notification_history.csv');
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+
+    setSnackbar({ open: true, message: '✅ CSV exported successfully!', severity: 'success' });
   };
 
   return (
@@ -82,7 +92,10 @@ const AdminNotificationsPage = () => {
       <Typography variant="h4" fontWeight="bold" gutterBottom color="primary.dark">
         🔔 Notification History
       </Typography>
-      <Typography variant="body1" mb={3}>Logs of all past notifications and announcements.</Typography>
+
+      <Typography variant="body1" mb={3}>
+        Logs of all past notifications and announcements.
+      </Typography>
 
       <Button
         variant="contained"

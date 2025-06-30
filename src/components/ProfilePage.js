@@ -1,3 +1,4 @@
+// 📁 src/pages/ProfilePage.js
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -11,7 +12,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import axios from 'axios';
+import axios from '../api/axios'; // ✅ Centralized axios
 
 export default function ProfilePage({ updateUser }) {
   const theme = useTheme();
@@ -39,12 +40,9 @@ export default function ProfilePage({ updateUser }) {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get(
-          `https://employee-backend-kifp.onrender.com/api/profile`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const res = await axios.get('/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setProfile(res.data);
         localStorage.setItem('user', JSON.stringify(res.data));
         updateUser && updateUser(res.data);
@@ -52,8 +50,7 @@ export default function ProfilePage({ updateUser }) {
         setSnackbar({
           open: true,
           type: 'error',
-          message:
-            err.response?.data?.error || '❌ Failed to load profile',
+          message: err.response?.data?.error || '❌ Failed to load profile',
         });
       }
     };
@@ -86,11 +83,9 @@ export default function ProfilePage({ updateUser }) {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.put(
-        `https://employee-backend-kifp.onrender.com/api/profile`,
-        profile,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.put('/profile', profile, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       setProfile((prev) => ({ ...prev, ...res.data }));
       localStorage.setItem('user', JSON.stringify(res.data));
@@ -105,8 +100,7 @@ export default function ProfilePage({ updateUser }) {
       setSnackbar({
         open: true,
         type: 'error',
-        message:
-          err.response?.data?.error || '❌ Failed to update profile',
+        message: err.response?.data?.error || '❌ Failed to update profile',
       });
     }
   };

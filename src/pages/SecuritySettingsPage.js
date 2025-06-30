@@ -1,3 +1,4 @@
+// 📁 src/pages/SecuritySettingsPage.js
 import React, { useEffect, useState } from 'react';
 import {
   Paper,
@@ -9,13 +10,13 @@ import {
   IconButton,
   Tooltip,
   Box,
-  Button
+  Button,
 } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import SecurityIcon from '@mui/icons-material/Security';
-import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import axios from '../axios'; // ✅ Centralized Axios instance
 
 const SecuritySettingsPage = () => {
   const navigate = useNavigate();
@@ -23,9 +24,7 @@ const SecuritySettingsPage = () => {
 
   const fetchSecurityLogs = async () => {
     try {
-      const res = await axios.get('/api/security-settings', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await axios.get('/security-settings');
       setSecurityLogs(res.data);
     } catch (error) {
       console.error('❌ Error fetching security settings:', error);

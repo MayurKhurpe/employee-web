@@ -12,8 +12,7 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EmailIcon from '@mui/icons-material/Email';
 import { Link } from 'react-router-dom';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
+import axios from '../api/axios'; // ✅ Updated import
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -22,17 +21,20 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_URL}/api/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
+      const res = await axios.post('/forgot-password', { email });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send reset email');
-      setSnackbar({ open: true, message: '✅ Reset link sent! Check your email.', severity: 'success' });
+      setSnackbar({
+        open: true,
+        message: '✅ Reset link sent! Check your email.',
+        severity: 'success',
+      });
     } catch (err) {
-      setSnackbar({ open: true, message: err.message, severity: 'error' });
+      setSnackbar({
+        open: true,
+        message:
+          err?.response?.data?.error || '❌ Failed to send reset email.',
+        severity: 'error',
+      });
     }
   };
 

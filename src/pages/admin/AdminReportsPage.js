@@ -1,5 +1,5 @@
 // 📁 src/pages/admin/AdminReportsPage.js
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
@@ -10,39 +10,45 @@ import {
   Alert,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { ArrowBack, InsertDriveFile, PictureAsPdf } from '@mui/icons-material';
+import {
+  ArrowBack,
+  InsertDriveFile,
+  PictureAsPdf,
+} from '@mui/icons-material';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
+// import axios from '../../api/axios'; // 🛡️ Enable when backend is ready
 
 const AdminReportsPage = () => {
   const navigate = useNavigate();
-  const [snackbar, setSnackbar] = React.useState({ open: false, message: '', severity: 'info' });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  // ⚠️ Replace this with real backend data later
+  // 🧪 Replace this with real backend call later
   const reportData = [
     { Name: 'John Doe', Email: 'john@example.com', Status: 'Present' },
     { Name: 'Jane Smith', Email: 'jane@example.com', Status: 'Absent' },
+    { Name: 'Ravi Patel', Email: 'ravi@company.com', Status: 'Late' },
   ];
 
   const handleDownloadCSV = () => {
     const ws = XLSX.utils.json_to_sheet(reportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Report');
-    XLSX.writeFile(wb, 'report.csv');
+    XLSX.writeFile(wb, 'employee-report.csv');
     setSnackbar({ open: true, message: '📥 CSV Report Downloaded!', severity: 'success' });
   };
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(16);
-    doc.text('📊 System Report', 10, 15);
+    doc.text('📊 Employee Attendance Report', 10, 15);
 
+    doc.setFontSize(12);
     reportData.forEach((item, index) => {
-      doc.setFontSize(12);
-      doc.text(`${index + 1}. ${item.Name} - ${item.Email} - ${item.Status}`, 10, 30 + index * 10);
+      doc.text(`${index + 1}. ${item.Name} | ${item.Email} | ${item.Status}`, 10, 30 + index * 10);
     });
 
-    doc.save('report.pdf');
+    doc.save('employee-report.pdf');
     setSnackbar({ open: true, message: '📥 PDF Report Downloaded!', severity: 'success' });
   };
 
@@ -77,7 +83,7 @@ const AdminReportsPage = () => {
         Back to Admin Panel
       </Button>
 
-      {/* Page Heading */}
+      {/* 📊 Heading */}
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: '#0d47a1' }}>
         📊 Reports
       </Typography>
@@ -92,8 +98,8 @@ const AdminReportsPage = () => {
           backdropFilter: 'blur(4px)',
         }}
       >
-        <Typography variant="body1" gutterBottom fontSize={16}>
-          Choose a format to download system reports:
+        <Typography variant="body1" fontSize={16} gutterBottom>
+          Choose a format to download the employee attendance report:
         </Typography>
 
         <Stack direction="row" spacing={2} mt={2}>
@@ -131,7 +137,7 @@ const AdminReportsPage = () => {
         </Stack>
       </Paper>
 
-      {/* Snackbar */}
+      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}

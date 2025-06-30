@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import { HowToReg as LeaveIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import axios from '../../api/axios'; // ✅ Centralized Axios
 
 const LeaveManagementPage = () => {
   const [leaveRequests, setLeaveRequests] = useState([]);
@@ -32,14 +33,13 @@ const LeaveManagementPage = () => {
   const fetchLeaves = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/leave/admin/all`, {
+      const res = await axios.get('/leave/admin/all', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setLeaveRequests(data);
+      if (Array.isArray(res.data)) {
+        setLeaveRequests(res.data);
       } else {
         throw new Error('Invalid response');
       }
@@ -69,25 +69,24 @@ const LeaveManagementPage = () => {
   const handleSubmit = async () => {
     if (!selectedRequest) return;
     const token = localStorage.getItem('token');
-    const route = `${process.env.REACT_APP_API_URL}/api/leave/admin/${action.toLowerCase()}/${selectedRequest._id}`;
 
     try {
-      const res = await fetch(route, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ adminNote: note }),
-      });
-
-      if (!res.ok) throw new Error('Action failed');
+      await axios.put(
+        `/leave/admin/${action.toLowerCase()}/${selectedRequest._id}`,
+        { adminNote: note },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       setSnackbar({
         open: true,
         message: `Leave ${action.toLowerCase()} successfully.`,
         severity: action === 'Approved' ? 'success' : 'error',
       });
+
       fetchLeaves();
     } catch (err) {
       setSnackbar({ open: true, message: 'Failed to process request', severity: 'error' });
@@ -113,14 +112,32 @@ const LeaveManagementPage = () => {
         variant="outlined"
         startIcon={<BackIcon />}
         onClick={() => navigate('/admin')}
-        sx={{ mb: 2, borderRadius: 2, borderColor: '#e91e63', color: '#e91e63', fontWeight: 'bold', '&:hover': { backgroundColor: '#f8bbd0' } }}
+        sx={{
+          mb: 2,
+          borderRadius: 2,
+          borderColor: '#e91e63',
+          color: '#e91e63',
+          fontWeight: 'bold',
+          '&:hover': { backgroundColor: '#f8bbd0' },
+        }}
       >
         Back to Admin Panel
       </Button>
 
-      <Paper elevation={4} sx={{ mb: 4, px: 4, py: 3, borderRadius: 3, background: 'linear-gradient(135deg, #e91e63, #f06292)', color: '#fff' }}>
+      <Paper
+        elevation={4}
+        sx={{
+          mb: 4,
+          px: 4,
+          py: 3,
+          borderRadius: 3,
+          background: 'linear-gradient(135deg, #e91e63, #f06292)',
+          color: '#fff',
+        }}
+      >
         <Typography variant="h4" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center' }}>
-          <LeaveIcon sx={{ mr: 1 }} fontSize="large" /> Leave Application Management
+          <LeaveIcon sx={{ mr: 1 }} fontSize="large" />
+          Leave Application Management
         </Typography>
         <Typography variant="body1" sx={{ mt: 1 }}>
           Review all submitted leave requests and take appropriate actions with notes.
@@ -130,10 +147,21 @@ const LeaveManagementPage = () => {
       <Grid container spacing={3}>
         {leaveRequests.map((request) => (
           <Grid item xs={12} sm={6} md={4} key={request._id}>
-            <Card elevation={6} sx={{ borderRadius: 3, transition: 'transform 0.3s', '&:hover': { transform: 'scale(1.03)', boxShadow: 8 } }}>
+            <Card
+              elevation={6}
+              sx={{
+                borderRadius: 3,
+                transition: 'transform 0.3s',
+                '&:hover': { transform: 'scale(1.03)', boxShadow: 8 },
+              }}
+            >
               <CardContent>
-                <Typography variant="h6" color="primary" gutterBottom> 👤 {request.name}</Typography>
-                <Typography variant="body2" gutterBottom> 📧 {request.email}</Typography>
+                <Typography variant="h6" color="primary" gutterBottom>
+                  👤 {request.name}
+                </Typography>
+                <Typography variant="body2" gutterBottom>
+                  📧 {request.email}
+                </Typography>
                 <Typography variant="body2">
                   🗓️ <strong>From:</strong> {new Date(request.startDate).toLocaleDateString()}
                 </Typography>
@@ -178,6 +206,7 @@ const LeaveManagementPage = () => {
         ))}
       </Grid>
 
+      {/* 📝 Note Dialog */}
       <Dialog open={open} onClose={handleCloseDialog}>
         <DialogTitle>{action === 'Approved' ? '✅ Approve' : '❌ Reject'} Leave</DialogTitle>
         <DialogContent>
@@ -206,6 +235,7 @@ const LeaveManagementPage = () => {
         </DialogActions>
       </Dialog>
 
+      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// 📁 src/pages/admin/AdminHolidaysPage.js
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -23,11 +24,14 @@ const AdminHolidaysPage = () => {
   const [newHoliday, setNewHoliday] = useState({ name: '', date: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  const API = process.env.REACT_APP_API_URL;
+  const API = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
 
   const fetchHolidays = async () => {
     try {
-      const res = await axios.get(`${API}/api/admin/holidays`);
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/api/admin/holidays`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setHolidays(res.data || []);
     } catch (err) {
       console.error('Failed to fetch holidays:', err);
@@ -35,14 +39,25 @@ const AdminHolidaysPage = () => {
     }
   };
 
+  useEffect(() => {
+    fetchHolidays();
+  }, []);
+
   const handleAddHoliday = async () => {
     if (!newHoliday.name.trim() || !newHoliday.date) {
-      setSnackbar({ open: true, message: '⚠️ Please enter both name and date.', severity: 'warning' });
-      return;
+      return setSnackbar({
+        open: true,
+        message: '⚠️ Please enter both name and date.',
+        severity: 'warning',
+      });
     }
 
     try {
-      const res = await axios.post(`${API}/api/admin/holidays`, newHoliday);
+      const token = localStorage.getItem('token');
+      const res = await axios.post(`${API}/api/admin/holidays`, newHoliday, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       setSnackbar({ open: true, message: res.data.message || '✅ Holiday added!', severity: 'success' });
       setNewHoliday({ name: '', date: '' });
       fetchHolidays();
@@ -82,10 +97,14 @@ const AdminHolidaysPage = () => {
         Back to Admin Panel
       </Button>
 
-      {/* Form + List Container */}
       <Paper
         elevation={4}
-        sx={{ p: 3, borderRadius: 3, backgroundColor: '#fff8', backdropFilter: 'blur(4px)' }}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          backgroundColor: '#fff9',
+          backdropFilter: 'blur(6px)',
+        }}
       >
         <Typography variant="h4" gutterBottom fontWeight="bold" color="primary.dark">
           📅 Holiday & Events Manager

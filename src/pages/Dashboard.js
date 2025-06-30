@@ -14,7 +14,7 @@ import {
 import AnnouncementIcon from "@mui/icons-material/Announcement";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import Birthday from "../components/Birthday";
-import axios from "axios";
+import axios from "../api/axios"; // ✅ Use centralized axios
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -44,7 +44,7 @@ export default function Dashboard() {
   // 📣 Load Announcements
   useEffect(() => {
     axios
-      .get(`${process.env.REACT_APP_API_URL}/api/admin/broadcasts`)
+      .get("/admin/broadcasts")
       .then((res) => setAnnouncements(res.data))
       .catch((err) => console.error("❌ Failed to load announcements:", err));
   }, []);
@@ -52,7 +52,7 @@ export default function Dashboard() {
   // 📅 Load Holidays
   useEffect(() => {
     axios
-      .get(`${process.env.REACT_APP_API_URL}/api/admin/holidays`)
+      .get("/admin/holidays")
       .then((res) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -186,7 +186,7 @@ export default function Dashboard() {
           </List>
         </SectionCard>
 
-        {/* 🎂 Birthdays (Once per day + Manual Refresh) */}
+        {/* 🎂 Birthdays */}
         <SectionCard title="Today's Birthdays" color="#2196f3">
           <Birthday spinnerSize={20} refresh={shouldRefreshBirthday} />
         </SectionCard>

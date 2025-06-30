@@ -14,7 +14,7 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../api/axios"; // ✅ Updated import
 
 const RegisterPage = () => {
   const theme = useTheme();
@@ -94,17 +94,14 @@ const RegisterPage = () => {
     }
 
     try {
-      await axios.post(
-        `https://employee-backend-kifp.onrender.com/api/register-request`,
-        {
-          name,
-          email,
-          password,
-          mobile,
-          department,
-          address,
-        }
-      );
+      await axios.post(`/register-request`, {
+        name,
+        email,
+        password,
+        mobile,
+        department,
+        address,
+      });
 
       setSnackbar({
         open: true,

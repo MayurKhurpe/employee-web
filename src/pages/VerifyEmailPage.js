@@ -12,6 +12,8 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import axios from 'axios';
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
+
 const VerifyEmailPage = () => {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -20,7 +22,7 @@ const VerifyEmailPage = () => {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}/api/auth/verify-email/${token}`);
+        const res = await axios.get(`${API_URL}/api/verify-email/${token}`);
         setStatus(res.status === 200 ? 'success' : 'error');
       } catch (err) {
         setStatus('error');
@@ -87,7 +89,7 @@ const VerifyEmailPage = () => {
               Verification Failed ❌
             </Typography>
             <Typography variant="body2" mt={1}>
-              The link is invalid or has expired.
+              The verification link is invalid or has expired.
             </Typography>
             <Button
               variant="outlined"

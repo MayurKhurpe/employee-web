@@ -12,8 +12,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff, LockReset as ResetIcon } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
+import axios from '../api/axios'; // ✅ Centralized axios
 
 export default function ResetPasswordPage() {
   const { token } = useParams();
@@ -25,21 +24,17 @@ export default function ResetPasswordPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_URL}/api/reset-password/${token}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
+      const res = await axios.post(`/reset-password/${token}`, { password });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Reset failed');
       setSnackbar({ open: true, message: '✅ Password reset successful!', severity: 'success' });
-
       setTimeout(() => navigate('/'), 2000);
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err.message.includes('Token') ? '⛔ Token expired or invalid.' : err.message,
+        message:
+          err?.response?.data?.error?.includes('token') || err?.message?.includes('token')
+            ? '⛔ Token expired or invalid.'
+            : err?.response?.data?.error || '❌ Reset failed.',
         severity: 'error',
       });
     }

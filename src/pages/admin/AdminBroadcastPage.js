@@ -1,4 +1,4 @@
-import React, { useState} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -22,11 +22,19 @@ const AdminBroadcastPage = () => {
   const [history, setHistory] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  const API_BASE = process.env.REACT_APP_API_URL;
+  const API_BASE = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
+
+  // 🔁 Fetch Broadcast History on Mount
+  useEffect(() => {
+    fetchBroadcasts();
+  }, []);
 
   const fetchBroadcasts = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/admin/broadcasts`);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/api/admin/broadcasts`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       if (Array.isArray(data)) {
         setHistory(data);
@@ -40,24 +48,28 @@ const AdminBroadcastPage = () => {
 
   const handleSend = async () => {
     if (!message.trim()) {
-      return setSnackbar({ open: true, message: 'Please enter a message.', severity: 'warning' });
+      return setSnackbar({ open: true, message: '⚠️ Please enter a message.', severity: 'warning' });
     }
 
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${API_BASE}/api/admin/broadcasts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ message, audience }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        setSnackbar({ open: true, message: data.message || 'Sent successfully!', severity: 'success' });
+        setSnackbar({ open: true, message: data.message || '✅ Broadcast sent!', severity: 'success' });
         setMessage('');
         setAudience('all');
-        setHistory([data.data, ...history]);
+        setHistory((prev) => [data.data, ...prev]);
       } else {
-        throw new Error(data.error || 'Failed to send');
+        throw new Error(data.error || 'Failed to send broadcast');
       }
     } catch (err) {
       setSnackbar({ open: true, message: err.message, severity: 'error' });
@@ -65,9 +77,14 @@ const AdminBroadcastPage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this message?')) return;
+    if (!window.confirm('🗑️ Are you sure you want to delete this broadcast?')) return;
     try {
-      const res = await fetch(`${API_BASE}/api/admin/broadcasts/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/api/admin/broadcasts/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       if (!res.ok) throw new Error('Delete failed');
       setHistory((prev) => prev.filter((log) => log._id !== id));
       setSnackbar({ open: true, message: '✅ Deleted successfully', severity: 'info' });
@@ -84,6 +101,7 @@ const AdminBroadcastPage = () => {
         background: 'linear-gradient(to bottom right, #fce4ec, #e3f2fd)',
       }}
     >
+      {/* 🔙 Back Button */}
       <Button
         startIcon={<ArrowBack />}
         onClick={() => navigate('/admin')}
@@ -109,6 +127,7 @@ const AdminBroadcastPage = () => {
         📢 Broadcast Message
       </Typography>
 
+      {/* 📬 Broadcast Form */}
       <Paper sx={{ mt: 2, p: 3, borderRadius: 3, backgroundColor: '#fff8', backdropFilter: 'blur(4px)' }}>
         <Stack spacing={2}>
           <TextField
@@ -151,7 +170,7 @@ const AdminBroadcastPage = () => {
         </Stack>
       </Paper>
 
-      {/* Broadcast History */}
+      {/* 📜 Broadcast History */}
       <Typography variant="h6" mt={4} mb={1} fontWeight="bold">
         🕓 Broadcast History
       </Typography>
@@ -160,7 +179,16 @@ const AdminBroadcastPage = () => {
       ) : (
         <Stack spacing={2}>
           {history.map((log) => (
-            <Paper key={log._id} sx={{ p: 2, display: 'flex', justifyContent: 'space-between' }}>
+            <Paper
+              key={log._id}
+              sx={{
+                p: 2,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                backgroundColor: '#f1f8e9',
+              }}
+            >
               <Box>
                 <Typography fontWeight="bold">{log.message}</Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -177,13 +205,17 @@ const AdminBroadcastPage = () => {
         </Stack>
       )}
 
-      {/* Snackbar Feedback */}
+      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          sx={{ width: '100%' }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

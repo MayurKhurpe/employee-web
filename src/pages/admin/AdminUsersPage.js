@@ -15,44 +15,58 @@ import {
   Snackbar,
   Alert,
 } from '@mui/material';
-
-const dummyUsers = [
-  {
-    _id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'user',
-    isApproved: false,
-  },
-  {
-    _id: '2',
-    name: 'Jane Admin',
-    email: 'admin@example.com',
-    role: 'admin',
-    isApproved: true,
-  },
-];
+import axios from '../../api/axios'; // ✅ Centralized Axios
 
 const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  useEffect(() => {
-    setUsers(dummyUsers); // Load dummy data initially
-  }, []);
+  const token = localStorage.getItem('token');
 
-  const handleApprove = (id) => {
-    const updated = users.map((user) =>
-      user._id === id ? { ...user, isApproved: true } : user
-    );
-    setUsers(updated);
-    setSnackbar({ open: true, message: '✅ User approved successfully', severity: 'success' });
+  // ✅ Load Users from Backend
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get('/admin/users', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsers(res.data);
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: '❌ Failed to fetch users',
+        severity: 'error',
+      });
+    }
   };
 
-  const handleDelete = (id) => {
-    const filtered = users.filter((user) => user._id !== id);
-    setUsers(filtered);
-    setSnackbar({ open: true, message: '🗑️ User deleted', severity: 'info' });
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // ✅ Approve User
+  const handleApprove = async (id) => {
+    try {
+      await axios.put(`/admin/users/approve/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSnackbar({ open: true, message: '✅ User approved successfully', severity: 'success' });
+      fetchUsers();
+    } catch (err) {
+      setSnackbar({ open: true, message: '❌ Approval failed', severity: 'error' });
+    }
+  };
+
+  // ✅ Delete User
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`/admin/users/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSnackbar({ open: true, message: '🗑️ User deleted', severity: 'info' });
+      fetchUsers();
+    } catch (err) {
+      setSnackbar({ open: true, message: '❌ Delete failed', severity: 'error' });
+    }
   };
 
   return (

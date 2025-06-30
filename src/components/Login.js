@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../api/axios'; // ✅ updated import
 
 const LoginPage = ({ onLogin }) => {
   const navigate = useNavigate();
@@ -38,17 +38,14 @@ const LoginPage = ({ onLogin }) => {
     try {
       setLoading(true);
 
-      const res = await axios.post(`https://employee-backend-kifp.onrender.com/api/login`, {
-        email,
-        password,
-      });
+      const res = await axios.post('/login', { email, password }); // ✅ relative endpoint
 
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('userName', res.data.user.name);
       localStorage.setItem('userRole', res.data.user.role);
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      onLogin(); // Notify parent
+      onLogin();
       setSnackbar({ open: true, message: '✅ Login successful!', severity: 'success' });
 
       navigate('/dashboard');

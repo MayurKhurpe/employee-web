@@ -200,7 +200,7 @@ export default function App() {
     const fetchUserProfile = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/profile', {
+        const res = await axios.get('https://employee-backend-kifp.onrender.com/api/profile', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(res.data);

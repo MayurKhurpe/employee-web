@@ -20,7 +20,7 @@ import LockResetIcon from "@mui/icons-material/LockReset";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import DevicesIcon from "@mui/icons-material/Devices";
-import axios from "axios";
+import axios from "../axios"; // ✅ Centralized axios instance
 
 // ✅ Settings list
 const settingsOptions = [
@@ -65,9 +65,7 @@ const SettingsPage = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await axios.get("/api/notification-settings", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
+        const res = await axios.get("/notification-settings");
         setNotifSettings({
           emailNotif: res.data.emailNotif || false,
           pushNotif: res.data.pushNotif || false,
@@ -91,13 +89,7 @@ const SettingsPage = () => {
     setNotifSettings(newSettings);
 
     try {
-      await axios.post(
-        "/api/notification-settings",
-        newSettings,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
+      await axios.post("/notification-settings", newSettings);
       setSnackbar({ open: true, message: "✅ Notification setting updated" });
     } catch (err) {
       console.error("Failed to update setting", err);
@@ -218,9 +210,7 @@ const SettingsPage = () => {
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>
                 <ListItemText
-                  primary={
-                    <Typography fontWeight={500}>{item.title}</Typography>
-                  }
+                  primary={<Typography fontWeight={500}>{item.title}</Typography>}
                 />
               </ListItem>
             ))}

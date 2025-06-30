@@ -22,6 +22,7 @@ import {
   Search as SearchIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import axios from '../../api/axios'; // ✅ Centralized Axios
 
 const AdminUserManagementPage = () => {
   const [users, setUsers] = useState([]);
@@ -29,14 +30,18 @@ const AdminUserManagementPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/admin/users');
-      const data = await res.json();
-      setUsers(data);
-      setFilteredUsers(data);
+      const res = await axios.get('/admin/users', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsers(res.data);
+      setFilteredUsers(res.data);
     } catch (err) {
       setSnackbar({ open: true, message: '❌ Failed to fetch users', severity: 'error' });
     } finally {
@@ -50,22 +55,22 @@ const AdminUserManagementPage = () => {
 
   // 🔍 Live Filter
   useEffect(() => {
-    const filtered = users.filter((user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = users.filter(
+      (user) =>
+        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredUsers(filtered);
   }, [searchTerm, users]);
 
   const handleApprove = async (email) => {
     try {
-      const res = await fetch('/api/approve-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      setSnackbar({ open: true, message: `✅ ${data.message}`, severity: 'success' });
+      const res = await axios.put(
+        `/admin/users/approve-by-email`,
+        { email },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSnackbar({ open: true, message: `✅ ${res.data.message}`, severity: 'success' });
       fetchUsers();
     } catch (err) {
       setSnackbar({ open: true, message: '❌ Approval failed', severity: 'error' });
@@ -75,13 +80,11 @@ const AdminUserManagementPage = () => {
   const handleDelete = async (email) => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
     try {
-      const res = await fetch('/api/admin/delete-user', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+      const res = await axios.delete(`/admin/users/delete-by-email`, {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { email },
       });
-      const data = await res.json();
-      setSnackbar({ open: true, message: `🗑️ ${data.message}`, severity: 'info' });
+      setSnackbar({ open: true, message: `🗑️ ${res.data.message}`, severity: 'info' });
       fetchUsers();
     } catch (err) {
       setSnackbar({ open: true, message: '❌ Delete failed', severity: 'error' });

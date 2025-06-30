@@ -1,3 +1,4 @@
+// 📁 src/pages/LoginHistoryPage.js
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -16,8 +17,8 @@ import {
   Fade
 } from '@mui/material';
 import { History as HistoryIcon, ArrowBack } from '@mui/icons-material';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import axios from '../axios'; // ✅ Use centralized axios config
 
 const LoginHistoryPage = () => {
   const [history, setHistory] = useState([]);
@@ -28,9 +29,7 @@ const LoginHistoryPage = () => {
   useEffect(() => {
     const fetchLoginHistory = async () => {
       try {
-        const res = await axios.get('/api/login-history', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
+        const res = await axios.get('/login-history'); // ✅ No base URL needed here
         setHistory(res.data);
       } catch (err) {
         console.error('Failed to load login history:', err);
@@ -66,8 +65,11 @@ const LoginHistoryPage = () => {
             boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
           }}
         >
+          {/* 🔙 Header */}
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>🕓 Login History</Typography>
+            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              🕓 Login History
+            </Typography>
             <Button
               onClick={() => navigate('/settings')}
               variant="outlined"
@@ -76,13 +78,14 @@ const LoginHistoryPage = () => {
                 textTransform: 'none',
                 borderRadius: '30px',
                 fontWeight: 600,
-                '&:hover': { backgroundColor: '#f5f5f5' }
+                '&:hover': { backgroundColor: '#f5f5f5' },
               }}
             >
               Back to Settings
             </Button>
           </Box>
 
+          {/* 🔄 Loading */}
           {loading ? (
             <Box textAlign="center">
               <CircularProgress />
@@ -106,7 +109,7 @@ const LoginHistoryPage = () => {
                         transform: 'scale(1.01)',
                         backgroundColor: '#fff',
                       },
-                      transition: '0.2s ease-in-out'
+                      transition: '0.2s ease-in-out',
                     }}
                   >
                     <ListItemIcon>
@@ -126,6 +129,7 @@ const LoginHistoryPage = () => {
             <Typography align="center">😕 No login history found.</Typography>
           )}
 
+          {/* ✅ Snackbar */}
           <Snackbar
             open={snackbar.open}
             autoHideDuration={3000}

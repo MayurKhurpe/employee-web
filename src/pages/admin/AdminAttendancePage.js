@@ -24,6 +24,8 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
+
 const AdminAttendancePage = () => {
   const [records, setRecords] = useState([]);
   const [summary, setSummary] = useState({
@@ -36,24 +38,28 @@ const AdminAttendancePage = () => {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
-  const token = localStorage.getItem('token');
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     const fetchAllAttendance = async () => {
       try {
         const [recordsRes, summaryRes] = await Promise.all([
-          axios.get(`${process.env.REACT_APP_API_URL}/api/attendance/all`, {
+          axios.get(`${API_URL}/api/attendance/all`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get(`${process.env.REACT_APP_API_URL}/api/attendance/summary`, {
+          axios.get(`${API_URL}/api/attendance/summary`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
-        setRecords(recordsRes.data);
-        setSummary(summaryRes.data);
+        setRecords(recordsRes.data || []);
+        setSummary(summaryRes.data || {});
       } catch (err) {
-        setSnackbar({ open: true, message: 'Failed to load attendance.', severity: 'error' });
+        setSnackbar({
+          open: true,
+          message: err.response?.data?.error || '❌ Failed to load attendance.',
+          severity: 'error',
+        });
       } finally {
         setLoading(false);
       }
@@ -105,7 +111,7 @@ const AdminAttendancePage = () => {
           </Button>
         </Box>
 
-        {/* Summary Cards */}
+        {/* 📊 Summary Cards */}
         <Grid container spacing={2} mb={3}>
           {[
             { label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
@@ -123,6 +129,7 @@ const AdminAttendancePage = () => {
           ))}
         </Grid>
 
+        {/* 📤 Export Buttons */}
         <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
           <Button variant="outlined" onClick={exportToPDF} disabled={exporting}>
             🧾 Export PDF
@@ -132,6 +139,7 @@ const AdminAttendancePage = () => {
           </Button>
         </Stack>
 
+        {/* 📅 Attendance Table */}
         {loading ? (
           <Box display="flex" justifyContent="center" mt={5}>
             <CircularProgress />
@@ -173,6 +181,7 @@ const AdminAttendancePage = () => {
           </TableContainer>
         )}
 
+        {/* ✅ Snackbar */}
         <Snackbar
           open={snackbar.open}
           autoHideDuration={3000}
