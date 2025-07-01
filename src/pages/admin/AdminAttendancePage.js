@@ -1,3 +1,4 @@
+// ✅ JUST ADDED THIS LINE AT THE TOP
 import React, { useEffect, useState } from 'react';
 import {
   Container,
@@ -17,6 +18,7 @@ import {
   Box,
   Grid,
   Pagination,
+  TextField, // ✅ Date picker added
 } from '@mui/material';
 import axios from 'api/axios';
 import dayjs from 'dayjs';
@@ -36,6 +38,7 @@ const AdminAttendancePage = () => {
     todayRemote: 0,
     totalEmployees: 0,
   });
+  const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD')); // ✅
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
@@ -43,12 +46,12 @@ const AdminAttendancePage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
-  const fetchAllAttendance = async (pg = 1) => {
+  const fetchAllAttendance = async (pg = 1, date = selectedDate) => {
     setLoading(true);
     try {
       const [recordsRes, summaryRes] = await Promise.all([
-        axios.get(`/attendance/all?page=${pg}&limit=${PAGE_SIZE}`),
-        axios.get('/attendance/summary'),
+        axios.get(`/attendance/all?page=${pg}&limit=${PAGE_SIZE}&date=${date}`),
+        axios.get(`/attendance/summary?date=${date}`),
       ]);
 
       setRecords(recordsRes.data.records || []);
@@ -66,8 +69,8 @@ const AdminAttendancePage = () => {
   };
 
   useEffect(() => {
-    fetchAllAttendance(page);
-  }, [page]);
+    fetchAllAttendance(page, selectedDate);
+  }, [page, selectedDate]);
 
   const exportToPDF = () => {
     setExporting(true);
@@ -138,6 +141,21 @@ const AdminAttendancePage = () => {
           </Button>
         </Box>
 
+        {/* ✅ Date Filter */}
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            label="📅 Filter by Date"
+            type="date"
+            value={selectedDate}
+            onChange={(e) => {
+              setPage(1); // Reset to page 1 when date changes
+              setSelectedDate(e.target.value);
+            }}
+            InputLabelProps={{ shrink: true }}
+          />
+        </Box>
+
+        {/* ✅ Summary Cards */}
         <Grid container spacing={2} mb={3}>
           {[{ label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
             { label: '❌ Absent', value: summary.todayAbsent, bg: '#ffebee' },
