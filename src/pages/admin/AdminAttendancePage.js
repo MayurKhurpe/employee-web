@@ -187,10 +187,7 @@ const AdminAttendancePage = () => {
                     <TableCell>Name</TableCell>
                     <TableCell>Email</TableCell>
                     <TableCell>Date</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Location / Remote Info</TableCell>
-                    <TableCell>Check In</TableCell>
-                    <TableCell>Check Out</TableCell>
+                    <TableCell colSpan={4}>Status / Details</TableCell>
                     <TableCell>Customer</TableCell>
                     <TableCell>Work Location</TableCell>
                     <TableCell>Assigned By</TableCell>
@@ -213,12 +210,12 @@ const AdminAttendancePage = () => {
                       <TableCell>{rec.name}</TableCell>
                       <TableCell>{rec.email}</TableCell>
                       <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
-                      <TableCell>{rec.status}</TableCell>
 
                       {rec.status === 'Remote Work' ? (
                         <>
-                          <TableCell colSpan={3}>
+                          <TableCell colSpan={4}>
                             <Box sx={{ whiteSpace: 'pre-line' }}>
+                              🖥️ <strong>Remote Work</strong>{"\n"}
                               👤 <strong>Customer:</strong> {rec.customer || '—'}{"\n"}
                               🏢 <strong>Location:</strong> {rec.workLocation || '—'}{"\n"}
                               📨 <strong>Assigned By:</strong> {rec.assignedBy || '—'}{"\n"}
@@ -231,6 +228,7 @@ const AdminAttendancePage = () => {
                         </>
                       ) : (
                         <>
+                          <TableCell>{rec.status}</TableCell>
                           <TableCell>
                             {typeof rec.location === 'string'
                               ? rec.location
