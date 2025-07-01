@@ -8,7 +8,7 @@ import CloudIcon from '@mui/icons-material/Cloud';
 import ThunderstormIcon from '@mui/icons-material/Thunderstorm';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import axios from 'api/axios';
+import axios from 'axios';
 
 const API_KEY = 'c8492a7984470daba608fb2d28ef150a';
 const backgroundImage = 'https://i.postimg.cc/QCsvqJ67/Industrial-Automation.jpg';
