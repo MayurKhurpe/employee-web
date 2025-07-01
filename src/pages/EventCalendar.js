@@ -50,13 +50,13 @@ export default function EventCalendar() {
     setSnack({ open: true, msg, severity });
   };
 
+  const authHeaders = {
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+  };
+
   const loadEvents = () => {
     axios
-      .get('/events', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+      .get('/api/events', { headers: authHeaders })
       .then((res) => setEvents(res.data))
       .catch((err) => console.error('❌ Failed to load events:', err));
   };
@@ -74,25 +74,13 @@ export default function EventCalendar() {
     try {
       if (editMode) {
         await axios.put(
-          '/events',
+          '/api/events',
           { ...payload, id: currentId },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-          }
+          { headers: authHeaders }
         );
         showToast('Event updated');
       } else {
-        await axios.post(
-          '/events',
-          payload,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-          }
-        );
+        await axios.post('/api/events', payload, { headers: authHeaders });
         showToast('Event added');
       }
       loadEvents();
@@ -107,11 +95,7 @@ export default function EventCalendar() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/events/${id}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      await axios.delete(`/api/events/${id}`, { headers: authHeaders });
       showToast('Event deleted');
       loadEvents();
     } catch (err) {
@@ -191,10 +175,7 @@ export default function EventCalendar() {
               </IconButton>
             </Tooltip>
           </Box>
-          <DateCalendar
-            value={selectedDate}
-            onChange={(newValue) => setSelectedDate(newValue)}
-          />
+          <DateCalendar value={selectedDate} onChange={(newValue) => setSelectedDate(newValue)} />
         </Paper>
 
         <Paper
