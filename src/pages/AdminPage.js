@@ -13,9 +13,6 @@ import {
 import {
   AdminPanelSettings as AdminIcon,
   Groups as UserIcon,
-  Assessment as ReportsIcon,
-  Settings as SystemSettingsIcon,
-  History as AuditIcon,
   Campaign as BroadcastIcon,
   Event as HolidayIcon,
   HowToReg as AttendanceIcon,
@@ -29,7 +26,6 @@ const AdminPage = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Role check
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (!user || user.role !== 'admin') {
@@ -37,7 +33,6 @@ const AdminPage = () => {
     }
   }, [navigate]);
 
-  // 📊 Fetch Admin Stats
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -84,24 +79,6 @@ const AdminPage = () => {
       route: '/admin/users',
     },
     {
-      title: 'Reports',
-      desc: 'Generate and export system usage reports.',
-      icon: <ReportsIcon color="success" />,
-      route: '/admin/reports',
-    },
-    {
-      title: 'System Settings',
-      desc: 'Manage roles, backups, and permissions.',
-      icon: <SystemSettingsIcon color="warning" />,
-      route: '/admin/settings',
-    },
-    {
-      title: 'Audit Logs',
-      desc: 'View login history and activity tracking.',
-      icon: <AuditIcon color="secondary" />,
-      route: '/admin/audit',
-    },
-    {
       title: 'Broadcast Message',
       desc: 'Send a message to all users instantly.',
       icon: <BroadcastIcon color="error" />,
@@ -138,7 +115,6 @@ const AdminPage = () => {
         }}
       />
 
-      {/* 📦 Content */}
       <Box sx={{ position: 'relative', zIndex: 1 }}>
         {/* 🧠 Header */}
         <Paper
@@ -157,7 +133,7 @@ const AdminPage = () => {
             Admin Dashboard
           </Typography>
           <Typography variant="body1" sx={{ mt: 1 }}>
-            Manage users, attendance, leave requests, reports, and more.
+            Manage users, attendance, leave requests, and more.
           </Typography>
         </Paper>
 
