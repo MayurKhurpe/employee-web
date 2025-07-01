@@ -1,4 +1,4 @@
-// 📁 src/pages/ProfilePage.js
+// 📁 src/components/ProfilePage.js
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -27,6 +27,7 @@ export default function ProfilePage({ updateUser }) {
     bloodGroup: '',
     department: '',
     joiningDate: '',
+    dob: '', // 🎂 Birthday field
   });
 
   const [snackbar, setSnackbar] = useState({
@@ -87,9 +88,9 @@ export default function ProfilePage({ updateUser }) {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setProfile((prev) => ({ ...prev, ...res.data }));
-      localStorage.setItem('user', JSON.stringify(res.data));
-      updateUser && updateUser(res.data);
+      setProfile((prev) => ({ ...prev, ...res.data.user }));
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      updateUser && updateUser(res.data.user);
 
       setSnackbar({
         open: true,
@@ -161,7 +162,7 @@ export default function ProfilePage({ updateUser }) {
             flexDirection="column"
             gap={2}
           >
-            {[ 
+            {[
               { label: '📝 Name', name: 'name' },
               { label: '📧 Email', name: 'email', type: 'email' },
               { label: '🏠 Address', name: 'address' },
@@ -181,13 +182,25 @@ export default function ProfilePage({ updateUser }) {
               />
             ))}
 
+            {/* 📅 Joining Date */}
             <TextField
               fullWidth
               type="date"
-              label="📅 Joining Date"
+              label="📆 Joining Date"
               name="joiningDate"
               InputLabelProps={{ shrink: true }}
               value={profile.joiningDate?.substring(0, 10) || ''}
+              onChange={handleChange}
+            />
+
+            {/* 🎂 Date of Birth */}
+            <TextField
+              fullWidth
+              type="date"
+              label="🎂 Birthday"
+              name="dob"
+              InputLabelProps={{ shrink: true }}
+              value={profile.dob?.substring(0, 10) || ''}
               onChange={handleChange}
             />
 
