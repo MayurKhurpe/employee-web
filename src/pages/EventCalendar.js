@@ -56,7 +56,7 @@ export default function EventCalendar() {
 
   const loadEvents = () => {
     axios
-      .get('/api/events', { headers: authHeaders })
+      .get('/events', { headers: authHeaders })
       .then((res) => setEvents(res.data))
       .catch((err) => console.error('❌ Failed to load events:', err));
   };
@@ -74,13 +74,13 @@ export default function EventCalendar() {
     try {
       if (editMode) {
         await axios.put(
-          '/api/events',
+          '/events',
           { ...payload, id: currentId },
           { headers: authHeaders }
         );
         showToast('Event updated');
       } else {
-        await axios.post('/api/events', payload, { headers: authHeaders });
+        await axios.post('/events', payload, { headers: authHeaders });
         showToast('Event added');
       }
       loadEvents();
@@ -95,7 +95,7 @@ export default function EventCalendar() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/events/${id}`, { headers: authHeaders });
+      await axios.delete(`/events/${id}`, { headers: authHeaders });
       showToast('Event deleted');
       loadEvents();
     } catch (err) {
