@@ -44,11 +44,6 @@ const settingsOptions = [
     icon: <NotificationsActiveIcon color="info" />,
     path: "/notification-settings",
   },
-  {
-    title: "💻 Linked Devices",
-    icon: <DevicesIcon color="success" />,
-    path: "/linked-devices",
-  },
 ];
 
 const SettingsPage = () => {
