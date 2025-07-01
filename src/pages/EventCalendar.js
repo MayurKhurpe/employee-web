@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -25,7 +25,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import { EventContext } from '../context/EventContext';
+import axios from '../api/axios';
 
 const backgroundImage = 'https://i.postimg.cc/Yq51br7t/MES.jpg';
 
@@ -39,7 +39,7 @@ const categoryIcons = {
 export default function EventCalendar() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(dayjs());
-  const { events, setEvents } = useContext(EventContext);
+  const [events, setEvents] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [eventData, setEventData] = useState({ title: '', category: 'Other' });
@@ -50,35 +50,79 @@ export default function EventCalendar() {
     setSnack({ open: true, msg, severity });
   };
 
-  const handleAddOrEdit = () => {
-    const event = {
+  const loadEvents = () => {
+    axios
+      .get('/events', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      })
+      .then((res) => setEvents(res.data))
+      .catch((err) => console.error('❌ Failed to load events:', err));
+  };
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  const handleAddOrEdit = async () => {
+    const payload = {
       ...eventData,
       date: selectedDate.format('YYYY-MM-DD'),
     };
 
-    if (editMode) {
-      setEvents((prev) =>
-        prev.map((e) => (e.id === currentId ? { ...event, id: currentId } : e))
-      );
-      showToast('Event updated');
-    } else {
-      setEvents((prev) => [...prev, { ...event, id: Date.now().toString() }]);
-      showToast('Event added');
+    try {
+      if (editMode) {
+        await axios.put(
+          '/events',
+          { ...payload, id: currentId },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        showToast('Event updated');
+      } else {
+        await axios.post(
+          '/events',
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        showToast('Event added');
+      }
+      loadEvents();
+      setOpenDialog(false);
+      setEditMode(false);
+      setEventData({ title: '', category: 'Other' });
+    } catch (err) {
+      console.error('❌ Error saving event:', err);
+      showToast('Error saving event', 'error');
     }
-
-    setOpenDialog(false);
-    setEditMode(false);
-    setEventData({ title: '', category: 'Other' });
   };
 
-  const handleDelete = (id) => {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
-    showToast('Event deleted');
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`/events/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      showToast('Event deleted');
+      loadEvents();
+    } catch (err) {
+      console.error('❌ Error deleting event:', err);
+      showToast('Error deleting event', 'error');
+    }
   };
 
   const openEdit = (event) => {
     setEventData({ title: event.title, category: event.category });
-    setCurrentId(event.id);
+    setCurrentId(event._id);
     setEditMode(true);
     setOpenDialog(true);
   };
@@ -89,7 +133,6 @@ export default function EventCalendar() {
 
   return (
     <Box sx={{ minHeight: '100vh', position: 'relative' }}>
-      {/* Background */}
       <Box
         sx={{
           position: 'absolute',
@@ -111,7 +154,6 @@ export default function EventCalendar() {
           zIndex: 1,
         }}
       />
-      {/* Content */}
       <Box
         sx={{
           position: 'relative',
@@ -125,7 +167,6 @@ export default function EventCalendar() {
           px: 2,
         }}
       >
-        {/* Calendar */}
         <Paper
           elevation={6}
           sx={{
@@ -156,7 +197,6 @@ export default function EventCalendar() {
           />
         </Paper>
 
-        {/* Event List */}
         <Paper
           elevation={6}
           sx={{
@@ -183,7 +223,7 @@ export default function EventCalendar() {
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Delete">
-                        <IconButton onClick={() => handleDelete(event.id)}>
+                        <IconButton onClick={() => handleDelete(event._id)}>
                           <DeleteIcon />
                         </IconButton>
                       </Tooltip>
@@ -203,7 +243,6 @@ export default function EventCalendar() {
         </Paper>
       </Box>
 
-      {/* Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth>
         <DialogTitle>{editMode ? 'Edit Event' : 'Add Event'}</DialogTitle>
         <DialogContent>
@@ -236,7 +275,6 @@ export default function EventCalendar() {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar */}
       <Snackbar
         open={snack.open}
         autoHideDuration={3000}
