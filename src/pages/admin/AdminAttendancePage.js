@@ -1,4 +1,3 @@
-// ✅ JUST ADDED THIS LINE AT THE TOP
 import React, { useEffect, useState } from 'react';
 import {
   Container,
@@ -18,7 +17,7 @@ import {
   Box,
   Grid,
   Pagination,
-  TextField, // ✅ Date picker added
+  TextField,
 } from '@mui/material';
 import axios from 'api/axios';
 import dayjs from 'dayjs';
@@ -38,7 +37,7 @@ const AdminAttendancePage = () => {
     todayRemote: 0,
     totalEmployees: 0,
   });
-  const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD')); // ✅
+  const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
@@ -53,7 +52,6 @@ const AdminAttendancePage = () => {
         axios.get(`/attendance/all?page=${pg}&limit=${PAGE_SIZE}&date=${date}`),
         axios.get(`/attendance/summary?date=${date}`),
       ]);
-
       setRecords(recordsRes.data.records || []);
       setTotalPages(recordsRes.data.totalPages || 1);
       setSummary(summaryRes.data || {});
@@ -77,7 +75,6 @@ const AdminAttendancePage = () => {
     const doc = new jsPDF();
     doc.setFontSize(14);
     doc.text('📋 All Employee Attendance', 14, 20);
-
     autoTable(doc, {
       startY: 30,
       head: [['#', 'Name', 'Email', 'Date', 'Status', 'Location', 'Check In', 'Check Out', 'Customer', 'Work Location', 'Assigned By']],
@@ -100,7 +97,6 @@ const AdminAttendancePage = () => {
       ]),
       theme: 'striped',
     });
-
     doc.save('all-attendance.pdf');
     setExporting(false);
   };
@@ -141,21 +137,19 @@ const AdminAttendancePage = () => {
           </Button>
         </Box>
 
-        {/* ✅ Date Filter */}
         <Box sx={{ mb: 3 }}>
           <TextField
             label="📅 Filter by Date"
             type="date"
             value={selectedDate}
             onChange={(e) => {
-              setPage(1); // Reset to page 1 when date changes
+              setPage(1);
               setSelectedDate(e.target.value);
             }}
             InputLabelProps={{ shrink: true }}
           />
         </Box>
 
-        {/* ✅ Summary Cards */}
         <Grid container spacing={2} mb={3}>
           {[{ label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
             { label: '❌ Absent', value: summary.todayAbsent, bg: '#ffebee' },
@@ -173,12 +167,8 @@ const AdminAttendancePage = () => {
         </Grid>
 
         <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-          <Button variant="outlined" onClick={exportToPDF} disabled={exporting}>
-            🧾 Export PDF
-          </Button>
-          <Button variant="outlined" onClick={exportToExcel} disabled={exporting}>
-            📊 Export Excel
-          </Button>
+          <Button variant="outlined" onClick={exportToPDF} disabled={exporting}>🧾 Export PDF</Button>
+          <Button variant="outlined" onClick={exportToExcel} disabled={exporting}>📊 Export Excel</Button>
         </Stack>
 
         {loading ? (
@@ -198,7 +188,7 @@ const AdminAttendancePage = () => {
                     <TableCell>Email</TableCell>
                     <TableCell>Date</TableCell>
                     <TableCell>Status</TableCell>
-                    <TableCell>Location</TableCell>
+                    <TableCell>Location / Remote Info</TableCell>
                     <TableCell>Check In</TableCell>
                     <TableCell>Check Out</TableCell>
                     <TableCell>Customer</TableCell>
@@ -208,24 +198,53 @@ const AdminAttendancePage = () => {
                 </TableHead>
                 <TableBody>
                   {records.map((rec, idx) => (
-                    <TableRow key={rec._id}>
+                    <TableRow
+                      key={rec._id}
+                      sx={{
+                        backgroundColor:
+                          rec.status === 'Not Marked Yet'
+                            ? '#fff3e0'
+                            : rec.status === 'Remote Work'
+                            ? '#f1f8e9'
+                            : 'inherit',
+                      }}
+                    >
                       <TableCell>{(page - 1) * PAGE_SIZE + idx + 1}</TableCell>
                       <TableCell>{rec.name}</TableCell>
                       <TableCell>{rec.email}</TableCell>
                       <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
                       <TableCell>{rec.status}</TableCell>
-                      <TableCell>
-                        {typeof rec.location === 'string'
-                          ? rec.location
-                          : rec.location?.lat
-                          ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
-                          : 'N/A'}
-                      </TableCell>
-                      <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
-                      <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
-                      <TableCell>{rec.status === 'Remote Work' ? rec.customer || '—' : '—'}</TableCell>
-                      <TableCell>{rec.status === 'Remote Work' ? rec.workLocation || '—' : '—'}</TableCell>
-                      <TableCell>{rec.status === 'Remote Work' ? rec.assignedBy || '—' : '—'}</TableCell>
+
+                      {rec.status === 'Remote Work' ? (
+                        <>
+                          <TableCell colSpan={3}>
+                            <Box sx={{ whiteSpace: 'pre-line' }}>
+                              👤 <strong>Customer:</strong> {rec.customer || '—'}{"\n"}
+                              🏢 <strong>Location:</strong> {rec.workLocation || '—'}{"\n"}
+                              📨 <strong>Assigned By:</strong> {rec.assignedBy || '—'}{"\n"}
+                              🕒 <strong>In:</strong> {rec.checkInTime || 'N/A'} | <strong>Out:</strong> {rec.checkOutTime || 'N/A'}
+                            </Box>
+                          </TableCell>
+                          <TableCell>—</TableCell>
+                          <TableCell>—</TableCell>
+                          <TableCell>—</TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell>
+                            {typeof rec.location === 'string'
+                              ? rec.location
+                              : rec.location?.lat
+                              ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
+                              : 'N/A'}
+                          </TableCell>
+                          <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
+                          <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
+                          <TableCell>—</TableCell>
+                          <TableCell>—</TableCell>
+                          <TableCell>—</TableCell>
+                        </>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
