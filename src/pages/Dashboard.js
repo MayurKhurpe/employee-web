@@ -45,12 +45,18 @@ export default function Dashboard() {
   }, []);
 
   // 📣 Load Announcements
-  useEffect(() => {
-    axios
-      .get("/admin/broadcasts")
-      .then((res) => setAnnouncements(res.data))
-      .catch((err) => console.error("❌ Failed to load announcements:", err));
-  }, []);
+useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  axios
+    .get("/admin/broadcasts", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then((res) => setAnnouncements(res.data))
+    .catch((err) => console.error("❌ Failed to load announcements:", err));
+}, []);
 
   // 📅 Load Holidays
   useEffect(() => {
