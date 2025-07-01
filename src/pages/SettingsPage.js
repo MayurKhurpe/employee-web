@@ -89,7 +89,7 @@ const SettingsPage = () => {
     setNotifSettings(newSettings);
 
     try {
-      await axios.post("/notification-settings", newSettings);
+      await axios.put("/notification-settings", newSettings);
       setSnackbar({ open: true, message: "✅ Notification setting updated" });
     } catch (err) {
       console.error("Failed to update setting", err);
