@@ -1,4 +1,3 @@
-// 📁 src/pages/Dashboard.js
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -10,17 +9,21 @@ import {
   ListItem,
   ListItemText,
   useTheme,
+  Grid,
+  Chip,
 } from "@mui/material";
 import AnnouncementIcon from "@mui/icons-material/Announcement";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import WorkIcon from "@mui/icons-material/Work";
 import Birthday from "../components/Birthday";
-import axios from 'api/axios'; // ✅ Use centralized axios
+import axios from "api/axios";
 
 export default function Dashboard() {
   const theme = useTheme();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [announcements, setAnnouncements] = useState([]);
   const [holidays, setHolidays] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [shouldRefreshBirthday, setShouldRefreshBirthday] = useState(false);
 
   // ⏰ Live Clock
@@ -62,6 +65,20 @@ export default function Dashboard() {
         setHolidays(upcoming);
       })
       .catch((err) => console.error("❌ Failed to load holidays:", err));
+  }, []);
+
+  // 📊 Load Attendance Summary
+  useEffect(() => {
+    axios
+      .get("/attendance/my-summary", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      .then((res) => setSummary(res.data))
+      .catch((err) =>
+        console.error("❌ Failed to load attendance summary:", err)
+      );
   }, []);
 
   // 🎁 Reusable SectionCard
@@ -136,6 +153,43 @@ export default function Dashboard() {
             {currentTime.toLocaleTimeString()}
           </Typography>
         </Card>
+
+        {/* ✅ Attendance Summary */}
+        {summary && (
+          <SectionCard title="Your Attendance Summary" color="#4caf50">
+            <Grid container spacing={2}>
+              <Grid item xs={6} sm={3}>
+                <Chip
+                  label={`✅ Present: ${summary.present}`}
+                  color="success"
+                  icon={<WorkIcon />}
+                  sx={{ width: "100%", fontWeight: "bold" }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Chip
+                  label={`❌ Absent: ${summary.absent}`}
+                  color="error"
+                  sx={{ width: "100%", fontWeight: "bold" }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Chip
+                  label={`⏳ Half Day: ${summary.halfDay}`}
+                  color="warning"
+                  sx={{ width: "100%", fontWeight: "bold" }}
+                />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <Chip
+                  label={`💻 Remote: ${summary.remote}`}
+                  color="info"
+                  sx={{ width: "100%", fontWeight: "bold" }}
+                />
+              </Grid>
+            </Grid>
+          </SectionCard>
+        )}
 
         {/* 📣 Announcements */}
         <SectionCard title="Announcements" color="#9c27b0">

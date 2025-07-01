@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Container, Paper, Typography, Stack, Button, Snackbar, Alert, ToggleButtonGroup,
-  ToggleButton, CircularProgress, Pagination, Box, TextField,
+  ToggleButton, CircularProgress, Pagination, Box, TextField, Dialog, DialogTitle,
+  DialogContent, DialogActions
 } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -28,7 +29,8 @@ const AttendancePage = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [location, setLocation] = useState({ lat: null, lng: null });
-  const [locationNameMap, setLocationNameMap] = useState({});
+  const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
+  const [remoteForm, setRemoteForm] = useState({ customer: '', workLocation: '', assignedBy: '' });
 
   const token = localStorage.getItem('token');
   const userName = localStorage.getItem('userName') || '👤 User';
@@ -73,38 +75,8 @@ const AttendancePage = () => {
     return filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   }, [filteredRecords, page]);
 
-  useEffect(() => {
-    const fetchLocationNames = async () => {
-      const cache = JSON.parse(localStorage.getItem('locationCache') || '{}');
-      const updatedMap = {};
-
-      for (const rec of paginatedRecords) {
-        if (!rec.location?.lat || !rec.location?.lng) continue;
-
-        if (cache[rec._id]) {
-          updatedMap[rec._id] = cache[rec._id];
-        } else {
-          try {
-            const res = await axios.get(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${rec.location.lat}&lon=${rec.location.lng}`
-            );
-            updatedMap[rec._id] = res.data.display_name;
-            cache[rec._id] = res.data.display_name;
-          } catch {
-            updatedMap[rec._id] = 'Unknown';
-          }
-        }
-      }
-
-      setLocationNameMap((prev) => ({ ...prev, ...updatedMap }));
-      localStorage.setItem('locationCache', JSON.stringify(cache));
-    };
-
-    if (paginatedRecords.length) fetchLocationNames();
-  }, [paginatedRecords]);
-
   const isWithinOffice = (lat, lng) => {
-    const officeLat = 18.5204, officeLng = 73.8567, radius = 0.2;
+    const officeLat = 18.5204, officeLng = 73.8567, radius = 5;
     const toRad = (val) => (val * Math.PI) / 180;
     const R = 6371;
     const dLat = toRad(officeLat - lat);
@@ -129,16 +101,37 @@ const AttendancePage = () => {
       });
     }
 
+    if (status === 'Remote Work') {
+      setRemoteDialogOpen(true);
+      return;
+    }
+
+    markAttendance(status);
+  };
+
+  const markAttendance = async (status, extra = {}) => {
     setLoading(true);
+    const now = dayjs();
+    const formattedTime = now.format('HH:mm');
+
     try {
       const res = await axios.post(
         '/attendance/mark',
-        { status, location },
+        {
+          status,
+          location,
+          date: now.toISOString(),
+          checkInTime: formattedTime,
+          checkOutTime: '',
+          ...extra,
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setRecords([res.data.attendance, ...records]);
       setSnackbar({ open: true, message: `✅ Marked as ${status}!`, severity: 'success' });
       setAlreadyMarked(true);
+      setRemoteForm({ customer: '', workLocation: '', assignedBy: '' });
+      setRemoteDialogOpen(false);
     } catch (err) {
       setSnackbar({
         open: true,
@@ -150,14 +143,19 @@ const AttendancePage = () => {
     }
   };
 
+  const summaryData = [
+    { name: 'Present', value: records.filter((r) => r.status === 'Present').length },
+    { name: 'Absent', value: records.filter((r) => r.status === 'Absent').length },
+    { name: 'Half Day', value: records.filter((r) => r.status === 'Half Day').length },
+    { name: 'Remote Work', value: records.filter((r) => r.status === 'Remote Work').length },
+  ];
+
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text('Attendance Records', 10, 10);
     filteredRecords.forEach((rec, i) => {
       doc.text(
-        `${i + 1}. ${dayjs(rec.date).format('DD MMM YYYY')} - ${rec.status} | In: ${
-          rec.checkInTime || 'N/A'
-        } | Out: ${rec.checkOutTime || 'N/A'}`,
+        `${i + 1}. ${dayjs(rec.date).format('DD MMM YYYY')} - ${rec.status}`,
         10,
         20 + i * 10
       );
@@ -170,10 +168,11 @@ const AttendancePage = () => {
       filteredRecords.map((r) => ({
         Date: dayjs(r.date).format('DD MMM YYYY'),
         Status: r.status,
+        Customer: r.customer || '',
+        Location: r.workLocation || '',
+        AssignedBy: r.assignedBy || '',
         CheckIn: r.checkInTime || 'N/A',
         CheckOut: r.checkOutTime || 'N/A',
-        Latitude: r.location?.lat || 'N/A',
-        Longitude: r.location?.lng || 'N/A',
       }))
     );
     const workbook = XLSX.utils.book_new();
@@ -181,15 +180,9 @@ const AttendancePage = () => {
     XLSX.writeFile(workbook, 'attendance.xlsx');
   };
 
-  const summaryData = [
-    { name: 'Present', value: records.filter((r) => r.status === 'Present').length },
-    { name: 'Absent', value: records.filter((r) => r.status === 'Absent').length },
-    { name: 'Half Day', value: records.filter((r) => r.status === 'Half Day').length },
-    { name: 'Remote Work', value: records.filter((r) => r.status === 'Remote Work').length },
-  ];
-
   return (
     <>
+      {/* Background Blur */}
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundImage: `url(${backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(50px)', zIndex: -1 }} />
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(255,255,255,0.6)', zIndex: -1 }} />
 
@@ -238,26 +231,38 @@ const AttendancePage = () => {
 
         {loading ? (
           <Box textAlign="center" py={5}><CircularProgress /></Box>
+        ) : paginatedRecords.length === 0 ? (
+          <Typography variant="body1" align="center">No attendance records found.</Typography>
         ) : (
-          paginatedRecords.length === 0 ? (
-            <Typography variant="body1" align="center">No attendance records found.</Typography>
-          ) : (
-            <Paper sx={{ p: 2 }}>
-              {paginatedRecords.map((rec) => (
-                <Box key={rec._id} mb={2} p={2} border={1} borderColor="grey.300" borderRadius={2}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    {dayjs(rec.date).format('dddd, DD MMM YYYY')}
-                  </Typography>
-                  <Typography variant="body1">📌 Status: <strong>{rec.status}</strong></Typography>
-                  <Typography variant="body2">🕒 In: {rec.checkInTime || 'N/A'} | Out: {rec.checkOutTime || 'N/A'}</Typography>
-                  <Typography variant="caption">📍 Location: {locationNameMap[rec._id] || 'Loading...'}</Typography>
-                </Box>
-              ))}
-              <Stack direction="row" justifyContent="center" mt={2}>
-                <Pagination count={Math.ceil(filteredRecords.length / PAGE_SIZE)} page={page} onChange={(e, val) => setPage(val)} />
-              </Stack>
-            </Paper>
-          )
+          <Paper sx={{ p: 2 }}>
+            {paginatedRecords.map((rec) => (
+              <Box key={rec._id} mb={2} p={2} border={1} borderColor="grey.300" borderRadius={2}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  {dayjs(rec.date).format('dddd, DD MMM YYYY')}
+                </Typography>
+                <Typography variant="body1">📌 Status: <strong>{rec.status}</strong></Typography>
+                {rec.status === 'Remote Work' && (
+  <>
+    {rec.customer && (
+      <Typography variant="body2">👤 Customer: {rec.customer}</Typography>
+    )}
+    {rec.workLocation && (
+      <Typography variant="body2">🏢 Location: {rec.workLocation}</Typography>
+    )}
+    {rec.assignedBy && (
+      <Typography variant="body2">📨 Assigned By: {rec.assignedBy}</Typography>
+    )}
+  </>
+)}
+                <Typography variant="body2">
+                  🕒 In: {rec.checkInTime || 'N/A'} | Out: {rec.checkOutTime || 'N/A'}
+                </Typography>
+              </Box>
+            ))}
+            <Stack direction="row" justifyContent="center" mt={2}>
+              <Pagination count={Math.ceil(filteredRecords.length / PAGE_SIZE)} page={page} onChange={(e, val) => setPage(val)} />
+            </Stack>
+          </Paper>
         )}
 
         <Stack direction="row" spacing={2} mt={3} justifyContent="center">
@@ -266,12 +271,27 @@ const AttendancePage = () => {
         </Stack>
       </Container>
 
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
+      {/* Remote Work Dialog */}
+      <Dialog open={remoteDialogOpen} onClose={() => setRemoteDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Remote Work Details</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <TextField label="👤 Customer Name" value={remoteForm.customer} onChange={(e) => setRemoteForm({ ...remoteForm, customer: e.target.value })} required />
+          <TextField label="🏢 Work Location" value={remoteForm.workLocation} onChange={(e) => setRemoteForm({ ...remoteForm, workLocation: e.target.value })} required />
+          <TextField label="📨 Assigned By" value={remoteForm.assignedBy} onChange={(e) => setRemoteForm({ ...remoteForm, assignedBy: e.target.value })} required />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRemoteDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={() => {
+            if (!remoteForm.customer || !remoteForm.workLocation || !remoteForm.assignedBy) {
+              setSnackbar({ open: true, message: 'All fields are required.', severity: 'warning' });
+              return;
+            }
+            markAttendance('Remote Work', remoteForm);
+          }}>Submit</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar({ ...snackbar, open: false })}>
           {snackbar.message}
         </Alert>

@@ -1,4 +1,3 @@
-// 📁 src/pages/admin/AdminAttendancePage.js
 import React, { useEffect, useState } from 'react';
 import {
   Container,
@@ -78,7 +77,7 @@ const AdminAttendancePage = () => {
 
     autoTable(doc, {
       startY: 30,
-      head: [['#', 'Name', 'Email', 'Date', 'Status', 'Location', 'Check In', 'Check Out']],
+      head: [['#', 'Name', 'Email', 'Date', 'Status', 'Location', 'Check In', 'Check Out', 'Customer', 'Work Location', 'Assigned By']],
       body: records.map((rec, i) => [
         i + 1,
         rec.name,
@@ -92,6 +91,9 @@ const AdminAttendancePage = () => {
           : 'N/A',
         rec.checkInTime || 'N/A',
         rec.checkOutTime || 'N/A',
+        rec.status === 'Remote Work' ? rec.customer || '—' : '—',
+        rec.status === 'Remote Work' ? rec.workLocation || '—' : '—',
+        rec.status === 'Remote Work' ? rec.assignedBy || '—' : '—',
       ]),
       theme: 'striped',
     });
@@ -115,6 +117,9 @@ const AdminAttendancePage = () => {
           : 'N/A',
       CheckIn: r.checkInTime || 'N/A',
       CheckOut: r.checkOutTime || 'N/A',
+      Customer: r.status === 'Remote Work' ? r.customer || '—' : '—',
+      WorkLocation: r.status === 'Remote Work' ? r.workLocation || '—' : '—',
+      AssignedBy: r.status === 'Remote Work' ? r.assignedBy || '—' : '—',
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -178,6 +183,9 @@ const AdminAttendancePage = () => {
                     <TableCell>Location</TableCell>
                     <TableCell>Check In</TableCell>
                     <TableCell>Check Out</TableCell>
+                    <TableCell>Customer</TableCell>
+                    <TableCell>Work Location</TableCell>
+                    <TableCell>Assigned By</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -197,6 +205,9 @@ const AdminAttendancePage = () => {
                       </TableCell>
                       <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
                       <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
+                      <TableCell>{rec.status === 'Remote Work' ? rec.customer || '—' : '—'}</TableCell>
+                      <TableCell>{rec.status === 'Remote Work' ? rec.workLocation || '—' : '—'}</TableCell>
+                      <TableCell>{rec.status === 'Remote Work' ? rec.assignedBy || '—' : '—'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
