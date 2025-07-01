@@ -68,7 +68,7 @@ export default function EventCalendar() {
   const handleAddOrEdit = async () => {
     const payload = {
       ...eventData,
-      date: selectedDate.format('YYYY-MM-DD'),
+      date: selectedDate.toDate(),
     };
 
     try {
@@ -112,7 +112,8 @@ export default function EventCalendar() {
   };
 
   const filteredEvents = events.filter(
-    (event) => dayjs(event.date).format('YYYY-MM-DD') === selectedDate.format('YYYY-MM-DD')
+    (event) => dayjs(event.date).isSame(selectedDate, 'day')
+
   );
 
   return (
