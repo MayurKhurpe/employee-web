@@ -15,6 +15,8 @@ import {
 import AnnouncementIcon from "@mui/icons-material/Announcement";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import WorkIcon from "@mui/icons-material/Work";
+import EventIcon from "@mui/icons-material/Event";
+import TodayIcon from "@mui/icons-material/Today";
 import Birthday from "../components/Birthday";
 import axios from "api/axios";
 
@@ -24,6 +26,7 @@ export default function Dashboard() {
   const [announcements, setAnnouncements] = useState([]);
   const [holidays, setHolidays] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [events, setEvents] = useState({ today: [], upcoming: [] });
   const [shouldRefreshBirthday, setShouldRefreshBirthday] = useState(false);
 
   // ⏰ Live Clock
@@ -45,18 +48,18 @@ export default function Dashboard() {
   }, []);
 
   // 📣 Load Announcements
-useEffect(() => {
-  const token = localStorage.getItem("token");
+  useEffect(() => {
+    const token = localStorage.getItem("token");
 
-  axios
-    .get("/admin/broadcasts", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    .then((res) => setAnnouncements(res.data))
-    .catch((err) => console.error("❌ Failed to load announcements:", err));
-}, []);
+    axios
+      .get("/admin/broadcasts", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((res) => setAnnouncements(res.data))
+      .catch((err) => console.error("❌ Failed to load announcements:", err));
+  }, []);
 
   // 📅 Load Holidays
   useEffect(() => {
@@ -84,6 +87,20 @@ useEffect(() => {
       .then((res) => setSummary(res.data))
       .catch((err) =>
         console.error("❌ Failed to load attendance summary:", err)
+      );
+  }, []);
+
+  // 📌 Load My Events for Dashboard
+  useEffect(() => {
+    axios
+      .get("/events/dashboard", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      .then((res) => setEvents(res.data))
+      .catch((err) =>
+        console.error("❌ Failed to load dashboard events:", err)
       );
   }, []);
 
@@ -225,6 +242,43 @@ useEffect(() => {
             </List>
           ) : (
             <Typography>No announcements for you yet.</Typography>
+          )}
+        </SectionCard>
+
+        {/* 📌 Today's Events */}
+        <SectionCard title="Today's Events" color="#ff9800">
+          {events.today.length > 0 ? (
+            <List>
+              {events.today.map((e, i) => (
+                <ListItem key={i}>
+                  <TodayIcon sx={{ mr: 2 }} color="warning" />
+                  <ListItemText primary={e.title} secondary={e.category} />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No events today.</Typography>
+          )}
+        </SectionCard>
+
+        {/* 📌 Upcoming Events */}
+        <SectionCard title="Upcoming Events" color="#00bcd4">
+          {events.upcoming.length > 0 ? (
+            <List>
+              {events.upcoming.map((e, i) => (
+                <ListItem key={i}>
+                  <EventIcon sx={{ mr: 2 }} color="info" />
+                  <ListItemText
+                    primary={e.title}
+                    secondary={
+                      `${e.category} • ${new Date(e.date).toDateString()}`
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No upcoming events.</Typography>
           )}
         </SectionCard>
 
