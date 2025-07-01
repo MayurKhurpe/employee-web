@@ -128,7 +128,7 @@ export default function EventCalendar() {
   };
 
   const filteredEvents = events.filter(
-    (event) => event.date === selectedDate.format('YYYY-MM-DD')
+    (event) => dayjs(event.date).format('YYYY-MM-DD') === selectedDate.format('YYYY-MM-DD')
   );
 
   return (
