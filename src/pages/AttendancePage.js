@@ -49,7 +49,6 @@ const AttendancePage = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Fill in missing days as Absent
         const start = dayjs().subtract(29, 'day');
         const end = dayjs().startOf('day');
         const allDates = [];
@@ -163,11 +162,19 @@ const AttendancePage = () => {
     }
   };
 
+  // ✅ Monthly Summary Only
+  const currentMonth = dayjs().month();
+  const currentYear = dayjs().year();
+  const currentMonthRecords = records.filter((r) => {
+    const d = dayjs(r.date);
+    return d.month() === currentMonth && d.year() === currentYear;
+  });
+
   const summaryData = [
-    { name: 'Present', value: records.filter((r) => r.status === 'Present').length },
-    { name: 'Absent', value: records.filter((r) => r.status === 'Absent').length },
-    { name: 'Half Day', value: records.filter((r) => r.status === 'Half Day').length },
-    { name: 'Remote Work', value: records.filter((r) => r.status === 'Remote Work').length },
+    { name: 'Present', value: currentMonthRecords.filter((r) => r.status === 'Present').length },
+    { name: 'Absent', value: currentMonthRecords.filter((r) => r.status === 'Absent').length },
+    { name: 'Half Day', value: currentMonthRecords.filter((r) => r.status === 'Half Day').length },
+    { name: 'Remote Work', value: currentMonthRecords.filter((r) => r.status === 'Remote Work').length },
   ];
 
   const exportToPDF = () => {
@@ -202,7 +209,6 @@ const AttendancePage = () => {
 
   return (
     <>
-      {/* Background Blur */}
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundImage: `url(${backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(50px)', zIndex: -1 }} />
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(255,255,255,0.6)', zIndex: -1 }} />
 
@@ -219,7 +225,7 @@ const AttendancePage = () => {
         </Paper>
 
         <Paper sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6" gutterBottom>📊 Attendance Summary</Typography>
+          <Typography variant="h6" gutterBottom>📊 Attendance Summary (This Month)</Typography>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie data={summaryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
@@ -264,9 +270,9 @@ const AttendancePage = () => {
                   <strong style={{
                     color:
                       rec.status === 'Present' ? '#4caf50' :
-                      rec.status === 'Absent' ? '#f44336' :
-                      rec.status === 'Half Day' ? '#ff9800' :
-                      '#2196f3'
+                        rec.status === 'Absent' ? '#f44336' :
+                          rec.status === 'Half Day' ? '#ff9800' :
+                            '#2196f3'
                   }}>
                     {rec.status}
                   </strong>
@@ -295,7 +301,6 @@ const AttendancePage = () => {
         </Stack>
       </Container>
 
-      {/* Remote Work Dialog */}
       <Dialog open={remoteDialogOpen} onClose={() => setRemoteDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Remote Work Details</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
