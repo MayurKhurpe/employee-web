@@ -1,23 +1,9 @@
+// ✅ AdminAttendancePage.js
 import React, { useEffect, useState } from 'react';
 import {
-  Container,
-  Typography,
-  Paper,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  Snackbar,
-  Alert,
-  Stack,
-  Box,
-  Grid,
-  Pagination,
-  TextField,
+  Container, Typography, Paper, CircularProgress, Table, TableBody, TableCell,
+  TableContainer, TableHead, TableRow, Button, Snackbar, Alert, Stack, Box, Grid,
+  Pagination, TextField
 } from '@mui/material';
 import axios from 'api/axios';
 import dayjs from 'dayjs';
@@ -30,28 +16,31 @@ const PAGE_SIZE = 10;
 
 const AdminAttendancePage = () => {
   const [records, setRecords] = useState([]);
-  const [summary, setSummary] = useState({
-    todayPresent: 0,
-    todayAbsent: 0,
-    todayHalfDay: 0,
-    todayRemote: 0,
-    totalEmployees: 0,
-  });
+  const [summary, setSummary] = useState({});
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [userSearch, setUserSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
-  const fetchAllAttendance = async (pg = 1, date = selectedDate) => {
+  const fetchAllAttendance = async () => {
     setLoading(true);
     try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('page', page);
+      queryParams.append('limit', PAGE_SIZE);
+      if (selectedDate) queryParams.append('date', selectedDate);
+      if (selectedMonth) queryParams.append('month', selectedMonth);
+      if (userSearch) queryParams.append('search', userSearch);
+
       const [recordsRes, summaryRes] = await Promise.all([
-        axios.get(`/attendance/all?page=${pg}&limit=${PAGE_SIZE}&date=${date}`),
-        axios.get(`/attendance/summary?date=${date}`),
+        axios.get(`/attendance/all?${queryParams.toString()}`),
+        axios.get(`/attendance/summary?date=${selectedDate}`),
       ]);
+
       setRecords(recordsRes.data.records || []);
       setTotalPages(recordsRes.data.totalPages || 1);
       setSummary(summaryRes.data || {});
@@ -67,98 +56,85 @@ const AdminAttendancePage = () => {
   };
 
   useEffect(() => {
-    fetchAllAttendance(page, selectedDate);
-  }, [page, selectedDate]);
+    fetchAllAttendance();
+  }, [page, selectedDate, selectedMonth, userSearch]);
 
   const exportToPDF = () => {
-    setExporting(true);
     const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text('📋 All Employee Attendance', 14, 20);
+    doc.text('📋 Admin Attendance Report', 14, 20);
     autoTable(doc, {
       startY: 30,
-      head: [['#', 'Name', 'Email', 'Date', 'Status', 'Location', 'Check In', 'Check Out', 'Customer', 'Work Location', 'Assigned By']],
+      head: [['#', 'Name', 'Email', 'Date', 'Status', 'Check In', 'Check Out']],
       body: records.map((rec, i) => [
         i + 1,
         rec.name,
         rec.email,
         dayjs(rec.date).format('DD MMM YYYY'),
         rec.status,
-        typeof rec.location === 'string'
-          ? rec.location
-          : rec.location?.lat
-          ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
-          : 'N/A',
         rec.checkInTime || 'N/A',
         rec.checkOutTime || 'N/A',
-        rec.status === 'Remote Work' ? rec.customer || '—' : '—',
-        rec.status === 'Remote Work' ? rec.workLocation || '—' : '—',
-        rec.status === 'Remote Work' ? rec.assignedBy || '—' : '—',
       ]),
-      theme: 'striped',
     });
-    doc.save('all-attendance.pdf');
-    setExporting(false);
+    doc.save('attendance.pdf');
   };
 
   const exportToExcel = () => {
-    setExporting(true);
-    const data = records.map((r) => ({
-      Name: r.name,
-      Email: r.email,
-      Date: dayjs(r.date).format('DD MMM YYYY'),
-      Status: r.status,
-      Location:
-        typeof r.location === 'string'
-          ? r.location
-          : r.location?.lat
-          ? `${r.location.lat}, ${r.location.lng}`
-          : 'N/A',
-      CheckIn: r.checkInTime || 'N/A',
-      CheckOut: r.checkOutTime || 'N/A',
-      Customer: r.status === 'Remote Work' ? r.customer || '—' : '—',
-      WorkLocation: r.status === 'Remote Work' ? r.workLocation || '—' : '—',
-      AssignedBy: r.status === 'Remote Work' ? r.assignedBy || '—' : '—',
-    }));
-    const ws = XLSX.utils.json_to_sheet(data);
+    const ws = XLSX.utils.json_to_sheet(
+      records.map((r) => ({
+        Name: r.name,
+        Email: r.email,
+        Date: dayjs(r.date).format('DD MMM YYYY'),
+        Status: r.status,
+        CheckIn: r.checkInTime || 'N/A',
+        CheckOut: r.checkOutTime || 'N/A',
+      }))
+    );
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
-    XLSX.writeFile(wb, 'all-attendance.xlsx');
-    setExporting(false);
+    XLSX.writeFile(wb, 'attendance.xlsx');
   };
 
   return (
     <Box sx={{ background: 'linear-gradient(to bottom right, #e0f7fa, #e1f5fe)', minHeight: '100vh', py: 4 }}>
       <Container>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h4" fontWeight="bold">📋 Admin Attendance Overview</Typography>
-          <Button variant="contained" color="secondary" onClick={() => navigate('/admin')}>
-            🔙 Back to Admin Panel
-          </Button>
+          <Button variant="contained" onClick={() => navigate('/admin')}>🔙 Admin Panel</Button>
         </Box>
 
-        <Box sx={{ mb: 3 }}>
-          <TextField
-            label="📅 Filter by Date"
-            type="date"
-            value={selectedDate}
-            onChange={(e) => {
-              setPage(1);
-              setSelectedDate(e.target.value);
-            }}
-            InputLabelProps={{ shrink: true }}
-          />
-        </Box>
+        <Grid container spacing={2} mb={2}>
+          <Grid item xs={12} sm={4}>
+            <TextField fullWidth label="📅 Filter by Date" type="date"
+              value={selectedDate}
+              onChange={(e) => { setSelectedDate(e.target.value); setPage(1); }}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField fullWidth label="📆 Filter by Month (YYYY-MM)"
+              value={selectedMonth}
+              onChange={(e) => { setSelectedMonth(e.target.value); setPage(1); }}
+              placeholder="2025-07"
+            />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <TextField fullWidth label="🔍 Search by User Name/Email"
+              value={userSearch}
+              onChange={(e) => { setUserSearch(e.target.value); setPage(1); }}
+            />
+          </Grid>
+        </Grid>
 
         <Grid container spacing={2} mb={3}>
-          {[{ label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
-            { label: '❌ Absent', value: summary.todayAbsent, bg: '#ffebee' },
-            { label: '🕒 Half Day', value: summary.todayHalfDay, bg: '#fff3e0' },
-            { label: '🏃 Remote', value: summary.todayRemote, bg: '#f1f8e9' },
-            { label: '👥 Total', value: summary.totalEmployees, bg: '#e8f5e9' },
-          ].map((item, index) => (
-            <Grid item xs={12} sm={6} md={2.4} key={index}>
-              <Paper sx={{ p: 2, textAlign: 'center', backgroundColor: item.bg, boxShadow: 2 }}>
+          {[
+            { label: '✅ Present', value: summary.todayPresent },
+            { label: '❌ Absent', value: summary.todayAbsent },
+            { label: '🕒 Half Day', value: summary.todayHalfDay },
+            { label: '🏃 Remote', value: summary.todayRemote },
+            { label: '👥 Total', value: summary.totalEmployees },
+          ].map((item, i) => (
+            <Grid item xs={12} sm={6} md={2.4} key={i}>
+              <Paper sx={{ p: 2, textAlign: 'center', backgroundColor: '#f0f4c3' }}>
                 <Typography variant="h6">{item.label}</Typography>
                 <Typography variant="h4">{item.value}</Typography>
               </Paper>
@@ -166,20 +142,18 @@ const AdminAttendancePage = () => {
           ))}
         </Grid>
 
-        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-          <Button variant="outlined" onClick={exportToPDF} disabled={exporting}>🧾 Export PDF</Button>
-          <Button variant="outlined" onClick={exportToExcel} disabled={exporting}>📊 Export Excel</Button>
+        <Stack direction="row" spacing={2} mb={2}>
+          <Button variant="outlined" onClick={exportToPDF}>📄 Export PDF</Button>
+          <Button variant="outlined" onClick={exportToExcel}>📊 Export Excel</Button>
         </Stack>
 
         {loading ? (
-          <Box display="flex" justifyContent="center" mt={5}><CircularProgress /></Box>
+          <Box textAlign="center" mt={5}><CircularProgress /></Box>
         ) : records.length === 0 ? (
-          <Typography variant="body1" color="text.secondary" sx={{ mt: 4 }}>
-            No attendance records found.
-          </Typography>
+          <Typography align="center" mt={4}>No attendance found.</Typography>
         ) : (
           <>
-            <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 3 }}>
+            <TableContainer component={Paper}>
               <Table>
                 <TableHead sx={{ backgroundColor: '#bbdefb' }}>
                   <TableRow>
@@ -187,91 +161,34 @@ const AdminAttendancePage = () => {
                     <TableCell>Name</TableCell>
                     <TableCell>Email</TableCell>
                     <TableCell>Date</TableCell>
-                    <TableCell colSpan={4}>Status / Details</TableCell>
-                    <TableCell>Customer</TableCell>
-                    <TableCell>Work Location</TableCell>
-                    <TableCell>Assigned By</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Check In</TableCell>
+                    <TableCell>Check Out</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {records.map((rec, idx) => (
-                    <TableRow
-                      key={rec._id}
-                      sx={{
-                        backgroundColor:
-                          rec.status === 'Not Marked Yet'
-                            ? '#fff3e0'
-                            : rec.status === 'Remote Work'
-                            ? '#f1f8e9'
-                            : 'inherit',
-                      }}
-                    >
-                      <TableCell>{(page - 1) * PAGE_SIZE + idx + 1}</TableCell>
+                  {records.map((rec, i) => (
+                    <TableRow key={rec._id}>
+                      <TableCell>{(page - 1) * PAGE_SIZE + i + 1}</TableCell>
                       <TableCell>{rec.name}</TableCell>
                       <TableCell>{rec.email}</TableCell>
                       <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
-
-                      {rec.status === 'Remote Work' ? (
-                        <>
-                          <TableCell colSpan={4}>
-                            <Box sx={{ whiteSpace: 'pre-line' }}>
-                              🖥️ <strong>Remote Work</strong>{"\n"}
-                              👤 <strong>Customer:</strong> {rec.customer || '—'}{"\n"}
-                              🏢 <strong>Location:</strong> {rec.workLocation || '—'}{"\n"}
-                              📨 <strong>Assigned By:</strong> {rec.assignedBy || '—'}{"\n"}
-                              🕒 <strong>In:</strong> {rec.checkInTime || 'N/A'} | <strong>Out:</strong> {rec.checkOutTime || 'N/A'}
-                            </Box>
-                          </TableCell>
-                          <TableCell>—</TableCell>
-                          <TableCell>—</TableCell>
-                          <TableCell>—</TableCell>
-                        </>
-                      ) : (
-                        <>
-                          <TableCell>{rec.status}</TableCell>
-                          <TableCell>
-                            {typeof rec.location === 'string'
-                              ? rec.location
-                              : rec.location?.lat
-                              ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
-                              : 'N/A'}
-                          </TableCell>
-                          <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
-                          <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
-                          <TableCell>—</TableCell>
-                          <TableCell>—</TableCell>
-                          <TableCell>—</TableCell>
-                        </>
-                      )}
+                      <TableCell>{rec.status}</TableCell>
+                      <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
+                      <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </TableContainer>
             <Stack direction="row" justifyContent="center" mt={3}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={(e, value) => setPage(value)}
-                color="primary"
-              />
+              <Pagination count={totalPages} page={page} onChange={(e, val) => setPage(val)} />
             </Stack>
           </>
         )}
 
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={3000}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-        >
-          <Alert
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-            severity={snackbar.severity}
-            variant="filled"
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
+        <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          <Alert severity={snackbar.severity} variant="filled">{snackbar.message}</Alert>
         </Snackbar>
       </Container>
     </Box>

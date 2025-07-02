@@ -104,7 +104,7 @@ export default function HelpSupport() {
           {/* 📞 Contact Info */}
           <Box mt={4}>
             <Typography variant="h6" fontWeight="bold">📞 Contact Us</Typography>
-            <Typography>Email: hr@seekersautomation.com</Typography>
+            <Typography>Email: hr.seekersautomation@gmail.com</Typography>
             <Typography>Support Hours: 9:30 AM - 6:30 PM (Mon-Sat)</Typography>
           </Box>
 
