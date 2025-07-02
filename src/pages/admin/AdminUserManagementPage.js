@@ -37,7 +37,7 @@ const AdminUserManagementPage = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/admin/users', {
+      const res = await axios.get('/users/all', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
