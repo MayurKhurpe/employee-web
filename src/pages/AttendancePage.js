@@ -1,175 +1,87 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Container, Paper, Typography, Stack, Button, Snackbar, Alert, ToggleButtonGroup,
-  ToggleButton, CircularProgress, Pagination, Box, TextField, Dialog, DialogTitle,
-  DialogContent, DialogActions
+  Container,
+  Typography,
+  Paper,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  Snackbar,
+  Alert,
+  Stack,
+  Box,
+  Grid,
+  Pagination,
+  TextField,
+  MenuItem,
 } from '@mui/material';
-import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs from 'dayjs';
 import axios from 'api/axios';
+import dayjs from 'dayjs';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import {
-  PieChart, Pie, Cell, Legend, ResponsiveContainer, Tooltip as RechartsTooltip,
-} from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
-const PAGE_SIZE = 5;
-const COLORS = ['#4caf50', '#f44336', '#ff9800', '#2196f3'];
-const backgroundImageUrl = 'https://i.postimg.cc/7Z3grwLw/MES.jpg';
+const PAGE_SIZE = 10;
 
-const AttendancePage = () => {
+const AdminAttendancePage = () => {
   const [records, setRecords] = useState([]);
+  const [summary, setSummary] = useState({
+    todayPresent: 0,
+    todayAbsent: 0,
+    todayHalfDay: 0,
+    todayRemote: 0,
+    totalEmployees: 0,
+  });
+  const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedUser, setSelectedUser] = useState('');
+  const [users, setUsers] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
-  const [alreadyMarked, setAlreadyMarked] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('All');
-  const [filterDate, setFilterDate] = useState(null);
-  const [filterMonth, setFilterMonth] = useState(dayjs()); // ✅ New filter by month
-  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [location, setLocation] = useState({ lat: null, lng: null });
-  const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
-  const [remoteForm, setRemoteForm] = useState({ customer: '', workLocation: '', assignedBy: '' });
+  const [totalPages, setTotalPages] = useState(1);
+  const navigate = useNavigate();
 
-  const token = localStorage.getItem('token');
-  const userName = localStorage.getItem('userName') || '👤 User';
-
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setLocation({ lat: 'Permission denied', lng: '' })
-    );
-  }, []);
-
-  useEffect(() => {
-    const fetchAttendance = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.get('/attendance/my', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const start = dayjs().subtract(29, 'day');
-        const end = dayjs().startOf('day');
-        const allDates = [];
-        for (let i = 0; i <= end.diff(start, 'day'); i++) {
-          allDates.push(start.add(i, 'day').format('YYYY-MM-DD'));
-        }
-
-        const filled = allDates.map((dateStr) => {
-          const found = res.data.find((rec) => dayjs(rec.date).isSame(dateStr, 'day'));
-          return found || {
-            _id: dateStr,
-            date: dateStr,
-            status: 'Absent',
-            checkInTime: '',
-            checkOutTime: '',
-          };
-        });
-
-        const sorted = filled.sort((a, b) => new Date(b.date) - new Date(a.date));
-        setRecords(sorted);
-
-        const today = dayjs().startOf('day');
-        const marked = res.data.some((rec) => dayjs(rec.date).isSame(today, 'day'));
-        setAlreadyMarked(marked);
-      } catch {
-        setSnackbar({ open: true, message: 'Failed to fetch attendance', severity: 'error' });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAttendance();
-  }, [token]);
-
-  const filteredRecords = useMemo(() => {
-    let temp = [...records];
-    if (filterStatus !== 'All') temp = temp.filter((r) => r.status === filterStatus);
-    if (filterDate) temp = temp.filter((r) => dayjs(r.date).isSame(filterDate, 'day'));
-    if (search) temp = temp.filter((r) => r.status.toLowerCase().includes(search.toLowerCase()));
-    return temp;
-  }, [records, filterStatus, filterDate, search]);
-
-  const paginatedRecords = useMemo(() => {
-    return filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  }, [filteredRecords, page]);
-
-  const monthYearRecords = useMemo(() => {
-    return records.filter((r) => {
-      const d = dayjs(r.date);
-      return d.month() === filterMonth.month() && d.year() === filterMonth.year();
-    });
-  }, [records, filterMonth]);
-
-  const summaryData = [
-    { name: 'Present', value: monthYearRecords.filter((r) => r.status === 'Present').length },
-    { name: 'Absent', value: monthYearRecords.filter((r) => r.status === 'Absent').length },
-    { name: 'Half Day', value: monthYearRecords.filter((r) => r.status === 'Half Day').length },
-    { name: 'Remote Work', value: monthYearRecords.filter((r) => r.status === 'Remote Work').length },
-  ];
-
-  const handleMarkAttendance = async (status) => {
-    if (loading) return;
-    if (
-      location.lat &&
-      location.lng &&
-      status !== 'Remote Work' &&
-      !isWithinOffice(location.lat, location.lng)
-    ) {
-      return setSnackbar({
-        open: true,
-        message: '❌ Outside office boundary. Attendance not allowed.',
-        severity: 'error',
-      });
-    }
-
-    if (status === 'Remote Work') {
-      setRemoteDialogOpen(true);
-      return;
-    }
-
-    markAttendance(status);
-  };
-
-  const isWithinOffice = (lat, lng) => {
-    const officeLat = 18.5204, officeLng = 73.8567, radius = 5;
-    const toRad = (val) => (val * Math.PI) / 180;
-    const R = 6371;
-    const dLat = toRad(officeLat - lat);
-    const dLon = toRad(officeLng - lng);
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat)) * Math.cos(toRad(officeLat)) * Math.sin(dLon / 2) ** 2;
-    const distance = 2 * R * Math.asin(Math.sqrt(a));
-    return distance <= radius;
-  };
-
-  const markAttendance = async (status, extra = {}) => {
-    setLoading(true);
-    const now = dayjs();
-    const formattedTime = now.format('HH:mm');
-
+  // ✅ Fetch users for user dropdown
+  const fetchUsers = async () => {
     try {
-      const res = await axios.post(
-        '/attendance/mark',
-        {
-          status,
-          location,
-          date: now.toISOString(),
-          checkInTime: formattedTime,
-          checkOutTime: '',
-          ...extra,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setRecords((prev) => [res.data.attendance, ...prev.filter((r) => !dayjs(r.date).isSame(now, 'day'))]);
-      setSnackbar({ open: true, message: `✅ Marked as ${status}!`, severity: 'success' });
-      setAlreadyMarked(true);
-      setRemoteForm({ customer: '', workLocation: '', assignedBy: '' });
-      setRemoteDialogOpen(false);
+      const res = await axios.get('/users/all');
+      setUsers(res.data || []);
+    } catch (err) {
+      console.error('Failed to load users');
+    }
+  };
+
+  const fetchAllAttendance = async (pg = 1) => {
+    setLoading(true);
+    try {
+      const query = new URLSearchParams();
+      query.append('page', pg);
+      query.append('limit', PAGE_SIZE);
+      if (selectedMonth) query.append('month', selectedMonth);
+      else query.append('date', selectedDate);
+      if (selectedUser) query.append('userId', selectedUser);
+
+      const [recordsRes, summaryRes] = await Promise.all([
+        axios.get(`/attendance/all?${query.toString()}`),
+        axios.get(`/attendance/summary?${selectedMonth ? `month=${selectedMonth}` : `date=${selectedDate}`}`),
+      ]);
+
+      setRecords(recordsRes.data.records || []);
+      setTotalPages(recordsRes.data.totalPages || 1);
+      setSummary(summaryRes.data || {});
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err.response?.data?.message || '❌ Error marking attendance',
+        message: err.response?.data?.error || '❌ Failed to load attendance.',
         severity: 'error',
       });
     } finally {
@@ -177,165 +89,254 @@ const AttendancePage = () => {
     }
   };
 
+  useEffect(() => {
+    fetchUsers();
+    fetchAllAttendance(page);
+  }, [page, selectedDate, selectedMonth, selectedUser]);
+
   const exportToPDF = () => {
+    setExporting(true);
     const doc = new jsPDF();
-    doc.text('Attendance Records', 10, 10);
-    filteredRecords.forEach((rec, i) => {
-      doc.text(`${i + 1}. ${dayjs(rec.date).format('DD MMM YYYY')} - ${rec.status}`, 10, 20 + i * 10);
+    doc.setFontSize(14);
+    doc.text('📋 All Employee Attendance', 14, 20);
+    autoTable(doc, {
+      startY: 30,
+      head: [['#', 'Name', 'Email', 'Date', 'Status', 'Location', 'Check In', 'Check Out', 'Customer', 'Work Location', 'Assigned By']],
+      body: records.map((rec, i) => [
+        i + 1,
+        rec.name,
+        rec.email,
+        dayjs(rec.date).format('DD MMM YYYY'),
+        rec.status,
+        typeof rec.location === 'string'
+          ? rec.location
+          : rec.location?.lat
+          ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
+          : 'N/A',
+        rec.checkInTime || 'N/A',
+        rec.checkOutTime || 'N/A',
+        rec.status === 'Remote Work' ? rec.customer || '—' : '—',
+        rec.status === 'Remote Work' ? rec.workLocation || '—' : '—',
+        rec.status === 'Remote Work' ? rec.assignedBy || '—' : '—',
+      ]),
+      theme: 'striped',
     });
-    doc.save('attendance.pdf');
+    doc.save('all-attendance.pdf');
+    setExporting(false);
   };
 
   const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(
-      filteredRecords.map((r) => ({
-        Date: dayjs(r.date).format('DD MMM YYYY'),
-        Status: r.status,
-        Customer: r.customer || '',
-        Location: r.workLocation || '',
-        AssignedBy: r.assignedBy || '',
-        CheckIn: r.checkInTime || 'N/A',
-        CheckOut: r.checkOutTime || 'N/A',
-      }))
-    );
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
-    XLSX.writeFile(workbook, 'attendance.xlsx');
+    setExporting(true);
+    const data = records.map((r) => ({
+      Name: r.name,
+      Email: r.email,
+      Date: dayjs(r.date).format('DD MMM YYYY'),
+      Status: r.status,
+      Location:
+        typeof r.location === 'string'
+          ? r.location
+          : r.location?.lat
+          ? `${r.location.lat}, ${r.location.lng}`
+          : 'N/A',
+      CheckIn: r.checkInTime || 'N/A',
+      CheckOut: r.checkOutTime || 'N/A',
+      Customer: r.status === 'Remote Work' ? r.customer || '—' : '—',
+      WorkLocation: r.status === 'Remote Work' ? r.workLocation || '—' : '—',
+      AssignedBy: r.status === 'Remote Work' ? r.assignedBy || '—' : '—',
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+    XLSX.writeFile(wb, 'all-attendance.xlsx');
+    setExporting(false);
   };
 
   return (
-    <>
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundImage: `url(${backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(50px)', zIndex: -1 }} />
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(255,255,255,0.6)', zIndex: -1 }} />
+    <Box sx={{ background: 'linear-gradient(to bottom right, #e0f7fa, #e1f5fe)', minHeight: '100vh', py: 4 }}>
+      <Container>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" fontWeight="bold">📋 Admin Attendance Overview</Typography>
+          <Button variant="contained" color="secondary" onClick={() => navigate('/admin')}>
+            🔙 Back to Admin Panel
+          </Button>
+        </Box>
 
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>📅 Attendance Tracker</Typography>
+        <Grid container spacing={2} mb={3}>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              label="📅 Filter by Date"
+              type="date"
+              fullWidth
+              value={selectedDate}
+              onChange={(e) => {
+                setSelectedMonth('');
+                setPage(1);
+                setSelectedDate(e.target.value);
+              }}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
 
-        <Paper sx={{ p: 2, mb: 3, textAlign: 'center' }}>
-          <Typography variant="subtitle1" gutterBottom>Welcome {userName}, mark your attendance below 👇</Typography>
-          <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap">
-            <Button variant="contained" color="success" disabled={alreadyMarked || loading} onClick={() => handleMarkAttendance('Present')}>Mark Present</Button>
-            <Button variant="contained" color="warning" disabled={alreadyMarked || loading} onClick={() => handleMarkAttendance('Half Day')}>Mark Half Day</Button>
-            <Button variant="contained" color="info" disabled={alreadyMarked || loading} onClick={() => handleMarkAttendance('Remote Work')}>Remote Work</Button>
-          </Stack>
-        </Paper>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              label="📆 Filter by Month"
+              type="month"
+              fullWidth
+              value={selectedMonth}
+              onChange={(e) => {
+                setSelectedDate('');
+                setPage(1);
+                setSelectedMonth(e.target.value);
+              }}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
 
-        <Paper sx={{ p: 3, mb: 4 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">📊 Attendance Summary - {filterMonth.format('MMMM YYYY')}</Typography>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                views={['year', 'month']}
-                label="📆 Filter Summary by Month"
-                minDate={dayjs().subtract(1, 'year')}
-                maxDate={dayjs()}
-                value={filterMonth}
-                onChange={(val) => setFilterMonth(val)}
-                slotProps={{ textField: { size: 'small' } }}
-              />
-            </LocalizationProvider>
-          </Stack>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie data={summaryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                {summaryData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <RechartsTooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </Paper>
+          <Grid item xs={12} sm={4}>
+            <TextField
+              select
+              label="👤 Filter by User"
+              fullWidth
+              value={selectedUser}
+              onChange={(e) => {
+                setPage(1);
+                setSelectedUser(e.target.value);
+              }}
+            >
+              <MenuItem value="">All Users</MenuItem>
+              {users.map((user) => (
+                <MenuItem key={user._id} value={user._id}>{user.name}</MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+        </Grid>
 
-        <Stack direction="row" spacing={2} alignItems="center" mb={2} flexWrap="wrap">
-          <ToggleButtonGroup value={filterStatus} exclusive onChange={(e, val) => val && setFilterStatus(val)} size="small">
-            <ToggleButton value="All">All</ToggleButton>
-            <ToggleButton value="Present">Present</ToggleButton>
-            <ToggleButton value="Absent">Absent</ToggleButton>
-            <ToggleButton value="Half Day">Half Day</ToggleButton>
-            <ToggleButton value="Remote Work">Remote</ToggleButton>
-          </ToggleButtonGroup>
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DatePicker label="📅 Filter by Date" value={filterDate} onChange={(val) => setFilterDate(val)} />
-          </LocalizationProvider>
-          <TextField label="🔍 Search" value={search} onChange={(e) => setSearch(e.target.value)} size="small" />
-          <Button variant="outlined" onClick={() => { setFilterDate(null); setSearch(''); setFilterStatus('All'); }}>Clear</Button>
+        <Grid container spacing={2} mb={3}>
+          {[{ label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
+            { label: '❌ Absent', value: summary.todayAbsent, bg: '#ffebee' },
+            { label: '🕒 Half Day', value: summary.todayHalfDay, bg: '#fff3e0' },
+            { label: '🏃 Remote', value: summary.todayRemote, bg: '#f1f8e9' },
+            { label: '👥 Total', value: summary.totalEmployees, bg: '#e8f5e9' },
+          ].map((item, index) => (
+            <Grid item xs={12} sm={6} md={2.4} key={index}>
+              <Paper sx={{ p: 2, textAlign: 'center', backgroundColor: item.bg, boxShadow: 2 }}>
+                <Typography variant="h6">{item.label}</Typography>
+                <Typography variant="h4">{item.value}</Typography>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
+
+        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+          <Button variant="outlined" onClick={exportToPDF} disabled={exporting}>🧾 Export PDF</Button>
+          <Button variant="outlined" onClick={exportToExcel} disabled={exporting}>📊 Export Excel</Button>
         </Stack>
 
         {loading ? (
-          <Box textAlign="center" py={5}><CircularProgress /></Box>
-        ) : paginatedRecords.length === 0 ? (
-          <Typography variant="body1" align="center">No attendance records found.</Typography>
+          <Box display="flex" justifyContent="center" mt={5}><CircularProgress /></Box>
+        ) : records.length === 0 ? (
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 4 }}>
+            No attendance records found.
+          </Typography>
         ) : (
-          <Paper sx={{ p: 2 }}>
-            {paginatedRecords.map((rec) => (
-              <Box key={rec._id} mb={2} p={2} border={1} borderColor="grey.300" borderRadius={2}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  {dayjs(rec.date).format('dddd, DD MMM YYYY')}
-                </Typography>
-                <Typography variant="body1">
-                  📌 Status:{' '}
-                  <strong style={{
-                    color:
-                      rec.status === 'Present' ? '#4caf50' :
-                      rec.status === 'Absent' ? '#f44336' :
-                      rec.status === 'Half Day' ? '#ff9800' :
-                      '#2196f3'
-                  }}>
-                    {rec.status}
-                  </strong>
-                </Typography>
-                {rec.status === 'Remote Work' && (
-                  <>
-                    {rec.customer && <Typography variant="body2">👤 Customer: {rec.customer}</Typography>}
-                    {rec.workLocation && <Typography variant="body2">🏢 Location: {rec.workLocation}</Typography>}
-                    {rec.assignedBy && <Typography variant="body2">📨 Assigned By: {rec.assignedBy}</Typography>}
-                  </>
-                )}
-                <Typography variant="body2">
-                  🕒 In: {rec.checkInTime || 'N/A'} | Out: {rec.checkOutTime || 'N/A'}
-                </Typography>
-              </Box>
-            ))}
-            <Stack direction="row" justifyContent="center" mt={2}>
-              <Pagination count={Math.ceil(filteredRecords.length / PAGE_SIZE)} page={page} onChange={(e, val) => setPage(val)} />
+          <>
+            <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 3 }}>
+              <Table>
+                <TableHead sx={{ backgroundColor: '#bbdefb' }}>
+                  <TableRow>
+                    <TableCell>#</TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell colSpan={4}>Status / Details</TableCell>
+                    <TableCell>Customer</TableCell>
+                    <TableCell>Work Location</TableCell>
+                    <TableCell>Assigned By</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {records.map((rec, idx) => (
+                    <TableRow
+                      key={rec._id}
+                      sx={{
+                        backgroundColor:
+                          rec.status === 'Not Marked Yet'
+                            ? '#fff3e0'
+                            : rec.status === 'Remote Work'
+                            ? '#f1f8e9'
+                            : 'inherit',
+                      }}
+                    >
+                      <TableCell>{(page - 1) * PAGE_SIZE + idx + 1}</TableCell>
+                      <TableCell>{rec.name}</TableCell>
+                      <TableCell>{rec.email}</TableCell>
+                      <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
+
+                      {rec.status === 'Remote Work' ? (
+                        <>
+                          <TableCell colSpan={4}>
+                            <Box sx={{ whiteSpace: 'pre-line' }}>
+                              🖥️ <strong>Remote Work</strong>{"\n"}
+                              👤 <strong>Customer:</strong> {rec.customer || '—'}{"\n"}
+                              🏢 <strong>Location:</strong> {rec.workLocation || '—'}{"\n"}
+                              📨 <strong>Assigned By:</strong> {rec.assignedBy || '—'}{"\n"}
+                              🕒 <strong>In:</strong> {rec.checkInTime || 'N/A'} | <strong>Out:</strong> {rec.checkOutTime || 'N/A'}
+                            </Box>
+                          </TableCell>
+                          <TableCell>—</TableCell>
+                          <TableCell>—</TableCell>
+                          <TableCell>—</TableCell>
+                        </>
+                      ) : (
+                        <>
+                          <TableCell>{rec.status}</TableCell>
+                          <TableCell>
+                            {typeof rec.location === 'string'
+                              ? rec.location
+                              : rec.location?.lat
+                              ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
+                              : 'N/A'}
+                          </TableCell>
+                          <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
+                          <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
+                          <TableCell>—</TableCell>
+                          <TableCell>—</TableCell>
+                          <TableCell>—</TableCell>
+                        </>
+                      )}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Stack direction="row" justifyContent="center" mt={3}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(e, value) => setPage(value)}
+                color="primary"
+              />
             </Stack>
-          </Paper>
+          </>
         )}
 
-        <Stack direction="row" spacing={2} mt={3} justifyContent="center">
-          <Button variant="outlined" onClick={exportToPDF}>📄 Export PDF</Button>
-          <Button variant="outlined" onClick={exportToExcel}>📊 Export Excel</Button>
-        </Stack>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={3000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          <Alert
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Container>
-
-      <Dialog open={remoteDialogOpen} onClose={() => setRemoteDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Remote Work Details</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-          <TextField label="👤 Customer Name" value={remoteForm.customer} onChange={(e) => setRemoteForm({ ...remoteForm, customer: e.target.value })} required />
-          <TextField label="🏢 Work Location" value={remoteForm.workLocation} onChange={(e) => setRemoteForm({ ...remoteForm, workLocation: e.target.value })} required />
-          <TextField label="📨 Assigned By" value={remoteForm.assignedBy} onChange={(e) => setRemoteForm({ ...remoteForm, assignedBy: e.target.value })} required />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRemoteDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={() => {
-            if (!remoteForm.customer || !remoteForm.workLocation || !remoteForm.assignedBy) {
-              setSnackbar({ open: true, message: 'All fields are required.', severity: 'warning' });
-              return;
-            }
-            markAttendance('Remote Work', remoteForm);
-          }}>Submit</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
-        <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </>
+    </Box>
   );
 };
 
-export default AttendancePage;
+export default AdminAttendancePage;
