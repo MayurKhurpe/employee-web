@@ -1,4 +1,3 @@
-// 📁 src/pages/AttendancePage.js
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Container, Paper, Typography, Stack, Button, Snackbar, Alert, ToggleButtonGroup,
@@ -49,10 +48,31 @@ const AttendancePage = () => {
         const res = await axios.get('/attendance/my', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const sorted = res.data.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Fill in missing days as Absent
+        const start = dayjs().subtract(29, 'day');
+        const end = dayjs().startOf('day');
+        const allDates = [];
+        for (let i = 0; i <= end.diff(start, 'day'); i++) {
+          allDates.push(start.add(i, 'day').format('YYYY-MM-DD'));
+        }
+
+        const filled = allDates.map((dateStr) => {
+          const found = res.data.find((rec) => dayjs(rec.date).isSame(dateStr, 'day'));
+          return found || {
+            _id: dateStr,
+            date: dateStr,
+            status: 'Absent',
+            checkInTime: '',
+            checkOutTime: '',
+          };
+        });
+
+        const sorted = filled.sort((a, b) => new Date(b.date) - new Date(a.date));
         setRecords(sorted);
+
         const today = dayjs().startOf('day');
-        const marked = sorted.some((rec) => dayjs(rec.date).isSame(today, 'day'));
+        const marked = res.data.some((rec) => dayjs(rec.date).isSame(today, 'day'));
         setAlreadyMarked(marked);
       } catch {
         setSnackbar({ open: true, message: 'Failed to fetch attendance', severity: 'error' });
@@ -127,7 +147,7 @@ const AttendancePage = () => {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setRecords([res.data.attendance, ...records]);
+      setRecords((prev) => [res.data.attendance, ...prev.filter((r) => !dayjs(r.date).isSame(now, 'day'))]);
       setSnackbar({ open: true, message: `✅ Marked as ${status}!`, severity: 'success' });
       setAlreadyMarked(true);
       setRemoteForm({ customer: '', workLocation: '', assignedBy: '' });
@@ -193,7 +213,6 @@ const AttendancePage = () => {
           <Typography variant="subtitle1" gutterBottom>Welcome {userName}, mark your attendance below 👇</Typography>
           <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap">
             <Button variant="contained" color="success" disabled={alreadyMarked || loading} onClick={() => handleMarkAttendance('Present')}>Mark Present</Button>
-            <Button variant="contained" color="error" disabled={alreadyMarked || loading} onClick={() => handleMarkAttendance('Absent')}>Mark Absent</Button>
             <Button variant="contained" color="warning" disabled={alreadyMarked || loading} onClick={() => handleMarkAttendance('Half Day')}>Mark Half Day</Button>
             <Button variant="contained" color="info" disabled={alreadyMarked || loading} onClick={() => handleMarkAttendance('Remote Work')}>Remote Work</Button>
           </Stack>
@@ -240,20 +259,25 @@ const AttendancePage = () => {
                 <Typography variant="subtitle2" color="text.secondary">
                   {dayjs(rec.date).format('dddd, DD MMM YYYY')}
                 </Typography>
-                <Typography variant="body1">📌 Status: <strong>{rec.status}</strong></Typography>
+                <Typography variant="body1">
+                  📌 Status:{' '}
+                  <strong style={{
+                    color:
+                      rec.status === 'Present' ? '#4caf50' :
+                      rec.status === 'Absent' ? '#f44336' :
+                      rec.status === 'Half Day' ? '#ff9800' :
+                      '#2196f3'
+                  }}>
+                    {rec.status}
+                  </strong>
+                </Typography>
                 {rec.status === 'Remote Work' && (
-  <>
-    {rec.customer && (
-      <Typography variant="body2">👤 Customer: {rec.customer}</Typography>
-    )}
-    {rec.workLocation && (
-      <Typography variant="body2">🏢 Location: {rec.workLocation}</Typography>
-    )}
-    {rec.assignedBy && (
-      <Typography variant="body2">📨 Assigned By: {rec.assignedBy}</Typography>
-    )}
-  </>
-)}
+                  <>
+                    {rec.customer && <Typography variant="body2">👤 Customer: {rec.customer}</Typography>}
+                    {rec.workLocation && <Typography variant="body2">🏢 Location: {rec.workLocation}</Typography>}
+                    {rec.assignedBy && <Typography variant="body2">📨 Assigned By: {rec.assignedBy}</Typography>}
+                  </>
+                )}
                 <Typography variant="body2">
                   🕒 In: {rec.checkInTime || 'N/A'} | Out: {rec.checkOutTime || 'N/A'}
                 </Typography>
