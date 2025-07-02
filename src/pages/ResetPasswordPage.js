@@ -88,12 +88,12 @@ export default function ResetPasswordPage() {
           <Box display="flex" alignItems="center" gap={1} mb={3}>
             <ResetIcon color="primary" />
             <Typography variant="h5" fontWeight="bold">
-              🔑 Reset Your Password
+              🔑 Reset Your Password 🤔
             </Typography>
           </Box>
 
           <Typography variant="body2" color="text.secondary" mb={2}>
-            Choose a new strong password you'll remember.
+            🕵️‍♀️ Choose a new strong password you'll remember 💪.
           </Typography>
 
           <form onSubmit={handleSubmit}>
