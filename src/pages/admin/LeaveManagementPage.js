@@ -16,10 +16,11 @@ import {
   Chip,
   Snackbar,
   Alert,
+  MenuItem,
 } from '@mui/material';
 import { HowToReg as LeaveIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'api/axios'; // ✅ Centralized Axios
+import axios from 'api/axios';
 
 const LeaveManagementPage = () => {
   const [leaveRequests, setLeaveRequests] = useState([]);
@@ -28,18 +29,39 @@ const LeaveManagementPage = () => {
   const [action, setAction] = useState('');
   const [open, setOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+
+  // 🔍 Filter states
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedUser, setSelectedUser] = useState('');
+  const [users, setUsers] = useState([]);
+
   const navigate = useNavigate();
 
+  // ✅ Fetch Users for Filter Dropdown
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('/users/all', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsers(res.data || []);
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+    }
+  };
+
+  // ✅ Fetch Leave Requests with Filters
   const fetchLeaves = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/leave/admin/all', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const query = new URLSearchParams();
+      if (selectedMonth) query.append('month', selectedMonth);
+      if (selectedUser) query.append('userId', selectedUser);
+
+      const res = await axios.get(`/leave/admin/all?${query.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      // ✅ Fixed: use res.data.leaves instead of res.data
       if (Array.isArray(res.data.leaves)) {
         setLeaveRequests(res.data.leaves);
       } else {
@@ -51,8 +73,12 @@ const LeaveManagementPage = () => {
   };
 
   useEffect(() => {
-    fetchLeaves();
+    fetchUsers();
   }, []);
+
+  useEffect(() => {
+    fetchLeaves();
+  }, [selectedMonth, selectedUser]);
 
   const handleOpenDialog = (request, actionType) => {
     setSelectedRequest(request);
@@ -77,9 +103,7 @@ const LeaveManagementPage = () => {
         `/leave/admin/${action === 'Approved' ? 'approve' : 'reject'}/${selectedRequest._id}`,
         { responseMessage: note },
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -145,6 +169,34 @@ const LeaveManagementPage = () => {
           Review all submitted leave requests and take appropriate actions with notes.
         </Typography>
       </Paper>
+
+      {/* 🔍 Filter Controls */}
+      <Grid container spacing={2} mb={3}>
+        <Grid item xs={12} sm={6} md={4}>
+          <TextField
+            label="📆 Filter by Month"
+            type="month"
+            fullWidth
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <TextField
+            select
+            label="👤 Filter by User"
+            fullWidth
+            value={selectedUser}
+            onChange={(e) => setSelectedUser(e.target.value)}
+          >
+            <MenuItem value="">All Users</MenuItem>
+            {users.map((u) => (
+              <MenuItem key={u._id} value={u._id}>{u.name}</MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+      </Grid>
 
       <Grid container spacing={3}>
         {leaveRequests.map((request) => (
