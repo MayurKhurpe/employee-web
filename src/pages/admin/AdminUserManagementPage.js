@@ -37,7 +37,7 @@ const AdminUserManagementPage = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/users/all', {
+      const res = await axios.get('/admin/pending-users', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
@@ -53,7 +53,6 @@ const AdminUserManagementPage = () => {
     fetchUsers();
   }, []);
 
-  // 🔍 Live Filter
   useEffect(() => {
     const filtered = users.filter(
       (user) =>
@@ -65,8 +64,8 @@ const AdminUserManagementPage = () => {
 
   const handleApprove = async (email) => {
     try {
-      const res = await axios.put(
-        `/admin/users/approve-by-email`,
+      const res = await axios.post(
+        `/admin/approve-user`,
         { email },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -80,7 +79,7 @@ const AdminUserManagementPage = () => {
   const handleDelete = async (email) => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
     try {
-      const res = await axios.delete(`/admin/users/delete-by-email`, {
+      const res = await axios.delete(`/admin/delete-user`, {
         headers: { Authorization: `Bearer ${token}` },
         data: { email },
       });
@@ -134,7 +133,6 @@ const AdminUserManagementPage = () => {
         backdropFilter: 'blur(8px)',
       }}
     >
-      {/* 🔙 Header */}
       <Paper
         elevation={3}
         sx={{
@@ -173,7 +171,6 @@ const AdminUserManagementPage = () => {
         <Divider sx={{ my: 2 }} />
       </Paper>
 
-      {/* 🔍 Search + Table */}
       <Paper
         elevation={2}
         sx={{
@@ -222,7 +219,6 @@ const AdminUserManagementPage = () => {
         )}
       </Paper>
 
-      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

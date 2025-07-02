@@ -21,13 +21,13 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 const AdminHolidaysPage = () => {
   const navigate = useNavigate();
   const [holidays, setHolidays] = useState([]);
-  const [newHoliday, setNewHoliday] = useState({ name: '', date: '' });
+  const [newHoliday, setNewHoliday] = useState({ title: '', date: '', description: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
   // ✅ Fetch all holidays
   const fetchHolidays = async () => {
     try {
-      const res = await axios.get('/admin/holidays');
+      const res = await axios.get('/holidays');
       setHolidays(res.data || []);
     } catch (err) {
       console.error('Failed to fetch holidays:', err);
@@ -41,22 +41,22 @@ const AdminHolidaysPage = () => {
 
   // ✅ Add new holiday
   const handleAddHoliday = async () => {
-    if (!newHoliday.name.trim() || !newHoliday.date) {
+    if (!newHoliday.title.trim() || !newHoliday.date) {
       return setSnackbar({
         open: true,
-        message: '⚠️ Please enter both name and date.',
+        message: '⚠️ Please enter both title and date.',
         severity: 'warning',
       });
     }
 
     try {
-      const res = await axios.post('/admin/holidays', newHoliday);
+      const res = await axios.post('/holidays', newHoliday);
       setSnackbar({
         open: true,
         message: res.data.message || '✅ Holiday added!',
         severity: 'success',
       });
-      setNewHoliday({ name: '', date: '' });
+      setNewHoliday({ title: '', date: '', description: '' });
       fetchHolidays();
     } catch (err) {
       console.error('Failed to add holiday:', err);
@@ -113,9 +113,9 @@ const AdminHolidaysPage = () => {
         {/* ➕ Add Holiday Form */}
         <Box sx={{ display: 'flex', gap: 2, my: 2, flexWrap: 'wrap' }}>
           <TextField
-            label="Holiday Name"
-            value={newHoliday.name}
-            onChange={(e) => setNewHoliday({ ...newHoliday, name: e.target.value })}
+            label="Title"
+            value={newHoliday.title}
+            onChange={(e) => setNewHoliday({ ...newHoliday, title: e.target.value })}
             fullWidth
             required
           />
@@ -126,6 +126,13 @@ const AdminHolidaysPage = () => {
             InputLabelProps={{ shrink: true }}
             fullWidth
             required
+          />
+          <TextField
+            label="Description (optional)"
+            value={newHoliday.description}
+            onChange={(e) => setNewHoliday({ ...newHoliday, description: e.target.value })}
+            fullWidth
+            multiline
           />
           <Button
             variant="contained"
@@ -156,10 +163,12 @@ const AdminHolidaysPage = () => {
               <ListItem key={holiday._id}>
                 <EventIcon color="primary" sx={{ mr: 2 }} />
                 <ListItemText
-                  primary={holiday.name || 'Unnamed'}
+                  primary={holiday.title || 'Untitled'}
                   secondary={
                     holiday.date
-                      ? new Date(holiday.date).toLocaleDateString()
+                      ? `${new Date(holiday.date).toLocaleDateString()} ${
+                          holiday.description ? ` - ${holiday.description}` : ''
+                        }`
                       : 'Date not set'
                   }
                 />
@@ -169,7 +178,7 @@ const AdminHolidaysPage = () => {
         </List>
       </Paper>
 
-      {/* ✅ Snackbar for actions */}
+      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}

@@ -52,7 +52,7 @@ export default function Dashboard() {
     const token = localStorage.getItem("token");
 
     axios
-      .get("/admin/broadcasts", {
+      .get("/broadcasts", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
