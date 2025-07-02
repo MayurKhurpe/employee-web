@@ -21,7 +21,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 const AdminHolidaysPage = () => {
   const navigate = useNavigate();
   const [holidays, setHolidays] = useState([]);
-  const [newHoliday, setNewHoliday] = useState({ title: '', date: '', description: '' });
+  const [newHoliday, setNewHoliday] = useState({ name: '', date: '', description: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
   // ✅ Fetch all holidays
@@ -41,22 +41,24 @@ const AdminHolidaysPage = () => {
 
   // ✅ Add new holiday
   const handleAddHoliday = async () => {
-    if (!newHoliday.title.trim() || !newHoliday.date) {
+    const { name, date, description } = newHoliday;
+
+    if (!name.trim() || !date) {
       return setSnackbar({
         open: true,
-        message: '⚠️ Please enter both title and date.',
+        message: '⚠️ Please enter both name and date.',
         severity: 'warning',
       });
     }
 
     try {
-      const res = await axios.post('/holidays', newHoliday);
+      const res = await axios.post('/holidays', { name, date, description });
       setSnackbar({
         open: true,
         message: res.data.message || '✅ Holiday added!',
         severity: 'success',
       });
-      setNewHoliday({ title: '', date: '', description: '' });
+      setNewHoliday({ name: '', date: '', description: '' });
       fetchHolidays();
     } catch (err) {
       console.error('Failed to add holiday:', err);
@@ -113,9 +115,9 @@ const AdminHolidaysPage = () => {
         {/* ➕ Add Holiday Form */}
         <Box sx={{ display: 'flex', gap: 2, my: 2, flexWrap: 'wrap' }}>
           <TextField
-            label="Title"
-            value={newHoliday.title}
-            onChange={(e) => setNewHoliday({ ...newHoliday, title: e.target.value })}
+            label="Holiday Name"
+            value={newHoliday.name}
+            onChange={(e) => setNewHoliday({ ...newHoliday, name: e.target.value })}
             fullWidth
             required
           />
@@ -163,12 +165,10 @@ const AdminHolidaysPage = () => {
               <ListItem key={holiday._id}>
                 <EventIcon color="primary" sx={{ mr: 2 }} />
                 <ListItemText
-                  primary={holiday.title || 'Untitled'}
+                  primary={holiday.name || 'Unnamed'}
                   secondary={
                     holiday.date
-                      ? `${new Date(holiday.date).toLocaleDateString()} ${
-                          holiday.description ? ` - ${holiday.description}` : ''
-                        }`
+                      ? new Date(holiday.date).toLocaleDateString()
                       : 'Date not set'
                   }
                 />
@@ -178,7 +178,7 @@ const AdminHolidaysPage = () => {
         </List>
       </Paper>
 
-      {/* ✅ Snackbar */}
+      {/* ✅ Snackbar for actions */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
