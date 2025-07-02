@@ -25,6 +25,7 @@ const AttendancePage = () => {
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterDate, setFilterDate] = useState(null);
+  const [filterMonth, setFilterMonth] = useState(dayjs()); // ✅ New filter by month
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [location, setLocation] = useState({ lat: null, lng: null });
@@ -94,16 +95,19 @@ const AttendancePage = () => {
     return filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   }, [filteredRecords, page]);
 
-  const isWithinOffice = (lat, lng) => {
-    const officeLat = 18.5204, officeLng = 73.8567, radius = 5;
-    const toRad = (val) => (val * Math.PI) / 180;
-    const R = 6371;
-    const dLat = toRad(officeLat - lat);
-    const dLon = toRad(officeLng - lng);
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat)) * Math.cos(toRad(officeLat)) * Math.sin(dLon / 2) ** 2;
-    const distance = 2 * R * Math.asin(Math.sqrt(a));
-    return distance <= radius;
-  };
+  const monthYearRecords = useMemo(() => {
+    return records.filter((r) => {
+      const d = dayjs(r.date);
+      return d.month() === filterMonth.month() && d.year() === filterMonth.year();
+    });
+  }, [records, filterMonth]);
+
+  const summaryData = [
+    { name: 'Present', value: monthYearRecords.filter((r) => r.status === 'Present').length },
+    { name: 'Absent', value: monthYearRecords.filter((r) => r.status === 'Absent').length },
+    { name: 'Half Day', value: monthYearRecords.filter((r) => r.status === 'Half Day').length },
+    { name: 'Remote Work', value: monthYearRecords.filter((r) => r.status === 'Remote Work').length },
+  ];
 
   const handleMarkAttendance = async (status) => {
     if (loading) return;
@@ -126,6 +130,17 @@ const AttendancePage = () => {
     }
 
     markAttendance(status);
+  };
+
+  const isWithinOffice = (lat, lng) => {
+    const officeLat = 18.5204, officeLng = 73.8567, radius = 5;
+    const toRad = (val) => (val * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(officeLat - lat);
+    const dLon = toRad(officeLng - lng);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat)) * Math.cos(toRad(officeLat)) * Math.sin(dLon / 2) ** 2;
+    const distance = 2 * R * Math.asin(Math.sqrt(a));
+    return distance <= radius;
   };
 
   const markAttendance = async (status, extra = {}) => {
@@ -162,30 +177,11 @@ const AttendancePage = () => {
     }
   };
 
-  // ✅ Monthly Summary Only
-  const currentMonth = dayjs().month();
-  const currentYear = dayjs().year();
-  const currentMonthRecords = records.filter((r) => {
-    const d = dayjs(r.date);
-    return d.month() === currentMonth && d.year() === currentYear;
-  });
-
-  const summaryData = [
-    { name: 'Present', value: currentMonthRecords.filter((r) => r.status === 'Present').length },
-    { name: 'Absent', value: currentMonthRecords.filter((r) => r.status === 'Absent').length },
-    { name: 'Half Day', value: currentMonthRecords.filter((r) => r.status === 'Half Day').length },
-    { name: 'Remote Work', value: currentMonthRecords.filter((r) => r.status === 'Remote Work').length },
-  ];
-
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text('Attendance Records', 10, 10);
     filteredRecords.forEach((rec, i) => {
-      doc.text(
-        `${i + 1}. ${dayjs(rec.date).format('DD MMM YYYY')} - ${rec.status}`,
-        10,
-        20 + i * 10
-      );
+      doc.text(`${i + 1}. ${dayjs(rec.date).format('DD MMM YYYY')} - ${rec.status}`, 10, 20 + i * 10);
     });
     doc.save('attendance.pdf');
   };
@@ -225,7 +221,20 @@ const AttendancePage = () => {
         </Paper>
 
         <Paper sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6" gutterBottom>📊 Attendance Summary (This Month)</Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">📊 Attendance Summary - {filterMonth.format('MMMM YYYY')}</Typography>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                views={['year', 'month']}
+                label="📆 Filter Summary by Month"
+                minDate={dayjs().subtract(1, 'year')}
+                maxDate={dayjs()}
+                value={filterMonth}
+                onChange={(val) => setFilterMonth(val)}
+                slotProps={{ textField: { size: 'small' } }}
+              />
+            </LocalizationProvider>
+          </Stack>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie data={summaryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
@@ -270,9 +279,9 @@ const AttendancePage = () => {
                   <strong style={{
                     color:
                       rec.status === 'Present' ? '#4caf50' :
-                        rec.status === 'Absent' ? '#f44336' :
-                          rec.status === 'Half Day' ? '#ff9800' :
-                            '#2196f3'
+                      rec.status === 'Absent' ? '#f44336' :
+                      rec.status === 'Half Day' ? '#ff9800' :
+                      '#2196f3'
                   }}>
                     {rec.status}
                   </strong>
