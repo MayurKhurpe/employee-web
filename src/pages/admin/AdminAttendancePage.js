@@ -52,13 +52,16 @@ const AdminAttendancePage = () => {
 
   // ✅ Fetch users for user dropdown
   const fetchUsers = async () => {
-    try {
-      const res = await axios.get('/users/all');
-      setUsers(res.data || []);
-    } catch (err) {
-      console.error('Failed to load users');
-    }
-  };
+  try {
+    const token = localStorage.getItem('token'); // ✅ Get token
+    const res = await axios.get('/users/all', {
+      headers: { Authorization: `Bearer ${token}` }, // ✅ Add token
+    });
+    setUsers(res.data || []);
+  } catch (err) {
+    console.error('❌ Failed to load users:', err.response?.data || err.message);
+  }
+};
 
   const fetchAllAttendance = async (pg = 1) => {
     setLoading(true);
