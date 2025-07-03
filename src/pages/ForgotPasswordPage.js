@@ -23,9 +23,10 @@ export default function ForgotPasswordPage() {
     try {
       const res = await axios.post('/forgot-password', { email });
 
+      // ✅ Backend now returns message with masked email
       setSnackbar({
         open: true,
-        message: '✅ Reset link sent! Check your email.',
+        message: res.data?.message || '✅ Reset link sent! Check your email.',
         severity: 'success',
       });
     } catch (err) {

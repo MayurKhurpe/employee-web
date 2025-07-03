@@ -76,6 +76,11 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import { EventProvider } from './context/EventContext';
 
+// ✅ OTP Password Reset Pages
+import SendOTPPage from './pages/SendOTPPage';
+import VerifyOTPPage from './pages/VerifyOTPPage';
+import SetNewPasswordPage from './pages/SetNewPasswordPage';
+
 function BackendChecker({ onReady }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -84,7 +89,7 @@ function BackendChecker({ onReady }) {
     try {
       setLoading(true);
       setError(false);
-      await axios.get('https://employee-backend-kifp.onrender.com/api/ping'); // ✅ your backend ping route
+      await axios.get('https://employee-backend-kifp.onrender.com/api/ping');
       setLoading(false);
       onReady();
     } catch (err) {
@@ -274,7 +279,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ Check backend before loading the app
   if (!backendReady) return <BackendChecker onReady={() => setBackendReady(true)} />;
 
   return (
@@ -287,6 +291,12 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+
+            {/* ✅ OTP Password Reset Routes */}
+            <Route path="/send-otp" element={<SendOTPPage />} />
+            <Route path="/verify-otp" element={<VerifyOTPPage />} />
+            <Route path="/set-password" element={<SetNewPasswordPage />} />
+
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/dashboard" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><Dashboard /></Layout></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><ProfilePage updateUser={setUser} /></Layout></ProtectedRoute>} />
