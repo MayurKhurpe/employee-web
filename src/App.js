@@ -1,4 +1,4 @@
-// 📁 App.js
+// 📁 src/App.js
 import React, { useState, useEffect } from 'react';
 import axios from 'api/axios';
 import {
@@ -8,7 +8,6 @@ import {
   Navigate,
   useNavigate,
 } from 'react-router-dom';
-
 import {
   Box,
   CssBaseline,
@@ -22,8 +21,9 @@ import {
   Avatar,
   Typography,
   Divider,
+  CircularProgress,
+  Button,
 } from '@mui/material';
-
 import {
   Menu as MenuIcon,
   Logout,
@@ -33,7 +33,6 @@ import {
   AccessTime as AccessTimeIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
 } from '@mui/icons-material';
-
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
@@ -76,6 +75,54 @@ import LeaveManagementPage from './pages/admin/LeaveManagementPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import { EventProvider } from './context/EventContext';
+
+function BackendChecker({ onReady }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const checkBackend = async () => {
+    try {
+      setLoading(true);
+      setError(false);
+      await axios.get('https://employee-backend-kifp.onrender.com/api/ping'); // ✅ your backend ping route
+      setLoading(false);
+      onReady();
+    } catch (err) {
+      setLoading(false);
+      setError(true);
+    }
+  };
+
+  useEffect(() => {
+    checkBackend();
+  }, []);
+
+  if (loading) {
+    return (
+      <Box textAlign="center" mt={10}>
+        <CircularProgress />
+        <Typography variant="h6" mt={2}>
+          Connecting to backend...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box textAlign="center" mt={10}>
+        <Typography variant="h6" color="error">
+          ⚠️ Backend server is starting up or unreachable.
+        </Typography>
+        <Button variant="contained" onClick={checkBackend} sx={{ mt: 2 }}>
+          🔁 Retry
+        </Button>
+      </Box>
+    );
+  }
+
+  return null;
+}
 
 function Sidebar({ collapsed, toggleSidebar, onLogout, navigate, user }) {
   const sidebarItems = [
@@ -180,6 +227,7 @@ function Layout({ children, onLogout, user }) {
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')));
+  const [backendReady, setBackendReady] = useState(false);
 
   const handleLogin = () => {
     const storedUser = localStorage.getItem('user');
@@ -226,20 +274,20 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // ✅ Check backend before loading the app
+  if (!backendReady) return <BackendChecker onReady={() => setBackendReady(true)} />;
+
   return (
     <EventProvider>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <Router>
           <Routes>
-            {/* Public */}
             <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" /> : <LoginPage onLogin={handleLogin} />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
-
-            {/* Protected User Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><Dashboard /></Layout></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><ProfilePage updateUser={setUser} /></Layout></ProtectedRoute>} />
             <Route path="/attendance" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AttendancePage /></Layout></ProtectedRoute>} />
@@ -258,8 +306,6 @@ export default function App() {
             <Route path="/notification-settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><NotificationSettings /></Layout></ProtectedRoute>} />
             <Route path="/linked-devices" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><LinkedDevices /></Layout></ProtectedRoute>} />
             <Route path="/help-support" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><HelpSupport /></Layout></ProtectedRoute>} />
-
-            {/* Admin Routes */}
             <Route path="/admin" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/users" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminUserManagementPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/reports" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminReportsPage /></Layout></ProtectedAdminRoute>} />
@@ -270,8 +316,6 @@ export default function App() {
             <Route path="/admin/notifications" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminNotificationsPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/attendance" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminAttendancePage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/leave-management" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><LeaveManagementPage /></Layout></ProtectedAdminRoute>} />
-
-            {/* Catch all */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Router>
