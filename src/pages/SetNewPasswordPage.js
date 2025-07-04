@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   TextField,
@@ -14,7 +14,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { Visibility, VisibilityOff, LockReset } from '@mui/icons-material';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'api/axios';
 
 const SetNewPasswordPage = () => {
@@ -27,8 +27,15 @@ const SetNewPasswordPage = () => {
   const [open, setOpen] = useState(false);
 
   const navigate = useNavigate();
-  const location = useLocation();
-  const { email, otp } = location.state || {};
+
+  const email = localStorage.getItem('resetEmail');
+  const otp = localStorage.getItem('resetOTP');
+
+  useEffect(() => {
+    if (!email || !otp) {
+      navigate('/');
+    }
+  }, [email, otp, navigate]);
 
   const getPasswordStrength = (password) => {
     let score = 0;
@@ -54,6 +61,9 @@ const SetNewPasswordPage = () => {
         otp,
         newPassword,
       });
+
+      localStorage.removeItem('resetEmail');
+      localStorage.removeItem('resetOTP');
 
       setMsg(res.data.message);
       setError('');
@@ -89,7 +99,6 @@ const SetNewPasswordPage = () => {
           backdropFilter: 'blur(8px)',
         }}
       />
-
       <Paper
         elevation={6}
         sx={{
@@ -158,12 +167,7 @@ const SetNewPasswordPage = () => {
           fullWidth
           sx={{ mt: 2 }}
           onClick={handleReset}
-          disabled={
-            !newPassword ||
-            newPassword.length < 6 ||
-            !confirmPassword ||
-            loading
-          }
+          disabled={!newPassword || newPassword.length < 6 || !confirmPassword || loading}
           startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <LockReset />}
         >
           {loading ? 'Saving...' : '✅ Save Password'}

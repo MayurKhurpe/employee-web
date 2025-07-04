@@ -4,7 +4,6 @@ import {
   TextField,
   Button,
   Typography,
-  Box,
   Snackbar,
   Alert,
   CircularProgress,
@@ -32,11 +31,9 @@ export default function VerifyOTPPage() {
       const email = localStorage.getItem('resetEmail');
       const res = await axios.post('/verify-otp', { email, otp });
 
-      // ✅ Save OTP again in case it's needed on next page
       localStorage.setItem('resetOTP', otp);
-
       setSnackbar({ open: true, message: res.data.message, severity: 'success' });
-      setTimeout(() => navigate('/set-password'), 2000); // ✅ fixed route
+      setTimeout(() => navigate('/set-password'), 1500);
     } catch (err) {
       setSnackbar({
         open: true,
