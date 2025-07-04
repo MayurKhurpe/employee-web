@@ -39,7 +39,6 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import LoginPage from './components/Login';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ProfilePage from './components/ProfilePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
@@ -76,7 +75,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import { EventProvider } from './context/EventContext';
 
-// ✅ OTP Password Reset Pages
+// ✅ OTP Password Reset Pages (✅ NEW)
 import SendOTPPage from './pages/SendOTPPage';
 import VerifyOTPPage from './pages/VerifyOTPPage';
 import SetNewPasswordPage from './pages/SetNewPasswordPage';
@@ -190,23 +189,6 @@ function Sidebar({ collapsed, toggleSidebar, onLogout, navigate, user }) {
           ))}
         </List>
       </Box>
-      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, p: 2 }}>
-        <Tooltip title="Instagram">
-          <IconButton href="https://www.instagram.com/seekersautomation/" target="_blank" sx={{ color: '#fff' }}>
-            <img src="https://cdn-icons-png.flaticon.com/512/1384/1384063.png" alt="Instagram" width={24} height={24} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Website">
-          <IconButton href="https://seekersautomation.com/" target="_blank" sx={{ color: '#fff' }}>
-            <img src="https://cdn-icons-png.flaticon.com/512/1055/1055646.png" alt="Website" width={24} height={24} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="LinkedIn">
-          <IconButton href="https://www.linkedin.com/company/seekers-automation-pvt-ltd/" target="_blank" sx={{ color: '#fff' }}>
-            <img src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png" alt="LinkedIn" width={24} height={24} />
-          </IconButton>
-        </Tooltip>
-      </Box>
     </Drawer>
   );
 }
@@ -289,15 +271,13 @@ export default function App() {
             <Route path="/" element={isLoggedIn ? <Navigate to="/dashboard" /> : <LoginPage onLogin={handleLogin} />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
-
-            {/* ✅ OTP Password Reset Routes */}
             <Route path="/send-otp" element={<SendOTPPage />} />
             <Route path="/verify-otp" element={<VerifyOTPPage />} />
             <Route path="/set-password" element={<SetNewPasswordPage />} />
-
             <Route path="/unauthorized" element={<Unauthorized />} />
+
+            {/* ✅ Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><Dashboard /></Layout></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><ProfilePage updateUser={setUser} /></Layout></ProtectedRoute>} />
             <Route path="/attendance" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AttendancePage /></Layout></ProtectedRoute>} />
@@ -316,6 +296,8 @@ export default function App() {
             <Route path="/notification-settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><NotificationSettings /></Layout></ProtectedRoute>} />
             <Route path="/linked-devices" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><LinkedDevices /></Layout></ProtectedRoute>} />
             <Route path="/help-support" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><HelpSupport /></Layout></ProtectedRoute>} />
+
+            {/* ✅ Admin */}
             <Route path="/admin" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/users" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminUserManagementPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/reports" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminReportsPage /></Layout></ProtectedAdminRoute>} />
@@ -326,6 +308,8 @@ export default function App() {
             <Route path="/admin/notifications" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminNotificationsPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/attendance" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminAttendancePage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/leave-management" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><LeaveManagementPage /></Layout></ProtectedAdminRoute>} />
+
+            {/* 🔚 Catch-all */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Router>

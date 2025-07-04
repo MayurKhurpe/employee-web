@@ -10,9 +10,7 @@ import {
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import axios from 'api/axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'https://employee-backend-kifp.onrender.com';
+import axios from 'api/axios'; // ✅ Use your axios base instance
 
 const VerifyEmailPage = () => {
   const { token } = useParams();
@@ -22,7 +20,7 @@ const VerifyEmailPage = () => {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/verify-email/${token}`);
+        const res = await axios.get(`/verify-email/${token}`);
         setStatus(res.status === 200 ? 'success' : 'error');
       } catch (err) {
         setStatus('error');

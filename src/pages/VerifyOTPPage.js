@@ -9,7 +9,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import axios from 'axios';
+import axios from 'api/axios'; // ✅ baseURL used
 import { useNavigate } from 'react-router-dom';
 
 export default function VerifyOTPPage() {
@@ -20,16 +20,18 @@ export default function VerifyOTPPage() {
 
   const handleVerifyOtp = async () => {
     if (!otp || otp.length !== 6) {
-      return setSnackbar({ open: true, message: 'Please enter a valid 6-digit OTP', severity: 'warning' });
+      return setSnackbar({
+        open: true,
+        message: 'Please enter a valid 6-digit OTP',
+        severity: 'warning',
+      });
     }
 
     try {
       setLoading(true);
       const email = localStorage.getItem('resetEmail');
-      const res = await axios.post('https://employee-backend-kifp.onrender.com/api/verify-otp', {
-        email,
-        otp,
-      });
+      const res = await axios.post('/verify-otp', { email, otp });
+
       setSnackbar({ open: true, message: res.data.message, severity: 'success' });
       setTimeout(() => navigate('/reset-password'), 2000);
     } catch (err) {

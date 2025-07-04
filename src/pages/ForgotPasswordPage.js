@@ -11,29 +11,31 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EmailIcon from '@mui/icons-material/Email';
-import { Link } from 'react-router-dom';
-import axios from 'api/axios'; // ✅ Updated import
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'api/axios';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('/forgot-password', { email });
+      const res = await axios.post('/send-otp', { email });
 
-      // ✅ Backend now returns message with masked email
+      localStorage.setItem('resetEmail', email); // ✅ Save for later steps
       setSnackbar({
         open: true,
-        message: res.data?.message || '✅ Reset link sent! Check your email.',
+        message: res.data?.message || '✅ OTP sent!',
         severity: 'success',
       });
+
+      setTimeout(() => navigate('/verify-otp'), 2000); // ✅ Redirect to OTP screen
     } catch (err) {
       setSnackbar({
         open: true,
-        message:
-          err?.response?.data?.error || '❌ Failed to send reset email.',
+        message: err?.response?.data?.error || '❌ Failed to send OTP.',
         severity: 'error',
       });
     }
@@ -53,7 +55,6 @@ export default function ForgotPasswordPage() {
           zIndex: 0,
         }}
       />
-      {/* 🔳 Overlay */}
       <Box
         sx={{
           position: 'absolute',
@@ -62,8 +63,6 @@ export default function ForgotPasswordPage() {
           zIndex: 1,
         }}
       />
-
-      {/* 📦 Form Card */}
       <Box
         sx={{
           position: 'relative',
@@ -93,7 +92,7 @@ export default function ForgotPasswordPage() {
           </Box>
 
           <Typography variant="body2" color="text.secondary" mb={2}>
-            Enter your registered email and we'll send you a reset link.
+            Enter your email and we’ll send you an OTP to reset your password.
           </Typography>
 
           <form onSubmit={handleSubmit}>
@@ -113,7 +112,7 @@ export default function ForgotPasswordPage() {
               fullWidth
               sx={{ mt: 2, py: 1.2 }}
             >
-              📬 Send Reset Link
+              📩 Send OTP
             </Button>
           </form>
 
@@ -144,7 +143,6 @@ export default function ForgotPasswordPage() {
         </Paper>
       </Box>
 
-      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
