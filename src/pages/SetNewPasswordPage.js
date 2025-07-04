@@ -16,7 +16,7 @@ import { Visibility, VisibilityOff, LockReset } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'api/axios';
 import Lottie from 'lottie-react';
-import successAnimation from '../animations/success.json'; // ✅ your downloaded file path
+import successAnimation from '../../animations/success.json'; // ✅ your downloaded file path
 
 const SetNewPasswordPage = () => {
   const [newPassword, setNewPassword] = useState('');
