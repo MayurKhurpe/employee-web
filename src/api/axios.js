@@ -2,10 +2,10 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: 'https://employee-backend-kifp.onrender.com/api', // ✅ Correct API base URL
+  baseURL: 'https://employee-backend-kifp.onrender.com/api', // ✅ API base URL
 });
 
-// 🔐 Automatically attach token from localStorage
+// 🔐 Attach token from localStorage for every request
 instance.interceptors.request.use(
   config => {
     const token = localStorage.getItem('token');

@@ -75,7 +75,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import { EventProvider } from './context/EventContext';
 
-// ✅ OTP Password Reset Pages (✅ NEW)
 import SendOTPPage from './pages/SendOTPPage';
 import VerifyOTPPage from './pages/VerifyOTPPage';
 import SetNewPasswordPage from './pages/SetNewPasswordPage';
@@ -216,11 +215,14 @@ export default function App() {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')));
   const [backendReady, setBackendReady] = useState(false);
 
-  const handleLogin = () => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+  const handleLogin = async () => {
+    try {
+      const res = await axios.get('/profile');
+      setUser(res.data);
+      localStorage.setItem('user', JSON.stringify(res.data));
       setIsLoggedIn(true);
+    } catch (err) {
+      console.error('❌ Failed to fetch user after login', err);
     }
   };
 
@@ -232,21 +234,15 @@ export default function App() {
   };
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get('https://employee-backend-kifp.onrender.com/api/profile', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUser(res.data);
-        localStorage.setItem('user', JSON.stringify(res.data));
-      } catch (err) {
-        console.error('Failed to fetch user profile', err);
-      }
-    };
-
-    if (localStorage.getItem('token')) {
-      fetchUserProfile();
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.get('/profile')
+        .then(res => {
+          setUser(res.data);
+          setIsLoggedIn(true);
+          localStorage.setItem('user', JSON.stringify(res.data));
+        })
+        .catch(err => console.error('❌ Failed to fetch user profile', err));
     }
   }, []);
 
@@ -276,8 +272,7 @@ export default function App() {
             <Route path="/verify-otp" element={<VerifyOTPPage />} />
             <Route path="/set-password" element={<SetNewPasswordPage />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
-
-            {/* ✅ Protected Routes */}
+            {/* All protected routes below */}
             <Route path="/dashboard" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><Dashboard /></Layout></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><ProfilePage updateUser={setUser} /></Layout></ProtectedRoute>} />
             <Route path="/attendance" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AttendancePage /></Layout></ProtectedRoute>} />
@@ -296,8 +291,7 @@ export default function App() {
             <Route path="/notification-settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><NotificationSettings /></Layout></ProtectedRoute>} />
             <Route path="/linked-devices" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><LinkedDevices /></Layout></ProtectedRoute>} />
             <Route path="/help-support" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><HelpSupport /></Layout></ProtectedRoute>} />
-
-            {/* ✅ Admin */}
+            {/* Admin */}
             <Route path="/admin" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/users" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminUserManagementPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/reports" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminReportsPage /></Layout></ProtectedAdminRoute>} />
@@ -308,8 +302,7 @@ export default function App() {
             <Route path="/admin/notifications" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminNotificationsPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/attendance" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminAttendancePage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/leave-management" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><LeaveManagementPage /></Layout></ProtectedAdminRoute>} />
-
-            {/* 🔚 Catch-all */}
+            {/* Fallback */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Router>
