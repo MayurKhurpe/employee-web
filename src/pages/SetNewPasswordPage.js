@@ -1,5 +1,3 @@
-// 📁 src/pages/SetNewPasswordPage.js
-
 import React, { useState } from 'react';
 import {
   Container,
@@ -10,12 +8,20 @@ import {
   Alert,
   Paper,
   Box,
+  InputAdornment,
+  IconButton,
+  LinearProgress,
+  CircularProgress,
 } from '@mui/material';
+import { Visibility, VisibilityOff, LockReset } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'api/axios'; // ✅ Use your configured axios instance
+import axios from 'api/axios';
 
 const SetNewPasswordPage = () => {
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
@@ -24,19 +30,41 @@ const SetNewPasswordPage = () => {
   const location = useLocation();
   const { email, otp } = location.state || {};
 
+  const getPasswordStrength = (password) => {
+    let score = 0;
+    if (password.length >= 6) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    return score;
+  };
+
   const handleReset = async () => {
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      setMsg('');
+      setOpen(true);
+      return;
+    }
+
     try {
+      setLoading(true);
       const res = await axios.post('/set-new-password', {
         email,
         otp,
         newPassword,
       });
+
       setMsg(res.data.message);
+      setError('');
       setOpen(true);
       setTimeout(() => navigate('/'), 2000);
     } catch (err) {
       setError(err.response?.data?.error || '❌ Error resetting password');
+      setMsg('');
       setOpen(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -79,23 +107,66 @@ const SetNewPasswordPage = () => {
         <Typography variant="body2" mb={2} color="textSecondary">
           Enter a strong new password to complete the reset.
         </Typography>
+
         <TextField
           label="New Password"
           fullWidth
           margin="normal"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
         />
+
+        {newPassword && (
+          <Box sx={{ mt: 1, mb: 2 }}>
+            <Typography variant="caption">Password strength</Typography>
+            <LinearProgress
+              variant="determinate"
+              value={getPasswordStrength(newPassword) * 25}
+              color={
+                getPasswordStrength(newPassword) < 2
+                  ? 'error'
+                  : getPasswordStrength(newPassword) < 4
+                  ? 'warning'
+                  : 'success'
+              }
+            />
+          </Box>
+        )}
+
+        <TextField
+          label="Confirm Password"
+          fullWidth
+          margin="normal"
+          type={showPassword ? 'text' : 'password'}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+        />
+
         <Button
           variant="contained"
           color="success"
           fullWidth
           sx={{ mt: 2 }}
           onClick={handleReset}
-          disabled={!newPassword || newPassword.length < 6}
+          disabled={
+            !newPassword ||
+            newPassword.length < 6 ||
+            !confirmPassword ||
+            loading
+          }
+          startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <LockReset />}
         >
-          ✅ Save Password
+          {loading ? 'Saving...' : '✅ Save Password'}
         </Button>
       </Paper>
 

@@ -9,7 +9,7 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import axios from 'api/axios'; // ✅ baseURL used
+import axios from 'api/axios';
 import { useNavigate } from 'react-router-dom';
 
 export default function VerifyOTPPage() {
@@ -32,8 +32,11 @@ export default function VerifyOTPPage() {
       const email = localStorage.getItem('resetEmail');
       const res = await axios.post('/verify-otp', { email, otp });
 
+      // ✅ Save OTP again in case it's needed on next page
+      localStorage.setItem('resetOTP', otp);
+
       setSnackbar({ open: true, message: res.data.message, severity: 'success' });
-      setTimeout(() => navigate('/reset-password'), 2000);
+      setTimeout(() => navigate('/set-password'), 2000); // ✅ fixed route
     } catch (err) {
       setSnackbar({
         open: true,
