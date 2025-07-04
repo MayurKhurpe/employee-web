@@ -37,19 +37,34 @@ const LoginPage = ({ onLogin }) => {
 
     try {
       setLoading(true);
+      const res = await axios.post('/login', { email, password });
 
-      const res = await axios.post('/login', { email, password }); // ✅ relative endpoint
+      // ✅ Only store token if user is approved
+      if (res.data?.token) {
+        localStorage.setItem('token', res.data.token);
+        localStorage.setItem('userName', res.data.user.name);
+        localStorage.setItem('userRole', res.data.user.role);
+        localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('userName', res.data.user.name);
-      localStorage.setItem('userRole', res.data.user.role);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-
-      onLogin();
-      setSnackbar({ open: true, message: '✅ Login successful!', severity: 'success' });
-
-      navigate('/dashboard');
+        onLogin();
+        setSnackbar({ open: true, message: '✅ Login successful!', severity: 'success' });
+        navigate('/dashboard');
+      } else {
+        setSnackbar({
+          open: true,
+          message: '⛔ You are not approved by admin yet.',
+          severity: 'warning',
+        });
+      }
     } catch (err) {
+      if (err?.response?.status === 403) {
+        return setSnackbar({
+          open: true,
+          message: '⛔ You are not approved by admin yet.',
+          severity: 'warning',
+        });
+      }
+
       setSnackbar({
         open: true,
         message: err?.response?.data?.error || '❌ Login failed. Try again.',
