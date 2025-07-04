@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Container,
   TextField,
   Button,
   Typography,
@@ -15,8 +16,6 @@ import {
 import { Visibility, VisibilityOff, LockReset } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'api/axios';
-import Lottie from 'lottie-react';
-import successAnimation from '../animations/success.json'; // ✅ your downloaded file path
 
 const SetNewPasswordPage = () => {
   const [newPassword, setNewPassword] = useState('');
@@ -26,7 +25,6 @@ const SetNewPasswordPage = () => {
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
 
   const navigate = useNavigate();
 
@@ -70,12 +68,7 @@ const SetNewPasswordPage = () => {
       setMsg(res.data.message);
       setError('');
       setOpen(true);
-      setShowSuccess(true);
-
-      setTimeout(() => {
-        setShowSuccess(false);
-        navigate('/');
-      }, 3500);
+      setTimeout(() => navigate('/'), 2000);
     } catch (err) {
       setError(err.response?.data?.error || '❌ Error resetting password');
       setMsg('');
@@ -106,104 +99,80 @@ const SetNewPasswordPage = () => {
           backdropFilter: 'blur(8px)',
         }}
       />
+      <Paper
+        elevation={6}
+        sx={{
+          zIndex: 2,
+          p: 4,
+          width: '100%',
+          maxWidth: 420,
+          borderRadius: 3,
+          backgroundColor: 'rgba(255,255,255,0.95)',
+        }}
+      >
+        <Typography variant="h5" fontWeight="bold" gutterBottom>
+          🔒 Set New Password
+        </Typography>
+        <Typography variant="body2" mb={2} color="textSecondary">
+          Enter a strong new password to complete the reset.
+        </Typography>
 
-      {showSuccess ? (
-        <Paper
-          elevation={6}
-          sx={{
-            zIndex: 2,
-            p: 4,
-            width: '100%',
-            maxWidth: 420,
-            borderRadius: 3,
-            backgroundColor: 'rgba(255,255,255,0.95)',
-            textAlign: 'center',
+        <TextField
+          label="New Password"
+          fullWidth
+          margin="normal"
+          type={showPassword ? 'text' : 'password'}
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
           }}
+        />
+
+        {newPassword && (
+          <Box sx={{ mt: 1, mb: 2 }}>
+            <Typography variant="caption">Password strength</Typography>
+            <LinearProgress
+              variant="determinate"
+              value={getPasswordStrength(newPassword) * 25}
+              color={
+                getPasswordStrength(newPassword) < 2
+                  ? 'error'
+                  : getPasswordStrength(newPassword) < 4
+                  ? 'warning'
+                  : 'success'
+              }
+            />
+          </Box>
+        )}
+
+        <TextField
+          label="Confirm Password"
+          fullWidth
+          margin="normal"
+          type={showPassword ? 'text' : 'password'}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+        />
+
+        <Button
+          variant="contained"
+          color="success"
+          fullWidth
+          sx={{ mt: 2 }}
+          onClick={handleReset}
+          disabled={!newPassword || newPassword.length < 6 || !confirmPassword || loading}
+          startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <LockReset />}
         >
-          <Lottie animationData={successAnimation} loop={false} style={{ height: 200 }} />
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            🎉 Password Reset Successfully!
-          </Typography>
-          <Typography variant="body2">Redirecting to login...</Typography>
-        </Paper>
-      ) : (
-        <Paper
-          elevation={6}
-          sx={{
-            zIndex: 2,
-            p: 4,
-            width: '100%',
-            maxWidth: 420,
-            borderRadius: 3,
-            backgroundColor: 'rgba(255,255,255,0.95)',
-          }}
-        >
-          <Typography variant="h5" fontWeight="bold" gutterBottom>
-            🔒 Set New Password
-          </Typography>
-          <Typography variant="body2" mb={2} color="textSecondary">
-            Enter a strong new password to complete the reset.
-          </Typography>
-
-          <TextField
-            label="New Password"
-            fullWidth
-            margin="normal"
-            type={showPassword ? 'text' : 'password'}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          {newPassword && (
-            <Box sx={{ mt: 1, mb: 2 }}>
-              <Typography variant="caption">Password strength</Typography>
-              <LinearProgress
-                variant="determinate"
-                value={getPasswordStrength(newPassword) * 25}
-                color={
-                  getPasswordStrength(newPassword) < 2
-                    ? 'error'
-                    : getPasswordStrength(newPassword) < 4
-                    ? 'warning'
-                    : 'success'
-                }
-              />
-            </Box>
-          )}
-
-          <TextField
-            label="Confirm Password"
-            fullWidth
-            margin="normal"
-            type={showPassword ? 'text' : 'password'}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-
-          <Button
-            variant="contained"
-            color="success"
-            fullWidth
-            sx={{ mt: 2 }}
-            onClick={handleReset}
-            disabled={
-              !newPassword || newPassword.length < 6 || !confirmPassword || loading
-            }
-            startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <LockReset />}
-          >
-            {loading ? 'Saving...' : '✅ Save Password'}
-          </Button>
-        </Paper>
-      )}
+          {loading ? 'Saving...' : '✅ Save Password'}
+        </Button>
+      </Paper>
 
       <Snackbar
         open={open}
