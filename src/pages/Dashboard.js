@@ -1,3 +1,4 @@
+// 📁 src/pages/Dashboard.js
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -49,14 +50,8 @@ export default function Dashboard() {
 
   // 📣 Load Announcements
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
     axios
-      .get("/broadcasts", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      .get("/broadcasts")
       .then((res) => setAnnouncements(res.data))
       .catch((err) => console.error("❌ Failed to load announcements:", err));
   }, []);
@@ -79,11 +74,7 @@ export default function Dashboard() {
   // 📊 Load Attendance Summary
   useEffect(() => {
     axios
-      .get("/attendance/my-summary", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      })
+      .get("/attendance/my-summary")
       .then((res) => setSummary(res.data))
       .catch((err) =>
         console.error("❌ Failed to load attendance summary:", err)
@@ -93,11 +84,7 @@ export default function Dashboard() {
   // 📌 Load My Events for Dashboard
   useEffect(() => {
     axios
-      .get("/events/dashboard", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      })
+      .get("/events/dashboard")
       .then((res) => setEvents(res.data))
       .catch((err) =>
         console.error("❌ Failed to load dashboard events:", err)
@@ -270,9 +257,9 @@ export default function Dashboard() {
                   <EventIcon sx={{ mr: 2 }} color="info" />
                   <ListItemText
                     primary={e.title}
-                    secondary={
-                      `${e.category} • ${new Date(e.date).toDateString()}`
-                    }
+                    secondary={`${e.category} • ${new Date(
+                      e.date
+                    ).toDateString()}`}
                   />
                 </ListItem>
               ))}
