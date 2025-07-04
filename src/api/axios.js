@@ -2,19 +2,23 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: 'https://employee-backend-kifp.onrender.com/api', // ✅ API base URL
+  baseURL: 'https://employee-backend-kifp.onrender.com/api',
 });
 
-// 🔐 Attach token from localStorage for every request
+// 🔐 Interceptor to always attach token
 instance.interceptors.request.use(
-  config => {
+  (config) => {
     const token = localStorage.getItem('token');
+
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.warn('⚠️ No token found in localStorage');
     }
+
     return config;
   },
-  error => Promise.reject(error)
+  (error) => Promise.reject(error)
 );
 
 export default instance;
