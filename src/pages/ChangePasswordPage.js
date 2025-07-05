@@ -37,7 +37,7 @@ export default function ChangePassword() {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Not authenticated');
 
-      const res = await axios.post('/auth/change-password',
+      const res = await axios.post('/change-password',
         { currentPassword, newPassword },
         {
           headers: { Authorization: `Bearer ${token}` },

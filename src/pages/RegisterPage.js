@@ -12,9 +12,12 @@ import {
   Alert,
   useTheme,
   useMediaQuery,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import axios from 'api/axios'; // ✅ Updated import
+import axios from 'api/axios';
 
 const RegisterPage = () => {
   const theme = useTheme();
@@ -31,6 +34,8 @@ const RegisterPage = () => {
     address: "",
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("");
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -106,7 +111,7 @@ const RegisterPage = () => {
       setSnackbar({
         open: true,
         type: "success",
-        message: "🎉 Registration submitted! Awaiting admin approval.",
+        message: "🎉 Registration submitted! Awaiting admin approval🤝.",
       });
 
       setFormData({
@@ -144,7 +149,6 @@ const RegisterPage = () => {
         px: 2,
       }}
     >
-      {/* Blur Background */}
       <Box
         sx={{
           position: "absolute",
@@ -175,67 +179,38 @@ const RegisterPage = () => {
             gutterBottom
             sx={{ fontWeight: "bold", color: theme.palette.primary.main }}
           >
-            🚀 WELCOME TO FAMILY
+            🚀 WELCOME TO FAMILY 🙋‍♂️
             <br />
-            REGISTER HERE
+            REGISTER HERE 👇
           </Typography>
 
           <form onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label="Name *"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="Email *"
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="Mobile Number *"
-              name="mobile"
-              value={formData.mobile}
-              onChange={handleChange}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="Department *"
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="Address"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              margin="normal"
-            />
+            <TextField fullWidth label="Name *" name="name" value={formData.name} onChange={handleChange} margin="normal" required />
+            <TextField fullWidth label="Email *" type="email" name="email" value={formData.email} onChange={handleChange} margin="normal" required />
+            <TextField fullWidth label="Mobile Number *" name="mobile" value={formData.mobile} onChange={handleChange} margin="normal" required />
+            <TextField fullWidth label="Department *" name="department" value={formData.department} onChange={handleChange} margin="normal" required />
+            <TextField fullWidth label="Address" name="address" value={formData.address} onChange={handleChange} margin="normal" />
+
             <TextField
               fullWidth
               label="Password *"
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="password"
               value={formData.password}
               onChange={handleChange}
               margin="normal"
               required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
+
             {formData.password && (
               <Typography
                 variant="body2"
@@ -254,15 +229,25 @@ const RegisterPage = () => {
                 Password Strength: {passwordStrength}
               </Typography>
             )}
+
             <TextField
               fullWidth
               label="Confirm Password *"
-              type="password"
+              type={showConfirm ? "text" : "password"}
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               margin="normal"
               required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowConfirm(!showConfirm)} edge="end">
+                      {showConfirm ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <Button fullWidth type="submit" variant="contained" sx={{ mt: 3 }}>

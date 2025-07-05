@@ -11,8 +11,12 @@ import {
   CircularProgress,
   useMediaQuery,
   useTheme,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useNavigate } from 'react-router-dom';
 import axios from 'api/axios'; // ✅ updated import
 
@@ -23,6 +27,7 @@ const LoginPage = ({ onLogin }) => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [loading, setLoading] = useState(false);
 
@@ -39,7 +44,6 @@ const LoginPage = ({ onLogin }) => {
       setLoading(true);
       const res = await axios.post('/login', { email, password });
 
-      // ✅ Only store token if user is approved
       if (res.data?.token) {
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('userName', res.data.user.name);
@@ -140,9 +144,10 @@ const LoginPage = ({ onLogin }) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
+
         <TextField
           label="Password"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           fullWidth
           required
           autoComplete="current-password"
@@ -150,6 +155,15 @@ const LoginPage = ({ onLogin }) => {
           variant="outlined"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
         />
 
         <Button
