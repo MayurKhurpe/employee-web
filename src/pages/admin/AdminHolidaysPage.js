@@ -35,9 +35,17 @@ const AdminHolidaysPage = () => {
     }
   };
 
-  useEffect(() => {
-    fetchHolidays();
-  }, []);
+  // ✅ Delete holiday
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`/holidays/${id}`);
+      setSnackbar({ open: true, message: '🗑️ Holiday deleted', severity: 'success' });
+      fetchHolidays();
+    } catch (err) {
+      console.error('Delete failed', err);
+      setSnackbar({ open: true, message: '❌ Failed to delete holiday', severity: 'error' });
+    }
+  };
 
   // ✅ Add new holiday
   const handleAddHoliday = async () => {
@@ -65,6 +73,10 @@ const AdminHolidaysPage = () => {
       setSnackbar({ open: true, message: '❌ Failed to add holiday.', severity: 'error' });
     }
   };
+
+  useEffect(() => {
+    fetchHolidays();
+  }, []);
 
   return (
     <Box
@@ -162,11 +174,14 @@ const AdminHolidaysPage = () => {
             </Typography>
           ) : (
             holidays.map((holiday) => (
-              <ListItem key={holiday._id} secondaryAction={
-              <Button color="error" onClick={() => handleDelete(holiday._id)}>
-               Delete
-              </Button>
-               }>
+              <ListItem
+                key={holiday._id}
+                secondaryAction={
+                  <Button color="error" onClick={() => handleDelete(holiday._id)}>
+                    Delete
+                  </Button>
+                }
+              >
                 <EventIcon color="primary" sx={{ mr: 2 }} />
                 <ListItemText
                   primary={holiday.name || 'Unnamed'}
