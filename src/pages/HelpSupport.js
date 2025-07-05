@@ -13,10 +13,11 @@ import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
 
+// ✅ Updated FAQ
 const faqs = [
   {
     question: 'How do I change my password?',
-    answer: 'Go to Settings → Change Password and follow the instructions.',
+    answer: 'You can reset your password by going to Settings → Forgot Password.',
   },
   {
     question: 'What if I forgot my password?',
@@ -48,7 +49,6 @@ export default function HelpSupport() {
           zIndex: 0,
         }}
       />
-      {/* Overlay */}
       <Box
         sx={{
           position: 'absolute',
@@ -61,7 +61,6 @@ export default function HelpSupport() {
         }}
       />
 
-      {/* Main content */}
       <Box
         sx={{
           position: 'relative',

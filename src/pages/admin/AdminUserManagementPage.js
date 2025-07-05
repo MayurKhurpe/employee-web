@@ -1,4 +1,3 @@
-// 📁 src/pages/admin/AdminUserManagementPage.js
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -20,9 +19,10 @@ import {
   Delete,
   ArrowBack,
   Search as SearchIcon,
+  VerifiedUser as VerifiedIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'api/axios'; // ✅ Centralized Axios
+import axios from 'api/axios';
 
 const AdminUserManagementPage = () => {
   const [users, setUsers] = useState([]);
@@ -76,6 +76,20 @@ const AdminUserManagementPage = () => {
     }
   };
 
+  const handleVerify = async (email) => {
+    try {
+      const res = await axios.post(
+        `/admin/verify-user`,
+        { email },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSnackbar({ open: true, message: `🔐 ${res.data.message}`, severity: 'success' });
+      fetchUsers();
+    } catch (err) {
+      setSnackbar({ open: true, message: '❌ Verification failed', severity: 'error' });
+    }
+  };
+
   const handleDelete = async (email) => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
     try {
@@ -101,9 +115,15 @@ const AdminUserManagementPage = () => {
       renderCell: (params) => (params.row.isApproved ? '✅ Yes' : '❌ No'),
     },
     {
+      field: 'isVerified',
+      headerName: '🔐 Verified',
+      width: 130,
+      renderCell: (params) => (params.row.isVerified ? '🔓 Yes' : '🔒 No'),
+    },
+    {
       field: 'actions',
       headerName: '⚙️ Actions',
-      width: 160,
+      width: 220,
       sortable: false,
       renderCell: (params) => (
         <>
@@ -111,6 +131,13 @@ const AdminUserManagementPage = () => {
             <Tooltip title="Approve User">
               <IconButton onClick={() => handleApprove(params.row.email)} color="success">
                 <CheckCircle />
+              </IconButton>
+            </Tooltip>
+          )}
+          {!params.row.isVerified && (
+            <Tooltip title="Verify User">
+              <IconButton onClick={() => handleVerify(params.row.email)} color="primary">
+                <VerifiedIcon />
               </IconButton>
             </Tooltip>
           )}
@@ -166,7 +193,7 @@ const AdminUserManagementPage = () => {
           👥 User Management
         </Typography>
         <Typography variant="subtitle1" color="text.secondary">
-          Approve new users, search, and manage employee accounts.
+          Approve and verify users, or manage user accounts.
         </Typography>
         <Divider sx={{ my: 2 }} />
       </Paper>

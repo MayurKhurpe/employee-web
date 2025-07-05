@@ -1,22 +1,8 @@
-// 📁 src/pages/admin/LeaveManagementPage.js
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Button,
-  Grid,
-  TextField,
-  Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
-  Snackbar,
-  Alert,
-  MenuItem,
+  Box, Typography, Card, CardContent, Button, Grid, TextField,
+  Paper, Dialog, DialogTitle, DialogContent, DialogActions, Chip,
+  Snackbar, Alert, MenuItem
 } from '@mui/material';
 import { HowToReg as LeaveIcon, ArrowBack as BackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -30,14 +16,12 @@ const LeaveManagementPage = () => {
   const [open, setOpen] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  // 🔍 Filter states
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
   const [users, setUsers] = useState([]);
 
   const navigate = useNavigate();
 
-  // ✅ Fetch Users for Filter Dropdown
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -50,7 +34,6 @@ const LeaveManagementPage = () => {
     }
   };
 
-  // ✅ Fetch Leave Requests with Filters
   const fetchLeaves = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -101,7 +84,7 @@ const LeaveManagementPage = () => {
     try {
       await axios.put(
         `/leave/admin/${action === 'Approved' ? 'approve' : 'reject'}/${selectedRequest._id}`,
-        { responseMessage: note },
+        { adminNote: note },
         {
           headers: { Authorization: `Bearer ${token}` },
         }

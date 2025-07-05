@@ -1,3 +1,4 @@
+// 📁 src/pages/SettingsPage.js
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -15,20 +16,13 @@ import {
   Grid,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import VpnKeyIcon from "@mui/icons-material/VpnKey";
 import LockResetIcon from "@mui/icons-material/LockReset";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
-import DevicesIcon from "@mui/icons-material/Devices";
-import axios from 'api/axios'; // ✅ Centralized axios instance
+import axios from 'api/axios';
 
-// ✅ Settings list
+// ✅ Settings list (Change Password removed)
 const settingsOptions = [
-  {
-    title: "🔐 Change Password",
-    icon: <VpnKeyIcon color="primary" />,
-    path: "/change-password",
-  },
   {
     title: "🔁 Forgot Password",
     icon: <LockResetIcon color="error" />,
@@ -56,7 +50,6 @@ const SettingsPage = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch settings on mount
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -78,7 +71,6 @@ const SettingsPage = () => {
     fetchSettings();
   }, []);
 
-  // ✅ Toggle handler
   const handleToggle = async (key) => {
     const newSettings = { ...notifSettings, [key]: !notifSettings[key] };
     setNotifSettings(newSettings);
@@ -99,7 +91,6 @@ const SettingsPage = () => {
 
   return (
     <Box sx={{ position: "relative", minHeight: "100vh", overflow: "hidden" }}>
-      {/* 🌄 Background */}
       <Box
         sx={{
           position: "absolute",
@@ -142,7 +133,6 @@ const SettingsPage = () => {
             boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
           }}
         >
-          {/* 👤 Header */}
           <Box sx={{ textAlign: "center", mb: 4 }}>
             <Avatar
               src={profilePic}
@@ -158,7 +148,6 @@ const SettingsPage = () => {
 
           <Divider sx={{ mb: 3 }} />
 
-          {/* 🔔 Notification Toggles */}
           <Box sx={{ mb: 4 }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               🔔 Notification Settings
@@ -185,7 +174,6 @@ const SettingsPage = () => {
 
           <Divider sx={{ mb: 3 }} />
 
-          {/* ⚙️ Settings List */}
           <List>
             {settingsOptions.map((item, index) => (
               <ListItem
@@ -213,7 +201,6 @@ const SettingsPage = () => {
         </Paper>
       </Box>
 
-      {/* ✅ Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={2000}

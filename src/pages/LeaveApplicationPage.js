@@ -1,4 +1,3 @@
-// 📁 src/pages/LeaveApplicationPage.js
 import React, { useState, useEffect } from 'react';
 import axios from 'api/axios';
 import {
@@ -24,7 +23,6 @@ const LeaveApplicationPage = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [leaveHistory, setLeaveHistory] = useState([]);
 
-  // 📥 Fetch leave history on mount
   useEffect(() => {
     axios
       .get(`${API_URL}/api/leave/user`, {
@@ -182,9 +180,9 @@ const LeaveApplicationPage = () => {
                             size="small"
                             sx={{ mt: 1 }}
                           />
-                          {leave.responseMessage && (
+                          {leave.adminNote && (
                             <Typography variant="body2" color="text.secondary">
-                              💬 Response: {leave.responseMessage}
+                              💬 Response: {leave.adminNote}
                             </Typography>
                           )}
                         </>
@@ -208,7 +206,7 @@ const LeaveApplicationPage = () => {
               events={leaveHistory.map((leave) => ({
                 title: leave.leaveType,
                 start: leave.startDate,
-                end: dayjs(leave.endDate).add(1, 'day').format('YYYY-MM-DD'), // include full end date
+                end: dayjs(leave.endDate).add(1, 'day').format('YYYY-MM-DD'),
                 color:
                   leave.status === 'Approved'
                     ? '#4caf50'
