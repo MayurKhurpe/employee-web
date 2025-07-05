@@ -162,7 +162,11 @@ const AdminHolidaysPage = () => {
             </Typography>
           ) : (
             holidays.map((holiday) => (
-              <ListItem key={holiday._id}>
+              <ListItem key={holiday._id} secondaryAction={
+              <Button color="error" onClick={() => handleDelete(holiday._id)}>
+               Delete
+              </Button>
+               }>
                 <EventIcon color="primary" sx={{ mr: 2 }} />
                 <ListItemText
                   primary={holiday.name || 'Unnamed'}
