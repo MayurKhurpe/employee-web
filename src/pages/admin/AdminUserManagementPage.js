@@ -32,12 +32,11 @@ const AdminUserManagementPage = () => {
   const [loading, setLoading] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
-  // Summary states
   const [summary, setSummary] = useState({
     totalUsers: 0,
     approvedUsers: 0,
     verifiedUsers: 0,
-    activeUsers: 0, // assuming active means approved + verified
+    activeUsers: 0,
   });
 
   const navigate = useNavigate();
@@ -46,17 +45,16 @@ const AdminUserManagementPage = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/admin/pending-users', {
+      const res = await axios.get('/admin/all-users', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
       setFilteredUsers(res.data);
 
-      // Calculate summary
       const total = res.data.length;
-      const approved = res.data.filter(u => u.isApproved).length;
-      const verified = res.data.filter(u => u.isVerified).length;
-      const active = res.data.filter(u => u.isApproved && u.isVerified).length;
+      const approved = res.data.filter((u) => u.isApproved).length;
+      const verified = res.data.filter((u) => u.isVerified).length;
+      const active = res.data.filter((u) => u.isApproved && u.isVerified).length;
 
       setSummary({
         totalUsers: total,
@@ -218,58 +216,29 @@ const AdminUserManagementPage = () => {
           Approve and verify users, or manage user accounts.
         </Typography>
 
-        {/* Summary */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
           <Grid item xs={6} sm={3}>
-            <Paper
-              elevation={1}
-              sx={{ p: 2, textAlign: 'center', bgcolor: '#e3f2fd', borderRadius: 2 }}
-            >
-              <Typography variant="subtitle2" color="primary">
-                Total Users
-              </Typography>
-              <Typography variant="h5" fontWeight="bold">
-                {summary.totalUsers}
-              </Typography>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#e3f2fd', borderRadius: 2 }}>
+              <Typography variant="subtitle2" color="primary">Total Users</Typography>
+              <Typography variant="h5" fontWeight="bold">{summary.totalUsers}</Typography>
             </Paper>
           </Grid>
           <Grid item xs={6} sm={3}>
-            <Paper
-              elevation={1}
-              sx={{ p: 2, textAlign: 'center', bgcolor: '#dcedc8', borderRadius: 2 }}
-            >
-              <Typography variant="subtitle2" color="success.main">
-                Approved Users
-              </Typography>
-              <Typography variant="h5" fontWeight="bold">
-                {summary.approvedUsers}
-              </Typography>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#dcedc8', borderRadius: 2 }}>
+              <Typography variant="subtitle2" color="success.main">Approved Users</Typography>
+              <Typography variant="h5" fontWeight="bold">{summary.approvedUsers}</Typography>
             </Paper>
           </Grid>
           <Grid item xs={6} sm={3}>
-            <Paper
-              elevation={1}
-              sx={{ p: 2, textAlign: 'center', bgcolor: '#fff9c4', borderRadius: 2 }}
-            >
-              <Typography variant="subtitle2" color="warning.main">
-                Verified Users
-              </Typography>
-              <Typography variant="h5" fontWeight="bold">
-                {summary.verifiedUsers}
-              </Typography>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#fff9c4', borderRadius: 2 }}>
+              <Typography variant="subtitle2" color="warning.main">Verified Users</Typography>
+              <Typography variant="h5" fontWeight="bold">{summary.verifiedUsers}</Typography>
             </Paper>
           </Grid>
           <Grid item xs={6} sm={3}>
-            <Paper
-              elevation={1}
-              sx={{ p: 2, textAlign: 'center', bgcolor: '#ffcdd2', borderRadius: 2 }}
-            >
-              <Typography variant="subtitle2" color="error.main">
-                Active Users
-              </Typography>
-              <Typography variant="h5" fontWeight="bold">
-                {summary.activeUsers}
-              </Typography>
+            <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#ffcdd2', borderRadius: 2 }}>
+              <Typography variant="subtitle2" color="error.main">Active Users</Typography>
+              <Typography variant="h5" fontWeight="bold">{summary.activeUsers}</Typography>
             </Paper>
           </Grid>
         </Grid>
