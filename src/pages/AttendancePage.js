@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Container, Paper, Typography, Stack, Button, Snackbar, Alert,
-  ToggleButtonGroup, ToggleButton, CircularProgress, Pagination,
-  Box, TextField, Dialog, DialogTitle, DialogContent, DialogActions
+  Container, Paper, Typography, Stack, Button, Snackbar, Alert, ToggleButtonGroup,
+  ToggleButton, CircularProgress, Pagination, Box, TextField, Dialog, DialogTitle,
+  DialogContent, DialogActions
 } from '@mui/material';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -10,7 +10,9 @@ import dayjs from 'dayjs';
 import axios from 'api/axios';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
-import { PieChart, Pie, Cell, Legend, ResponsiveContainer, Tooltip } from 'recharts';
+import {
+  PieChart, Pie, Cell, Legend, ResponsiveContainer, Tooltip as RechartsTooltip,
+} from 'recharts';
 
 const PAGE_SIZE = 5;
 const COLORS = ['#4caf50', '#f44336', '#ff9800', '#2196f3'];
@@ -23,7 +25,7 @@ const AttendancePage = () => {
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterDate, setFilterDate] = useState(null);
-  const [filterMonth, setFilterMonth] = useState(dayjs());
+  const [filterMonth, setFilterMonth] = useState(dayjs()); // ✅ New filter by month
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [location, setLocation] = useState({ lat: null, lng: null });
@@ -107,6 +109,40 @@ const AttendancePage = () => {
     { name: 'Remote Work', value: monthYearRecords.filter((r) => r.status === 'Remote Work').length },
   ];
 
+  const handleMarkAttendance = async (status) => {
+    if (loading) return;
+    if (
+      location.lat &&
+      location.lng &&
+      status !== 'Remote Work' &&
+      !isWithinOffice(location.lat, location.lng)
+    ) {
+      return setSnackbar({
+        open: true,
+        message: '❌ Outside office boundary. Attendance not allowed.',
+        severity: 'error',
+      });
+    }
+
+    if (status === 'Remote Work') {
+      setRemoteDialogOpen(true);
+      return;
+    }
+
+    markAttendance(status);
+  };
+
+  const isWithinOffice = (lat, lng) => {
+    const officeLat = 18.5204, officeLng = 73.8567, radius = 5;
+    const toRad = (val) => (val * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(officeLat - lat);
+    const dLon = toRad(officeLng - lng);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat)) * Math.cos(toRad(officeLat)) * Math.sin(dLon / 2) ** 2;
+    const distance = 2 * R * Math.asin(Math.sqrt(a));
+    return distance <= radius;
+  };
+
   const markAttendance = async (status, extra = {}) => {
     setLoading(true);
     const now = dayjs();
@@ -125,14 +161,8 @@ const AttendancePage = () => {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setRecords((prev) => [res.data.attendance, ...prev.filter((r) => !dayjs(r.date).isSame(now, 'day'))]);
-      const locMsg =
-        ['Present', 'Half Day'].includes(status) && location.lat
-          ? '⚠️ Outside office/or any error. Attendance submitted successfully.'
-          : `✅ Marked as ${status}!`;
-
-      setSnackbar({ open: true, message: locMsg, severity: 'success' });
+      setSnackbar({ open: true, message: `✅ Marked as ${status}!`, severity: 'success' });
       setAlreadyMarked(true);
       setRemoteForm({ customer: '', workLocation: '', assignedBy: '' });
       setRemoteDialogOpen(false);
@@ -144,15 +174,6 @@ const AttendancePage = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleMarkAttendance = (status) => {
-    if (loading) return;
-    if (status === 'Remote Work') {
-      setRemoteDialogOpen(true);
-    } else {
-      markAttendance(status);
     }
   };
 
@@ -184,6 +205,9 @@ const AttendancePage = () => {
 
   return (
     <>
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundImage: `url(${backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(50px)', zIndex: -1 }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(255,255,255,0.6)', zIndex: -1 }} />
+
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom>📅 Attendance Tracker</Typography>
 
@@ -196,40 +220,120 @@ const AttendancePage = () => {
           </Stack>
         </Paper>
 
-        {/* ... Summary, Filters, Records Table, Export Buttons ... */}
-        {/* Skip for brevity. Already in your code and works fine. */}
+        <Paper sx={{ p: 3, mb: 4 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="h6">📊 Attendance Summary - {filterMonth.format('MMMM YYYY')}</Typography>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                views={['year', 'month']}
+                label="📆 Filter Summary by Month"
+                minDate={dayjs().subtract(1, 'year')}
+                maxDate={dayjs()}
+                value={filterMonth}
+                onChange={(val) => setFilterMonth(val)}
+                slotProps={{ textField: { size: 'small' } }}
+              />
+            </LocalizationProvider>
+          </Stack>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie data={summaryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                {summaryData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </Paper>
 
-        {/* Remote Work Dialog */}
-        <Dialog open={remoteDialogOpen} onClose={() => setRemoteDialogOpen(false)} fullWidth maxWidth="sm">
-          <DialogTitle>Remote Work Details</DialogTitle>
-          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <TextField label="👤 Customer Name" value={remoteForm.customer} onChange={(e) => setRemoteForm({ ...remoteForm, customer: e.target.value })} required />
-            <TextField label="🏢 Work Location" value={remoteForm.workLocation} onChange={(e) => setRemoteForm({ ...remoteForm, workLocation: e.target.value })} required />
-            <TextField label="📨 Assigned By" value={remoteForm.assignedBy} onChange={(e) => setRemoteForm({ ...remoteForm, assignedBy: e.target.value })} required />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setRemoteDialogOpen(false)}>Cancel</Button>
-            <Button variant="contained" onClick={() => {
-              if (!remoteForm.customer || !remoteForm.workLocation || !remoteForm.assignedBy) {
-                setSnackbar({ open: true, message: 'All fields are required.', severity: 'warning' });
-                return;
-              }
-              markAttendance('Remote Work', remoteForm);
-            }}>Submit</Button>
-          </DialogActions>
-        </Dialog>
+        <Stack direction="row" spacing={2} alignItems="center" mb={2} flexWrap="wrap">
+          <ToggleButtonGroup value={filterStatus} exclusive onChange={(e, val) => val && setFilterStatus(val)} size="small">
+            <ToggleButton value="All">All</ToggleButton>
+            <ToggleButton value="Present">Present</ToggleButton>
+            <ToggleButton value="Absent">Absent</ToggleButton>
+            <ToggleButton value="Half Day">Half Day</ToggleButton>
+            <ToggleButton value="Remote Work">Remote</ToggleButton>
+          </ToggleButtonGroup>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker label="📅 Filter by Date" value={filterDate} onChange={(val) => setFilterDate(val)} />
+          </LocalizationProvider>
+          <TextField label="🔍 Search" value={search} onChange={(e) => setSearch(e.target.value)} size="small" />
+          <Button variant="outlined" onClick={() => { setFilterDate(null); setSearch(''); setFilterStatus('All'); }}>Clear</Button>
+        </Stack>
 
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={4000}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar({ ...snackbar, open: false })}>
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
+        {loading ? (
+          <Box textAlign="center" py={5}><CircularProgress /></Box>
+        ) : paginatedRecords.length === 0 ? (
+          <Typography variant="body1" align="center">No attendance records found.</Typography>
+        ) : (
+          <Paper sx={{ p: 2 }}>
+            {paginatedRecords.map((rec) => (
+              <Box key={rec._id} mb={2} p={2} border={1} borderColor="grey.300" borderRadius={2}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  {dayjs(rec.date).format('dddd, DD MMM YYYY')}
+                </Typography>
+                <Typography variant="body1">
+                  📌 Status:{' '}
+                  <strong style={{
+                    color:
+                      rec.status === 'Present' ? '#4caf50' :
+                      rec.status === 'Absent' ? '#f44336' :
+                      rec.status === 'Half Day' ? '#ff9800' :
+                      '#2196f3'
+                  }}>
+                    {rec.status}
+                  </strong>
+                </Typography>
+                {rec.status === 'Remote Work' && (
+                  <>
+                    {rec.customer && <Typography variant="body2">👤 Customer: {rec.customer}</Typography>}
+                    {rec.workLocation && <Typography variant="body2">🏢 Location: {rec.workLocation}</Typography>}
+                    {rec.assignedBy && <Typography variant="body2">📨 Assigned By: {rec.assignedBy}</Typography>}
+                  </>
+                )}
+                <Typography variant="body2">
+                  🕒 In: {rec.checkInTime || 'N/A'} | Out: {rec.checkOutTime || 'N/A'}
+                </Typography>
+              </Box>
+            ))}
+            <Stack direction="row" justifyContent="center" mt={2}>
+              <Pagination count={Math.ceil(filteredRecords.length / PAGE_SIZE)} page={page} onChange={(e, val) => setPage(val)} />
+            </Stack>
+          </Paper>
+        )}
+
+        <Stack direction="row" spacing={2} mt={3} justifyContent="center">
+          <Button variant="outlined" onClick={exportToPDF}>📄 Export PDF</Button>
+          <Button variant="outlined" onClick={exportToExcel}>📊 Export Excel</Button>
+        </Stack>
       </Container>
+
+      <Dialog open={remoteDialogOpen} onClose={() => setRemoteDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Remote Work Details</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+          <TextField label="👤 Customer Name" value={remoteForm.customer} onChange={(e) => setRemoteForm({ ...remoteForm, customer: e.target.value })} required />
+          <TextField label="🏢 Work Location" value={remoteForm.workLocation} onChange={(e) => setRemoteForm({ ...remoteForm, workLocation: e.target.value })} required />
+          <TextField label="📨 Assigned By" value={remoteForm.assignedBy} onChange={(e) => setRemoteForm({ ...remoteForm, assignedBy: e.target.value })} required />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRemoteDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={() => {
+            if (!remoteForm.customer || !remoteForm.workLocation || !remoteForm.assignedBy) {
+              setSnackbar({ open: true, message: 'All fields are required.', severity: 'warning' });
+              return;
+            }
+            markAttendance('Remote Work', remoteForm);
+          }}>Submit</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };
