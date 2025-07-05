@@ -111,30 +111,6 @@ const AttendancePage = () => {
     { name: 'Remote Work', value: monthYearRecords.filter((r) => r.status === 'Remote Work').length },
   ];
 
-  const handleMarkAttendance = async (status) => {
-    if (loading) return;
-
-    if (
-      location.lat &&
-      location.lng &&
-      status !== 'Remote Work' &&
-      !isWithinOffice(location.lat, location.lng)
-    ) {
-      return setSnackbar({
-        open: true,
-        message: '❌ Outside office boundary. Attendance not allowed.',
-        severity: 'error',
-      });
-    }
-
-    if (status === 'Remote Work') {
-      setRemoteDialogOpen(true);
-      return;
-    }
-
-    markAttendance(status);
-  };
-
   const isWithinOffice = (lat, lng) => {
     const officeLat = 18.5204, officeLng = 73.8567, radius = 5;
     const toRad = (val) => (val * Math.PI) / 180;
@@ -144,6 +120,28 @@ const AttendancePage = () => {
     const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat)) * Math.cos(toRad(officeLat)) * Math.sin(dLon / 2) ** 2;
     const distance = 2 * R * Math.asin(Math.sqrt(a));
     return distance <= radius;
+  };
+
+  const handleMarkAttendance = async (status) => {
+    if (loading) return;
+
+    if (status === 'Remote Work') {
+      setRemoteDialogOpen(true);
+      return;
+    }
+
+    const outside = location.lat && location.lng && !isWithinOffice(location.lat, location.lng);
+
+    if (outside && (status === 'Present' || status === 'Half Day')) {
+      markAttendance(status);
+      return setSnackbar({
+        open: true,
+        message: `⚠ Outside office boundary. Attendance Mark successfully as ${status} & notify to admin.`,
+        severity: 'warning',
+      });
+    }
+
+    markAttendance(status);
   };
 
   const markAttendance = async (status, extra = {}) => {
@@ -179,7 +177,6 @@ const AttendancePage = () => {
       setLoading(false);
     }
   };
-
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text('Attendance Records', 10, 10);
