@@ -25,7 +25,7 @@ const AttendancePage = () => {
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterDate, setFilterDate] = useState(null);
-  const [filterMonth, setFilterMonth] = useState(dayjs()); // ✅ New filter by month
+  const [filterMonth, setFilterMonth] = useState(dayjs());
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [location, setLocation] = useState({ lat: null, lng: null });
@@ -50,16 +50,18 @@ const AttendancePage = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const start = dayjs().subtract(29, 'day');
+        const start = dayjs('2025-07-01');
         const end = dayjs().startOf('day');
         const allDates = [];
         for (let i = 0; i <= end.diff(start, 'day'); i++) {
           allDates.push(start.add(i, 'day').format('YYYY-MM-DD'));
         }
 
+        const markedMap = new Map(
+          res.data.map((rec) => [dayjs(rec.date).format('YYYY-MM-DD'), rec])
+        );
         const filled = allDates.map((dateStr) => {
-          const found = res.data.find((rec) => dayjs(rec.date).isSame(dateStr, 'day'));
-          return found || {
+          return markedMap.get(dateStr) || {
             _id: dateStr,
             date: dateStr,
             status: 'Absent',
@@ -111,6 +113,7 @@ const AttendancePage = () => {
 
   const handleMarkAttendance = async (status) => {
     if (loading) return;
+
     if (
       location.lat &&
       location.lng &&
