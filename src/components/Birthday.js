@@ -29,7 +29,9 @@ export default function Birthday({ spinnerSize = 20, refresh = true }) {
         );
         setBirthdays(sorted);
 
-        // Update last fetch only if not manual refresh
+        // Cache the data in localStorage
+        localStorage.setItem('cachedBirthdays', JSON.stringify(sorted));
+
         if (!isManual) {
           const todayStr = dayjs().format('YYYY-MM-DD');
           localStorage.setItem('lastBirthdayFetch', todayStr);
@@ -38,15 +40,24 @@ export default function Birthday({ spinnerSize = 20, refresh = true }) {
       .finally(() => setLoading(false));
   };
 
-  // Auto-fetch only once per day
+  // Auto-fetch or use cache
   useEffect(() => {
-    if (!refresh) return;
-
     const todayStr = dayjs().format('YYYY-MM-DD');
     const lastFetch = localStorage.getItem('lastBirthdayFetch');
 
-    if (lastFetch !== todayStr) {
+    if (refresh && lastFetch !== todayStr) {
       fetchBirthdays(false);
+    } else {
+      // Load from cache if available
+      const cached = localStorage.getItem('cachedBirthdays');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setBirthdays(parsed);
+        } catch (e) {
+          console.error("❌ Failed to parse cachedBirthdays:", e);
+        }
+      }
     }
   }, [refresh]);
 
