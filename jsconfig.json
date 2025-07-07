@@ -2,5 +2,5 @@
   "compilerOptions": {
     "baseUrl": "src"
   },
-  "include": ["src", "employee-backend/src/utils/absentReminderCron.js"]
+  "include": ["src", "employee-backend/utils/absentReminderCron.js"]
 }

@@ -1,4 +1,3 @@
-// 📁 src/pages/Dashboard.js
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -11,15 +10,26 @@ import {
   ListItemText,
   useTheme,
   Grid,
-  Chip,
 } from "@mui/material";
 import AnnouncementIcon from "@mui/icons-material/Announcement";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import WorkIcon from "@mui/icons-material/Work";
 import EventIcon from "@mui/icons-material/Event";
 import TodayIcon from "@mui/icons-material/Today";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+import TimelapseIcon from "@mui/icons-material/Timelapse";
+import LaptopMacIcon from "@mui/icons-material/LaptopMac";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import Birthday from "../components/Birthday";
 import axios from "api/axios";
+
+const ATTENDANCE_COLORS = {
+  present: "#4caf50",
+  absent: "#f44336",
+  halfDay: "#ff9800",
+  remote: "#2196f3",
+};
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -30,13 +40,11 @@ export default function Dashboard() {
   const [events, setEvents] = useState({ today: [], upcoming: [] });
   const [shouldRefreshBirthday, setShouldRefreshBirthday] = useState(false);
 
-  // ⏰ Live Clock
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // 🎂 Birthday Refresh Once Per Day
   useEffect(() => {
     const todayStr = new Date().toISOString().split("T")[0];
     const lastFetch = localStorage.getItem("lastBirthdayFetch");
@@ -48,7 +56,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  // 📣 Load Announcements
   useEffect(() => {
     axios
       .get("/broadcasts")
@@ -56,7 +63,6 @@ export default function Dashboard() {
       .catch((err) => console.error("❌ Failed to load announcements:", err));
   }, []);
 
-  // 📅 Load Holidays
   useEffect(() => {
     axios
       .get("/holidays")
@@ -71,7 +77,6 @@ export default function Dashboard() {
       .catch((err) => console.error("❌ Failed to load holidays:", err));
   }, []);
 
-  // 📊 Load Attendance Summary
   useEffect(() => {
     axios
       .get("/attendance/my-summary")
@@ -81,7 +86,6 @@ export default function Dashboard() {
       );
   }, []);
 
-  // 📌 Load My Events for Dashboard
   useEffect(() => {
     axios
       .get("/events/dashboard")
@@ -91,7 +95,6 @@ export default function Dashboard() {
       );
   }, []);
 
-  // 🎁 Reusable SectionCard
   const SectionCard = ({ title, color, children }) => (
     <Card
       elevation={4}
@@ -127,7 +130,6 @@ export default function Dashboard() {
         py: 4,
       }}
     >
-      {/* 🔲 Blur Overlay */}
       <Box
         sx={{
           position: "absolute",
@@ -137,10 +139,7 @@ export default function Dashboard() {
           zIndex: 0,
         }}
       />
-
-      {/* 📦 Dashboard Content */}
       <Box sx={{ position: "relative", zIndex: 1, maxWidth: 900, mx: "auto" }}>
-        {/* 🎉 Header */}
         <Card
           elevation={6}
           sx={{
@@ -164,44 +163,77 @@ export default function Dashboard() {
           </Typography>
         </Card>
 
-        {/* ✅ Attendance Summary */}
         {summary && (
-          <SectionCard title="Your Attendance Summary" color="#4caf50">
-            <Grid container spacing={2}>
-              <Grid item xs={6} sm={3}>
-                <Chip
-                  label={`✅ Present: ${summary.present}`}
-                  color="success"
-                  icon={<WorkIcon />}
-                  sx={{ width: "100%", fontWeight: "bold" }}
-                />
+          <SectionCard
+            title={`Your Attendance Summary (${new Date().toLocaleString("default", {
+              month: "long",
+              year: "numeric",
+            })})`}
+            color="#4caf50"
+          >
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: "Present", value: summary.present },
+                        { name: "Absent", value: summary.absent },
+                        { name: "Half Day", value: summary.halfDay },
+                        { name: "Remote", value: summary.remote ?? 0 },
+                      ]}
+                      dataKey="value"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={4}
+                      label
+                    >
+                      <Cell fill={ATTENDANCE_COLORS.present} />
+                      <Cell fill={ATTENDANCE_COLORS.absent} />
+                      <Cell fill={ATTENDANCE_COLORS.halfDay} />
+                      <Cell fill={ATTENDANCE_COLORS.remote} />
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
               </Grid>
-              <Grid item xs={6} sm={3}>
-                <Chip
-                  label={`❌ Absent: ${summary.absent}`}
-                  color="error"
-                  sx={{ width: "100%", fontWeight: "bold" }}
-                />
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Chip
-                  label={`⏳ Half Day: ${summary.halfDay}`}
-                  color="warning"
-                  sx={{ width: "100%", fontWeight: "bold" }}
-                />
-              </Grid>
-              <Grid item xs={6} sm={3}>
-                <Chip
-                  label={`💻 Remote: ${summary.remote}`}
-                  color="info"
-                  sx={{ width: "100%", fontWeight: "bold" }}
-                />
+
+              <Grid item xs={12} md={6}>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Box textAlign="center">
+                      <CheckCircleIcon sx={{ fontSize: 40, color: "#4caf50" }} />
+                      <Typography variant="h6">{summary.present}</Typography>
+                      <Typography variant="body2" color="text.secondary">Present</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Box textAlign="center">
+                      <CancelIcon sx={{ fontSize: 40, color: "#f44336" }} />
+                      <Typography variant="h6">{summary.absent}</Typography>
+                      <Typography variant="body2" color="text.secondary">Absent</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Box textAlign="center">
+                      <TimelapseIcon sx={{ fontSize: 40, color: "#ff9800" }} />
+                      <Typography variant="h6">{summary.halfDay}</Typography>
+                      <Typography variant="body2" color="text.secondary">Half Day</Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Box textAlign="center">
+                      <LaptopMacIcon sx={{ fontSize: 40, color: "#2196f3" }} />
+                      <Typography variant="h6">{summary.remote ?? 0}</Typography>
+                      <Typography variant="body2" color="text.secondary">Remote</Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
               </Grid>
             </Grid>
           </SectionCard>
         )}
 
-        {/* 📣 Announcements */}
         <SectionCard title="Announcements" color="#9c27b0">
           {announcements.filter(
             (msg) => msg.audience === "all" || msg.audience === "employee"
@@ -232,7 +264,6 @@ export default function Dashboard() {
           )}
         </SectionCard>
 
-        {/* 📌 Today's Events */}
         <SectionCard title="Today's Events" color="#ff9800">
           {events.today.length > 0 ? (
             <List>
@@ -248,7 +279,6 @@ export default function Dashboard() {
           )}
         </SectionCard>
 
-        {/* 📌 Upcoming Events */}
         <SectionCard title="Upcoming Events" color="#00bcd4">
           {events.upcoming.length > 0 ? (
             <List>
@@ -269,7 +299,6 @@ export default function Dashboard() {
           )}
         </SectionCard>
 
-        {/* 📅 Holidays */}
         <SectionCard title="Upcoming Holidays" color="#f44336">
           <List>
             {holidays.length > 0 ? (
@@ -287,7 +316,6 @@ export default function Dashboard() {
           </List>
         </SectionCard>
 
-        {/* 🎂 Birthdays */}
         <SectionCard title="Today's Birthdays" color="#2196f3">
           <Birthday spinnerSize={20} refresh={shouldRefreshBirthday} />
         </SectionCard>
