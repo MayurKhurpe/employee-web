@@ -22,7 +22,7 @@ export default function Birthday({ spinnerSize = 20, refresh = true }) {
   const fetchBirthdays = (isManual = false) => {
     setLoading(true);
     axios
-      .get('/api/birthdays')
+      .get('/birthdays')
       .then((res) => {
         const sorted = res.data.sort(
           (a, b) => new Date(a.date) - new Date(b.date)
