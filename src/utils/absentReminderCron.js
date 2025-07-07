@@ -1,4 +1,4 @@
-// 📁 cron/absentReminderCron.js
+// 📁 utils/absentReminderCron.js
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 const mongoose = require('mongoose');
