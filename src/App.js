@@ -9,33 +9,17 @@ import {
   useNavigate,
 } from 'react-router-dom';
 import {
-  Box,
-  CssBaseline,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  IconButton,
-  Tooltip,
-  Avatar,
-  Typography,
-  Divider,
-  CircularProgress,
-  Button,
+  Box, CssBaseline, Drawer, List, ListItem, ListItemIcon, ListItemText,
+  IconButton, Tooltip, Avatar, Typography, Divider, CircularProgress, Button
 } from '@mui/material';
 import {
-  Menu as MenuIcon,
-  Logout,
-  Settings,
-  AccountCircle,
-  Dashboard as DashboardIcon,
-  AccessTime as AccessTimeIcon,
-  AdminPanelSettings as AdminPanelSettingsIcon,
+  Menu as MenuIcon, Logout, Settings, AccountCircle, Dashboard as DashboardIcon,
+  AccessTime as AccessTimeIcon, AdminPanelSettings as AdminPanelSettingsIcon
 } from '@mui/icons-material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
+// Page Imports
 import LoginPage from './components/Login';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -79,6 +63,14 @@ import SendOTPPage from './pages/SendOTPPage';
 import VerifyOTPPage from './pages/VerifyOTPPage';
 import SetNewPasswordPage from './pages/SetNewPasswordPage';
 
+// ✅ NEW TOOL PAGES
+import BreathingExercise from './pages/BreathingExercise';
+import MiniNotepad from './pages/MiniNotepad';
+import LoFiMusic from './pages/LoFiMusic';
+import TextCaseConverter from './pages/TextCaseConverter';
+import DigitalCompass from './pages/DigitalCompass';
+import TypingSpeedTest from './pages/TypingSpeedTest';
+
 function BackendChecker({ onReady }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -104,9 +96,7 @@ function BackendChecker({ onReady }) {
     return (
       <Box textAlign="center" mt={10}>
         <CircularProgress />
-        <Typography variant="h6" mt={2}>
-          Connecting to backend...
-        </Typography>
+        <Typography variant="h6" mt={2}>Connecting to backend...</Typography>
       </Box>
     );
   }
@@ -114,12 +104,8 @@ function BackendChecker({ onReady }) {
   if (error) {
     return (
       <Box textAlign="center" mt={10}>
-        <Typography variant="h6" color="error">
-          ⚠️ Backend server is starting up or unreachable.
-        </Typography>
-        <Button variant="contained" onClick={checkBackend} sx={{ mt: 2 }}>
-          🔁 Retry
-        </Button>
+        <Typography variant="h6" color="error">⚠️ Backend is unreachable.</Typography>
+        <Button variant="contained" onClick={checkBackend} sx={{ mt: 2 }}>🔁 Retry</Button>
       </Box>
     );
   }
@@ -272,7 +258,8 @@ export default function App() {
             <Route path="/verify-otp" element={<VerifyOTPPage />} />
             <Route path="/set-password" element={<SetNewPasswordPage />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
-            {/* All protected routes below */}
+
+            {/* 🔒 Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><Dashboard /></Layout></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><ProfilePage updateUser={setUser} /></Layout></ProtectedRoute>} />
             <Route path="/attendance" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><AttendancePage /></Layout></ProtectedRoute>} />
@@ -286,17 +273,22 @@ export default function App() {
             <Route path="/more-functions/documents" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><DocumentCenter /></Layout></ProtectedRoute>} />
             <Route path="/more-functions/weather" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><WeatherReport /></Layout></ProtectedRoute>} />
             <Route path="/more-functions/mood" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><MoodTracker /></Layout></ProtectedRoute>} />
-            <Route path="/more-functions/breathing" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>🧘‍♀️ Breathing Exercise</div></Layout></ProtectedRoute>} />
-            <Route path="/more-functions/notepad" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>📝 Mini Notepad</div></Layout></ProtectedRoute>} />
-            <Route path="/more-functions/music" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>🎵 Lo-Fi Music</div></Layout></ProtectedRoute>} />
-            <Route path="/more-functions/textcase" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>🔤 Text Case Converter</div></Layout></ProtectedRoute>} />
-            <Route path="/more-functions/compass" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>🧭 Digital Compass</div></Layout></ProtectedRoute>} />
-            <Route path="/more-functions/typing-test" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>⌨️ Typing Speed Test</div></Layout></ProtectedRoute>} />
+
+            {/* ✅ NEW TOOL ROUTES */}
+            <Route path="/more-functions/breathing" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><BreathingExercise /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/notepad" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><MiniNotepad /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/music" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><LoFiMusic /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/textcase" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><TextCaseConverter /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/compass" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><DigitalCompass /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/typing-test" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><TypingSpeedTest /></Layout></ProtectedRoute>} />
+
+            {/* Settings */}
             <Route path="/change-password" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><ChangePasswordPage /></Layout></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><SettingsPage /></Layout></ProtectedRoute>} />
             <Route path="/notification-settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><NotificationSettings /></Layout></ProtectedRoute>} />
             <Route path="/linked-devices" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><LinkedDevices /></Layout></ProtectedRoute>} />
             <Route path="/help-support" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><HelpSupport /></Layout></ProtectedRoute>} />
+
             {/* Admin */}
             <Route path="/admin" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/users" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminUserManagementPage /></Layout></ProtectedAdminRoute>} />
@@ -308,6 +300,7 @@ export default function App() {
             <Route path="/admin/notifications" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminNotificationsPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/attendance" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminAttendancePage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/leave-management" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><LeaveManagementPage /></Layout></ProtectedAdminRoute>} />
+
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

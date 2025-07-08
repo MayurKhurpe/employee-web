@@ -1,36 +1,92 @@
-import React, { useRef, useState } from 'react';
-import { Box, Typography, Button } from '@mui/material';
-import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import React from 'react';
+import { Box, Typography, Paper, Button, Fade } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useNavigate } from 'react-router-dom';
 
-export default function LoFiMusic() {
-  const audioRef = useRef(null);
-  const [playing, setPlaying] = useState(false);
-
-  const toggleMusic = () => {
-    if (playing) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setPlaying(!playing);
-  };
+const LoFiMusic = () => {
+  const navigate = useNavigate();
 
   return (
-    <Box sx={{ textAlign: 'center', mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        🎵 Lo-Fi Music
-      </Typography>
-      <Button
-        variant="contained"
-        color={playing ? 'error' : 'primary'}
-        startIcon={<MusicNoteIcon />}
-        onClick={toggleMusic}
-      >
-        {playing ? 'Pause Music' : 'Play Music'}
-      </Button>
-      <audio ref={audioRef} loop>
-        <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_fa493b9e49.mp3" type="audio/mpeg" />
-      </audio>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundImage: `url('https://i.postimg.cc/Yq51br7t/MES.jpg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        position: 'relative',
+      }}
+    >
+      {/* Blur Overlay */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          height: '100%',
+          width: '100%',
+          backdropFilter: 'blur(10px)',
+          backgroundColor: 'rgba(255,255,255,0.4)',
+          zIndex: 0,
+        }}
+      />
+
+      <Fade in timeout={600}>
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            p: 4,
+            maxWidth: 700,
+            mx: 'auto',
+            textAlign: 'center',
+          }}
+        >
+          {/* Back Button */}
+          <Button
+            variant="contained"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate('/more-functions')}
+            sx={{
+              mb: 3,
+              bgcolor: '#ffffffdd',
+              color: '#000',
+              '&:hover': { bgcolor: '#ffffff' },
+            }}
+          >
+            Back to More Functions
+          </Button>
+
+          {/* Music Player Card */}
+          <Paper
+            elevation={6}
+            sx={{
+              borderRadius: 4,
+              p: 4,
+              bgcolor: 'rgba(255, 255, 255, 0.95)',
+              boxShadow: 6,
+            }}
+          >
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              🎧 LoFi Music
+            </Typography>
+            <Typography variant="body1" mb={2}>
+              Relax and focus with calming LoFi beats.
+            </Typography>
+
+            <iframe
+              width="100%"
+              height="315"
+              src="https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1"
+              title="LoFi Music Stream"
+              frameBorder="0"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+            ></iframe>
+          </Paper>
+        </Box>
+      </Fade>
     </Box>
   );
-}
+};
+
+export default LoFiMusic;
