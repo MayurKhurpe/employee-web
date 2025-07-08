@@ -286,6 +286,12 @@ export default function App() {
             <Route path="/more-functions/documents" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><DocumentCenter /></Layout></ProtectedRoute>} />
             <Route path="/more-functions/weather" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><WeatherReport /></Layout></ProtectedRoute>} />
             <Route path="/more-functions/mood" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><MoodTracker /></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/breathing" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>🧘‍♀️ Breathing Exercise</div></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/notepad" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>📝 Mini Notepad</div></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/music" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>🎵 Lo-Fi Music</div></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/textcase" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>🔤 Text Case Converter</div></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/compass" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>🧭 Digital Compass</div></Layout></ProtectedRoute>} />
+            <Route path="/more-functions/typing-test" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><div>⌨️ Typing Speed Test</div></Layout></ProtectedRoute>} />
             <Route path="/change-password" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><ChangePasswordPage /></Layout></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><SettingsPage /></Layout></ProtectedRoute>} />
             <Route path="/notification-settings" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><NotificationSettings /></Layout></ProtectedRoute>} />

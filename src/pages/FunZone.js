@@ -102,8 +102,8 @@ const FunZone = () => {
                 <Button fullWidth variant="contained" sx={{ mb: 1 }} onClick={() => window.open('https://rock-paper-scissors-game.netlify.app', '_blank')}>👊✌️✋ Rock Paper</Button>
                 <Button fullWidth variant="outlined" sx={{ mb: 1 }} onClick={() => window.open('https://tic-tac-toe-advanced.netlify.app', '_blank')}>⭕❌ Tic Tac Toe</Button>
                 <Button fullWidth variant="outlined" sx={{ mb: 1 }} onClick={() => window.open('https://sudoku-game.netlify.app', '_blank')}>🔢 Sudoku</Button>
-                <Button fullWidth variant="outlined" sx={{ mb: 1 }} onClick={() => window.open('https://guess-the-number-js-game.netlify.app', '_blank')}>🎯 Number Guessing</Button>
-                <Button fullWidth variant="outlined" onClick={() => window.open('https://sliding-puzzle-game-react.netlify.app', '_blank')}>🧩 Puzzle Game</Button>
+                <Button fullWidth variant="outlined" sx={{ mb: 1 }} onClick={() => window.open('https://number-guess-game-react.netlify.app', '_blank')}>🎯 Number Guessing</Button>
+                <Button fullWidth variant="outlined" onClick={() => window.open('https://toytheater.com/category/play/puzzles/', '_blank')}>🧩 Puzzle Game</Button>
               </Card>
             </Grid>
 
