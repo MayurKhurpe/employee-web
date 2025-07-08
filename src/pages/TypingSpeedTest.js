@@ -1,14 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
   TextField,
-  Button,
   Paper,
+  Button,
   Fade,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import KeyboardIcon from '@mui/icons-material/Keyboard';
 import { useNavigate } from 'react-router-dom';
 
 const sampleText = `Practice makes perfect. Improve your typing speed with this simple test!`;
@@ -17,37 +16,48 @@ const TypingSpeedTest = () => {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [startTime, setStartTime] = useState(null);
-  const [wpm, setWpm] = useState(null);
-  const [accuracy, setAccuracy] = useState(null);
-  const [completed, setCompleted] = useState(false);
+  const [wpm, setWpm] = useState(0);
+  const [accuracy, setAccuracy] = useState(100);
+  const [isFinished, setIsFinished] = useState(false);
+  const inputRef = useRef();
 
-  const handleChange = (e) => {
-    const value = e.target.value;
-    if (!startTime) setStartTime(Date.now());
-    setInput(value);
-
-    if (value === sampleText) {
-      const endTime = Date.now();
-      const timeTaken = (endTime - startTime) / 60000;
-      const words = sampleText.split(' ').length;
-      setWpm(Math.round(words / timeTaken));
-
-      const correctChars = sampleText
-        .split('')
-        .filter((char, i) => char === value[i]).length;
-      const totalChars = sampleText.length;
-      setAccuracy(Math.round((correctChars / totalChars) * 100));
-
-      setCompleted(true);
+  useEffect(() => {
+    if (input.length === 1 && !startTime) {
+      setStartTime(Date.now());
     }
-  };
+
+    if (input === sampleText) {
+      const endTime = Date.now();
+      const timeInMinutes = (endTime - startTime) / 60000;
+      const wordCount = sampleText.trim().split(/\s+/).length;
+      const correctChars = [...input].filter((char, idx) => char === sampleText[idx]).length;
+      const totalChars = sampleText.length;
+
+      setWpm(Math.round(wordCount / timeInMinutes));
+      setAccuracy(Math.round((correctChars / totalChars) * 100));
+      setIsFinished(true);
+    }
+  }, [input]);
 
   const handleRestart = () => {
     setInput('');
+    setWpm(0);
+    setAccuracy(100);
     setStartTime(null);
-    setWpm(null);
-    setAccuracy(null);
-    setCompleted(false);
+    setIsFinished(false);
+    inputRef.current.focus();
+  };
+
+  const renderLiveText = () => {
+    return [...sampleText].map((char, idx) => {
+      let color = '';
+      if (idx < input.length) {
+        color = input[idx] === char ? '#4caf50' : '#f44336';
+      }
+      return (
+        <span key={idx} style={{ color }}>{char}</span>
+      );
+    });
   };
 
   return (
@@ -60,16 +70,16 @@ const TypingSpeedTest = () => {
         position: 'relative',
       }}
     >
-      {/* Blur Layer */}
+      {/* Blur Overlay */}
       <Box
         sx={{
           position: 'absolute',
           top: 0,
           left: 0,
-          height: '100%',
           width: '100%',
+          height: '100%',
           backdropFilter: 'blur(10px)',
-          backgroundColor: 'rgba(255,255,255,0.4)',
+          backgroundColor: 'rgba(255,255,255,0.3)',
           zIndex: 0,
         }}
       />
@@ -80,22 +90,22 @@ const TypingSpeedTest = () => {
           variant="contained"
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate('/more-functions')}
-          sx={{ bgcolor: '#fff', color: '#000', '&:hover': { bgcolor: '#f5f5f5' } }}
+          sx={{ bgcolor: '#fff', color: '#000', '&:hover': { bgcolor: '#eee' } }}
         >
           Back to More Functions
         </Button>
       </Box>
 
-      {/* Typing Test UI */}
+      {/* Main Content */}
       <Fade in timeout={600}>
         <Box
           sx={{
             zIndex: 1,
             position: 'relative',
-            maxWidth: 700,
+            maxWidth: 800,
             mx: 'auto',
             mt: 12,
-            px: 2,
+            px: 3,
           }}
         >
           <Paper
@@ -107,48 +117,56 @@ const TypingSpeedTest = () => {
               textAlign: 'center',
             }}
           >
-            <KeyboardIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               ⌨️ Typing Speed Test
             </Typography>
 
             <Typography variant="body1" sx={{ mb: 2 }}>
-              Type the following:
+              Type the sentence below as fast and accurately as you can:
             </Typography>
 
-            <Typography
-              variant="body2"
+            <Box
               sx={{
-                fontStyle: 'italic',
-                mb: 2,
-                backgroundColor: '#f1f1f1',
                 p: 2,
+                mb: 2,
+                border: '1px solid #ddd',
                 borderRadius: 2,
+                minHeight: '60px',
+                textAlign: 'left',
+                fontFamily: 'monospace',
+                fontSize: '1.1rem',
               }}
             >
-              {sampleText}
-            </Typography>
+              {renderLiveText()}
+            </Box>
 
             <TextField
               multiline
               fullWidth
-              rows={4}
-              value={input}
-              onChange={handleChange}
-              disabled={completed}
+              rows={3}
               placeholder="Start typing here..."
+              inputRef={inputRef}
+              value={input}
+              onChange={(e) => !isFinished && setInput(e.target.value)}
+              disabled={isFinished}
+              sx={{ mb: 2 }}
             />
 
-            {completed && (
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="h6" sx={{ mb: 1 }}>
-                  🚀 WPM: <strong>{wpm}</strong> | 🎯 Accuracy: <strong>{accuracy}%</strong>
+            {isFinished && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="h6">
+                  🚀 WPM: <strong>{wpm}</strong> &nbsp; | &nbsp; 🎯 Accuracy: <strong>{accuracy}%</strong>
                 </Typography>
-                <Button variant="outlined" onClick={handleRestart}>
-                  🔁 Try Again
-                </Button>
               </Box>
             )}
+
+            <Button
+              variant="outlined"
+              onClick={handleRestart}
+              sx={{ mt: 1 }}
+            >
+              🔁 Restart
+            </Button>
           </Paper>
         </Box>
       </Fade>

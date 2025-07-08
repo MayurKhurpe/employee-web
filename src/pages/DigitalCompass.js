@@ -1,44 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Fade,
-} from '@mui/material';
+import { Box, Typography, Paper, Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ExploreIcon from '@mui/icons-material/Explore';
 import { useNavigate } from 'react-router-dom';
-
-const getDirection = (angle) => {
-  if (angle === null) return 'N/A';
-  if (angle >= 337.5 || angle < 22.5) return 'North';
-  if (angle >= 22.5 && angle < 67.5) return 'North-East';
-  if (angle >= 67.5 && angle < 112.5) return 'East';
-  if (angle >= 112.5 && angle < 157.5) return 'South-East';
-  if (angle >= 157.5 && angle < 202.5) return 'South';
-  if (angle >= 202.5 && angle < 247.5) return 'South-West';
-  if (angle >= 247.5 && angle < 292.5) return 'West';
-  return 'North-West';
-};
 
 const DigitalCompass = () => {
   const navigate = useNavigate();
-  const [heading, setHeading] = useState(null);
+  const [angle, setAngle] = useState(null);
+  const [direction, setDirection] = useState('N/A');
+  const [supported, setSupported] = useState(true);
+
+  const getDirection = (deg) => {
+    if (deg >= 337.5 || deg < 22.5) return 'N';
+    if (deg >= 22.5 && deg < 67.5) return 'NE';
+    if (deg >= 67.5 && deg < 112.5) return 'E';
+    if (deg >= 112.5 && deg < 157.5) return 'SE';
+    if (deg >= 157.5 && deg < 202.5) return 'S';
+    if (deg >= 202.5 && deg < 247.5) return 'SW';
+    if (deg >= 247.5 && deg < 292.5) return 'W';
+    if (deg >= 292.5 && deg < 337.5) return 'NW';
+    return 'N/A';
+  };
 
   useEffect(() => {
-    const handleOrientation = (event) => {
-      if (event.absolute && event.alpha !== null) {
-        setHeading(event.alpha);
+    const handleOrientation = (e) => {
+      if (typeof e.alpha === 'number') {
+        const deg = Math.round(e.alpha);
+        setAngle(deg);
+        setDirection(getDirection(deg));
+      } else {
+        setSupported(false);
       }
     };
 
     if (window.DeviceOrientationEvent) {
-      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-      return () => window.removeEventListener('deviceorientationabsolute', handleOrientation);
+      window.addEventListener('deviceorientation', handleOrientation, true);
     } else {
-      setHeading(null);
+      setSupported(false);
     }
+
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation);
+    };
   }, []);
 
   return (
@@ -49,80 +51,61 @@ const DigitalCompass = () => {
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         position: 'relative',
+        px: 2,
+        py: 4,
       }}
     >
-      {/* Blur Background */}
       <Box
         sx={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backdropFilter: 'blur(10px)',
-          backgroundColor: 'rgba(255,255,255,0.4)',
-          zIndex: 0,
+          top: 20,
+          left: 20,
+          zIndex: 2,
         }}
-      />
-
-      {/* Back Button */}
-      <Box sx={{ position: 'absolute', top: 20, left: 20, zIndex: 2 }}>
+      >
         <Button
           variant="contained"
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate('/more-functions')}
-          sx={{ bgcolor: '#fff', color: '#000', '&:hover': { bgcolor: '#f5f5f5' } }}
+          sx={{
+            bgcolor: '#fff',
+            color: '#000',
+            '&:hover': { bgcolor: '#eee' },
+          }}
         >
           Back to More Functions
         </Button>
       </Box>
 
-      {/* Compass Content */}
-      <Fade in timeout={600}>
-        <Box
-          sx={{
-            position: 'relative',
-            zIndex: 1,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '100vh',
-            p: 3,
-          }}
-        >
-          <Paper
-            elevation={6}
-            sx={{
-              p: 4,
-              borderRadius: 4,
-              maxWidth: 400,
-              width: '100%',
-              textAlign: 'center',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            }}
-          >
-            <ExploreIcon sx={{ fontSize: 60, color: '#3f51b5' }} />
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              🧭 Digital Compass
+      <Paper
+        elevation={6}
+        sx={{
+          mt: 10,
+          maxWidth: 400,
+          mx: 'auto',
+          p: 4,
+          borderRadius: 4,
+          backgroundColor: 'rgba(255,255,255,0.95)',
+          textAlign: 'center',
+        }}
+      >
+        <Typography variant="h4" gutterBottom>
+          🧭 Digital Compass
+        </Typography>
+
+        {supported && angle !== null ? (
+          <>
+            <Typography variant="h5" gutterBottom>
+              Direction: <strong>{direction}</strong>
             </Typography>
-            <Typography variant="h6" sx={{ mt: 2 }}>
-              Direction: <strong>{getDirection(heading)}</strong>
-            </Typography>
-            <Typography variant="body1" sx={{ mt: 1 }}>
-              Angle: <strong>{heading ? `${Math.round(heading)}°` : 'N/A'}</strong>
-            </Typography>
-            {!heading && (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ mt: 2, display: 'block' }}
-              >
-                Compass not supported on your device/browser.
-              </Typography>
-            )}
-          </Paper>
-        </Box>
-      </Fade>
+            <Typography variant="h6">Angle: {angle}°</Typography>
+          </>
+        ) : (
+          <Typography color="error" mt={2}>
+            Compass not supported on your device/browser.
+          </Typography>
+        )}
+      </Paper>
     </Box>
   );
 };
