@@ -46,6 +46,44 @@ const features = [
     description: 'Track your mood and mental well-being.',
     path: '/more-functions/mood',
   },
+
+  // ✅ NEW FEATURES BELOW
+  {
+    icon: '🧘‍♀️',
+    title: 'Breathing Exercise',
+    description: 'Simple breathing to calm your mind.',
+    path: '/more-functions/breathing',
+  },
+  {
+    icon: '📝',
+    title: 'Mini Notepad',
+    description: 'Quickly write and save your notes.',
+    path: '/more-functions/notepad',
+  },
+  {
+    icon: '🎵',
+    title: 'Lo-Fi Music',
+    description: 'Play relaxing background music.',
+    path: '/more-functions/music',
+  },
+  {
+    icon: '🔤',
+    title: 'Text Case Converter',
+    description: 'Convert text to UPPER, lower, Capital.',
+    path: '/more-functions/textcase',
+  },
+  {
+    icon: '🧭',
+    title: 'Digital Compass',
+    description: 'See your phone’s direction live.',
+    path: '/more-functions/compass',
+  },
+  {
+    icon: '⌨️',
+    title: 'Typing Speed Test',
+    description: 'Check your typing speed in WPM.',
+    path: '/more-functions/typing-test',
+  },
 ];
 
 export default function MoreFunctionsPage() {

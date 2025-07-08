@@ -180,7 +180,7 @@ export default function Dashboard() {
                         { name: "Present", value: summary.present },
                         { name: "Absent", value: summary.absent },
                         { name: "Half Day", value: summary.halfDay },
-                        { name: "Remote", value: summary.remote ?? 0 },
+                        { name: "Remote", value: summary.remoteWork ?? 0 },
                       ]}
                       dataKey="value"
                       innerRadius={60}
@@ -224,7 +224,7 @@ export default function Dashboard() {
                   <Grid item xs={6}>
                     <Box textAlign="center">
                       <LaptopMacIcon sx={{ fontSize: 40, color: "#2196f3" }} />
-                      <Typography variant="h6">{summary.remote ?? 0}</Typography>
+                      <Typography variant="h6">{summary.remoteWork ?? 0}</Typography>
                       <Typography variant="body2" color="text.secondary">Remote</Typography>
                     </Box>
                   </Grid>
