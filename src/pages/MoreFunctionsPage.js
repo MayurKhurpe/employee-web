@@ -73,12 +73,6 @@ const features = [
     path: '/more-functions/textcase',
   },
   {
-    icon: '🧭',
-    title: 'Digital Compass',
-    description: 'See your phone’s direction live.',
-    path: '/more-functions/compass',
-  },
-  {
     icon: '⌨️',
     title: 'Typing Speed Test',
     description: 'Check your typing speed in WPM.',
