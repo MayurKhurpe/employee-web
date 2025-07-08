@@ -173,7 +173,10 @@ const AdminUserManagementPage = () => {
       headerName: '📅 Joining Date',
       width: 160,
       valueGetter: (params) =>
-        params.row.joiningDate ? new Date(params.row.joiningDate).toLocaleDateString('en-GB') : '—',
+  params?.row?.joiningDate
+    ? new Date(params.row.joiningDate).toLocaleDateString('en-GB')
+    : '—',
+
     },
     { field: 'role', headerName: '🛡️ Role', width: 130 },
     {

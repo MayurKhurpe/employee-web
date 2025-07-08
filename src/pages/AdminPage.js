@@ -56,7 +56,6 @@ const AdminPage = () => {
     { label: '⏱ Today’s Check-ins', value: stats?.todayCheckIns, color: 'success.main' },
     { label: '📋 Total Leaves', value: stats?.totalLeaves, color: 'info.main' },
     { label: '📩 Pending Leaves', value: stats?.pendingLeaves, color: 'error.main' },
-    { label: '📁 Documents', value: stats?.totalDocuments, color: 'secondary.main' },
   ];
 
   const features = [
