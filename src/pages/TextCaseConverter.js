@@ -1,20 +1,50 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, TextField, Button, Fade, Stack } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  Button,
+  Fade,
+  Snackbar,
+  IconButton,
+} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useNavigate } from 'react-router-dom';
 
 const TextCaseConverter = () => {
   const navigate = useNavigate();
   const [text, setText] = useState('');
+  const [result, setResult] = useState('');
+  const [snack, setSnack] = useState(false);
 
-  const toUpper = () => setText(text.toUpperCase());
-  const toLower = () => setText(text.toLowerCase());
-  const toCapitalize = () =>
-    setText(
-      text
-        .toLowerCase()
-        .replace(/\b\w/g, (char) => char.toUpperCase())
-    );
+  const handleConvert = (type) => {
+    switch (type) {
+      case 'upper':
+        setResult(text.toUpperCase());
+        break;
+      case 'lower':
+        setResult(text.toLowerCase());
+        break;
+      case 'title':
+        setResult(
+          text.replace(/\w\S*/g, (w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        );
+        break;
+      case 'clear':
+        setText('');
+        setResult('');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(result);
+    setSnack(true);
+  };
 
   return (
     <Box
@@ -26,68 +56,106 @@ const TextCaseConverter = () => {
         position: 'relative',
       }}
     >
-      {/* Blur Overlay */}
+      {/* Blur Background */}
       <Box
         sx={{
           position: 'absolute',
           top: 0,
           left: 0,
-          height: '100%',
           width: '100%',
+          height: '100%',
           backdropFilter: 'blur(10px)',
-          backgroundColor: 'rgba(255,255,255,0.4)',
+          backgroundColor: 'rgba(255,255,255,0.3)',
           zIndex: 0,
         }}
       />
 
-      <Fade in timeout={600}>
-        <Box sx={{ position: 'relative', zIndex: 1, p: 4, maxWidth: 700, mx: 'auto' }}>
-          {/* Back Button */}
-          <Button
-            variant="contained"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/more-functions')}
+      {/* Back Button */}
+      <Box sx={{ position: 'absolute', top: 20, left: 20, zIndex: 2 }}>
+        <Button
+          variant="contained"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/more-functions')}
+          sx={{ bgcolor: '#fff', color: '#000', '&:hover': { bgcolor: '#f5f5f5' } }}
+        >
+          Back to More Functions
+        </Button>
+      </Box>
+
+      {/* Content */}
+      <Fade in timeout={500}>
+        <Box
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            maxWidth: 600,
+            mx: 'auto',
+            mt: 10,
+            px: 2,
+            textAlign: 'center',
+          }}
+        >
+          <Paper
+            elevation={6}
             sx={{
-              mb: 3,
-              bgcolor: '#ffffffdd',
-              color: '#000',
-              '&:hover': { bgcolor: '#ffffff' },
+              p: 4,
+              borderRadius: 4,
+              backgroundColor: 'rgba(255,255,255,0.95)',
+              boxShadow: 8,
             }}
           >
-            Back to More Functions
-          </Button>
-
-          {/* Converter UI */}
-          <Paper elevation={6} sx={{ p: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.95)' }}>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               🔤 Text Case Converter
             </Typography>
 
             <TextField
               multiline
-              rows={6}
+              rows={4}
               fullWidth
               variant="outlined"
+              label="Enter your text"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Type your text here..."
-              sx={{ mb: 3 }}
+              sx={{ mt: 2, mb: 2 }}
             />
 
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <Button variant="contained" onClick={toUpper}>
-                UPPERCASE
-              </Button>
-              <Button variant="contained" onClick={toLower}>
-                lowercase
-              </Button>
-              <Button variant="contained" onClick={toCapitalize}>
-                Capitalize Each Word
-              </Button>
-            </Stack>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', mb: 2 }}>
+              <Button variant="contained" onClick={() => handleConvert('upper')}>UPPERCASE</Button>
+              <Button variant="contained" onClick={() => handleConvert('lower')}>lowercase</Button>
+              <Button variant="contained" onClick={() => handleConvert('title')}>Title Case</Button>
+              <Button variant="outlined" onClick={() => handleConvert('clear')}>Clear</Button>
+            </Box>
+
+            {result && (
+              <>
+                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                  🎯 Converted Result
+                </Typography>
+                <Paper sx={{ p: 2, position: 'relative' }}>
+                  <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>
+                    {result}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={handleCopy}
+                    sx={{ position: 'absolute', top: 8, right: 8 }}
+                  >
+                    <ContentCopyIcon fontSize="small" />
+                  </IconButton>
+                </Paper>
+              </>
+            )}
           </Paper>
         </Box>
       </Fade>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snack}
+        autoHideDuration={2000}
+        onClose={() => setSnack(false)}
+        message="Copied to clipboard!"
+      />
     </Box>
   );
 };

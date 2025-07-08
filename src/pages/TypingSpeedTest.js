@@ -1,41 +1,53 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Paper,
   TextField,
   Button,
+  Paper,
   Fade,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import KeyboardIcon from '@mui/icons-material/Keyboard';
 import { useNavigate } from 'react-router-dom';
 
-const sampleText = `Practice typing quickly and accurately to boost your typing speed and productivity.`;
+const sampleText = `Practice makes perfect. Improve your typing speed with this simple test!`;
 
 const TypingSpeedTest = () => {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [startTime, setStartTime] = useState(null);
-  const [endTime, setEndTime] = useState(null);
-  const inputRef = useRef();
+  const [wpm, setWpm] = useState(null);
+  const [accuracy, setAccuracy] = useState(null);
+  const [completed, setCompleted] = useState(false);
 
   const handleChange = (e) => {
+    const value = e.target.value;
     if (!startTime) setStartTime(Date.now());
-    setInput(e.target.value);
-    if (e.target.value === sampleText) setEndTime(Date.now());
+    setInput(value);
+
+    if (value === sampleText) {
+      const endTime = Date.now();
+      const timeTaken = (endTime - startTime) / 60000;
+      const words = sampleText.split(' ').length;
+      setWpm(Math.round(words / timeTaken));
+
+      const correctChars = sampleText
+        .split('')
+        .filter((char, i) => char === value[i]).length;
+      const totalChars = sampleText.length;
+      setAccuracy(Math.round((correctChars / totalChars) * 100));
+
+      setCompleted(true);
+    }
   };
 
-  const calculateWPM = () => {
-    if (!startTime || !endTime) return 0;
-    const minutes = (endTime - startTime) / 60000;
-    return Math.round(sampleText.split(' ').length / minutes);
-  };
-
-  const reset = () => {
+  const handleRestart = () => {
     setInput('');
     setStartTime(null);
-    setEndTime(null);
-    inputRef.current.focus();
+    setWpm(null);
+    setAccuracy(null);
+    setCompleted(false);
   };
 
   return (
@@ -48,7 +60,7 @@ const TypingSpeedTest = () => {
         position: 'relative',
       }}
     >
-      {/* Blur Overlay */}
+      {/* Blur Layer */}
       <Box
         sx={{
           position: 'absolute',
@@ -62,58 +74,81 @@ const TypingSpeedTest = () => {
         }}
       />
 
+      {/* Back Button */}
+      <Box sx={{ position: 'absolute', top: 20, left: 20, zIndex: 2 }}>
+        <Button
+          variant="contained"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/more-functions')}
+          sx={{ bgcolor: '#fff', color: '#000', '&:hover': { bgcolor: '#f5f5f5' } }}
+        >
+          Back to More Functions
+        </Button>
+      </Box>
+
+      {/* Typing Test UI */}
       <Fade in timeout={600}>
         <Box
           sx={{
-            position: 'relative',
             zIndex: 1,
-            p: 4,
+            position: 'relative',
             maxWidth: 700,
             mx: 'auto',
+            mt: 12,
+            px: 2,
           }}
         >
-          {/* Back Button */}
-          <Button
-            variant="contained"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate('/more-functions')}
+          <Paper
+            elevation={6}
             sx={{
-              mb: 3,
-              bgcolor: '#ffffffdd',
-              color: '#000',
-              '&:hover': { bgcolor: '#ffffff' },
+              p: 4,
+              borderRadius: 4,
+              backgroundColor: 'rgba(255,255,255,0.95)',
+              textAlign: 'center',
             }}
           >
-            Back to More Functions
-          </Button>
-
-          {/* Typing Card */}
-          <Paper elevation={6} sx={{ p: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.95)' }}>
+            <KeyboardIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
             <Typography variant="h4" fontWeight="bold" gutterBottom>
               ⌨️ Typing Speed Test
             </Typography>
+
             <Typography variant="body1" sx={{ mb: 2 }}>
+              Type the following:
+            </Typography>
+
+            <Typography
+              variant="body2"
+              sx={{
+                fontStyle: 'italic',
+                mb: 2,
+                backgroundColor: '#f1f1f1',
+                p: 2,
+                borderRadius: 2,
+              }}
+            >
               {sampleText}
             </Typography>
+
             <TextField
-              fullWidth
               multiline
+              fullWidth
               rows={4}
-              inputRef={inputRef}
               value={input}
               onChange={handleChange}
+              disabled={completed}
               placeholder="Start typing here..."
-              disabled={!!endTime}
-              sx={{ mb: 2 }}
             />
-            {endTime && (
-              <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
-                Your speed: {calculateWPM()} WPM 🚀
-              </Typography>
+
+            {completed && (
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  🚀 WPM: <strong>{wpm}</strong> | 🎯 Accuracy: <strong>{accuracy}%</strong>
+                </Typography>
+                <Button variant="outlined" onClick={handleRestart}>
+                  🔁 Try Again
+                </Button>
+              </Box>
             )}
-            <Button variant="outlined" onClick={reset}>
-              Reset
-            </Button>
           </Paper>
         </Box>
       </Fade>
