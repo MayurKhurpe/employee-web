@@ -85,34 +85,8 @@ const AttendancePage = () => {
     fetchAttendance();
   }, [token]);
 
-  const filteredRecords = useMemo(() => {
-    let temp = [...records];
-    if (filterStatus !== 'All') temp = temp.filter((r) => r.status === filterStatus);
-    if (filterDate) temp = temp.filter((r) => dayjs(r.date).isSame(filterDate, 'day'));
-    if (search) temp = temp.filter((r) => r.status.toLowerCase().includes(search.toLowerCase()));
-    return temp;
-  }, [records, filterStatus, filterDate, search]);
-
-  const paginatedRecords = useMemo(() => {
-    return filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  }, [filteredRecords, page]);
-
-  const monthYearRecords = useMemo(() => {
-    return records.filter((r) => {
-      const d = dayjs(r.date);
-      return d.month() === filterMonth.month() && d.year() === filterMonth.year();
-    });
-  }, [records, filterMonth]);
-
-  const summaryData = [
-    { name: 'Present', value: monthYearRecords.filter((r) => r.status === 'Present').length },
-    { name: 'Absent', value: monthYearRecords.filter((r) => r.status === 'Absent').length },
-    { name: 'Half Day', value: monthYearRecords.filter((r) => r.status === 'Half Day').length },
-    { name: 'Remote Work', value: monthYearRecords.filter((r) => r.status === 'Remote Work').length },
-  ];
-
   const isWithinOffice = (lat, lng) => {
-    const officeLat = 18.5204, officeLng = 73.8567, radius = 5;
+    const officeLat = 18.641478153875, officeLng = 73.79522807016143, radius = 5;
     const toRad = (val) => (val * Math.PI) / 180;
     const R = 6371;
     const dLat = toRad(officeLat - lat);
@@ -125,6 +99,15 @@ const AttendancePage = () => {
   const handleMarkAttendance = async (status) => {
     if (loading) return;
 
+    // 🔒 Require location
+    if (!location.lat || !location.lng || location.lat === 'Permission denied') {
+      return setSnackbar({
+        open: true,
+        message: '📍 Please enable your device location to mark attendance.',
+        severity: 'warning',
+      });
+    }
+
     if (status === 'Remote Work') {
       setRemoteDialogOpen(true);
       return;
@@ -136,7 +119,7 @@ const AttendancePage = () => {
       markAttendance(status);
       return setSnackbar({
         open: true,
-        message: `⚠ Outside office boundary. Attendance Mark successfully as ${status} & notify to admin.`,
+        message: `⚠ Outside office boundary. Attendance marked as ${status} & admin notified.`,
         severity: 'warning',
       });
     }
@@ -177,6 +160,33 @@ const AttendancePage = () => {
       setLoading(false);
     }
   };
+
+  const filteredRecords = useMemo(() => {
+    let temp = [...records];
+    if (filterStatus !== 'All') temp = temp.filter((r) => r.status === filterStatus);
+    if (filterDate) temp = temp.filter((r) => dayjs(r.date).isSame(filterDate, 'day'));
+    if (search) temp = temp.filter((r) => r.status.toLowerCase().includes(search.toLowerCase()));
+    return temp;
+  }, [records, filterStatus, filterDate, search]);
+
+  const paginatedRecords = useMemo(() => {
+    return filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  }, [filteredRecords, page]);
+
+  const monthYearRecords = useMemo(() => {
+    return records.filter((r) => {
+      const d = dayjs(r.date);
+      return d.month() === filterMonth.month() && d.year() === filterMonth.year();
+    });
+  }, [records, filterMonth]);
+
+  const summaryData = [
+    { name: 'Present', value: monthYearRecords.filter((r) => r.status === 'Present').length },
+    { name: 'Absent', value: monthYearRecords.filter((r) => r.status === 'Absent').length },
+    { name: 'Half Day', value: monthYearRecords.filter((r) => r.status === 'Half Day').length },
+    { name: 'Remote Work', value: monthYearRecords.filter((r) => r.status === 'Remote Work').length },
+  ];
+
   const exportToPDF = () => {
     const doc = new jsPDF();
     doc.text('Attendance Records', 10, 10);
@@ -227,8 +237,6 @@ const AttendancePage = () => {
               <DatePicker
                 views={['year', 'month']}
                 label="📆 Filter Summary by Month"
-                minDate={dayjs().subtract(1, 'year')}
-                maxDate={dayjs()}
                 value={filterMonth}
                 onChange={(val) => setFilterMonth(val)}
                 slotProps={{ textField: { size: 'small' } }}
