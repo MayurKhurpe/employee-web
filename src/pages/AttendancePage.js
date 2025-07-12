@@ -9,14 +9,16 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-dayjs.extend(utc);
-dayjs.extend(timezone);
 import axios from 'api/axios';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import {
   PieChart, Pie, Cell, Legend, ResponsiveContainer, Tooltip as RechartsTooltip,
 } from 'recharts';
+
+// Extend dayjs plugins AFTER imports
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const PAGE_SIZE = 5;
 const COLORS = ['#4caf50', '#f44336', '#ff9800', '#2196f3'];
@@ -39,7 +41,6 @@ const AttendancePage = () => {
   const token = localStorage.getItem('token');
   const userName = localStorage.getItem('userName') || '👤 User';
 
-  // ⏰ Add timer check for 9:45 AM IST
   const isAfter945IST = dayjs().tz('Asia/Kolkata').isAfter(dayjs().tz('Asia/Kolkata').hour(9).minute(45));
 
   useEffect(() => {
@@ -91,6 +92,7 @@ const AttendancePage = () => {
     };
     fetchAttendance();
   }, [token]);
+
   const isWithinOffice = (lat, lng) => {
     const officeLat = 18.641478153875, officeLng = 73.79522807016143, radius = 1;
     const toRad = (val) => (val * Math.PI) / 180;
@@ -105,7 +107,6 @@ const AttendancePage = () => {
   const handleMarkAttendance = async (status) => {
     if (loading) return;
 
-    // 🔒 Require location
     if (!location.lat || !location.lng || location.lat === 'Permission denied') {
       return setSnackbar({
         open: true,
@@ -218,16 +219,44 @@ const AttendancePage = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
     XLSX.writeFile(workbook, 'attendance.xlsx');
   };
+
   return (
     <>
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundImage: `url(${backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(50px)', zIndex: -1 }} />
-      <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(255,255,255,0.6)', zIndex: -1 }} />
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundImage: `url(${backgroundImageUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(50px)',
+          zIndex: -1,
+        }}
+      />
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(255,255,255,0.6)',
+          zIndex: -1,
+        }}
+      />
 
       <Container maxWidth="md" sx={{ py: 4 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>📅 Attendance Tracker</Typography>
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
+          📅 Attendance Tracker
+        </Typography>
 
         <Paper sx={{ p: 2, mb: 3, textAlign: 'center' }}>
-          <Typography variant="subtitle1" gutterBottom>Welcome {userName}, mark your attendance below 👇</Typography>
+          <Typography variant="subtitle1" gutterBottom>
+            Welcome {userName}, mark your attendance below 👇
+          </Typography>
           <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap">
             <Button
               variant="contained"
@@ -283,7 +312,12 @@ const AttendancePage = () => {
         </Paper>
 
         <Stack direction="row" spacing={2} alignItems="center" mb={2} flexWrap="wrap">
-          <ToggleButtonGroup value={filterStatus} exclusive onChange={(e, val) => val && setFilterStatus(val)} size="small">
+          <ToggleButtonGroup
+            value={filterStatus}
+            exclusive
+            onChange={(e, val) => val && setFilterStatus(val)}
+            size="small"
+          >
             <ToggleButton value="All">All</ToggleButton>
             <ToggleButton value="Present">Present</ToggleButton>
             <ToggleButton value="Absent">Absent</ToggleButton>
@@ -294,12 +328,25 @@ const AttendancePage = () => {
             <DatePicker label="📅 Filter by Date" value={filterDate} onChange={(val) => setFilterDate(val)} />
           </LocalizationProvider>
           <TextField label="🔍 Search" value={search} onChange={(e) => setSearch(e.target.value)} size="small" />
-          <Button variant="outlined" onClick={() => { setFilterDate(null); setSearch(''); setFilterStatus('All'); }}>Clear</Button>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setFilterDate(null);
+              setSearch('');
+              setFilterStatus('All');
+            }}
+          >
+            Clear
+          </Button>
         </Stack>
         {loading ? (
-          <Box textAlign="center" py={5}><CircularProgress /></Box>
+          <Box textAlign="center" py={5}>
+            <CircularProgress />
+          </Box>
         ) : paginatedRecords.length === 0 ? (
-          <Typography variant="body1" align="center">No attendance records found.</Typography>
+          <Typography variant="body1" align="center">
+            No attendance records found.
+          </Typography>
         ) : (
           <Paper sx={{ p: 2 }}>
             {paginatedRecords.map((rec) => (
@@ -309,13 +356,18 @@ const AttendancePage = () => {
                 </Typography>
                 <Typography variant="body1">
                   📌 Status:{' '}
-                  <strong style={{
-                    color:
-                      rec.status === 'Present' ? '#4caf50' :
-                      rec.status === 'Absent' ? '#f44336' :
-                      rec.status === 'Half Day' ? '#ff9800' :
-                      '#2196f3'
-                  }}>
+                  <strong
+                    style={{
+                      color:
+                        rec.status === 'Present'
+                          ? '#4caf50'
+                          : rec.status === 'Absent'
+                          ? '#f44336'
+                          : rec.status === 'Half Day'
+                          ? '#ff9800'
+                          : '#2196f3',
+                    }}
+                  >
                     {rec.status}
                   </strong>
                 </Typography>
@@ -332,37 +384,70 @@ const AttendancePage = () => {
               </Box>
             ))}
             <Stack direction="row" justifyContent="center" mt={2}>
-              <Pagination count={Math.ceil(filteredRecords.length / PAGE_SIZE)} page={page} onChange={(e, val) => setPage(val)} />
+              <Pagination
+                count={Math.ceil(filteredRecords.length / PAGE_SIZE)}
+                page={page}
+                onChange={(e, val) => setPage(val)}
+              />
             </Stack>
           </Paper>
         )}
 
         <Stack direction="row" spacing={2} mt={3} justifyContent="center">
-          <Button variant="outlined" onClick={exportToPDF}>📄 Export PDF</Button>
-          <Button variant="outlined" onClick={exportToExcel}>📊 Export Excel</Button>
+          <Button variant="outlined" onClick={exportToPDF}>
+            📄 Export PDF
+          </Button>
+          <Button variant="outlined" onClick={exportToExcel}>
+            📊 Export Excel
+          </Button>
         </Stack>
       </Container>
 
       <Dialog open={remoteDialogOpen} onClose={() => setRemoteDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle>Remote Work Details</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-          <TextField label="👤 Customer Name" value={remoteForm.customer} onChange={(e) => setRemoteForm({ ...remoteForm, customer: e.target.value })} required />
-          <TextField label="🏢 Work Location" value={remoteForm.workLocation} onChange={(e) => setRemoteForm({ ...remoteForm, workLocation: e.target.value })} required />
-          <TextField label="📨 Assigned By" value={remoteForm.assignedBy} onChange={(e) => setRemoteForm({ ...remoteForm, assignedBy: e.target.value })} required />
+          <TextField
+            label="👤 Customer Name"
+            value={remoteForm.customer}
+            onChange={(e) => setRemoteForm({ ...remoteForm, customer: e.target.value })}
+            required
+          />
+          <TextField
+            label="🏢 Work Location"
+            value={remoteForm.workLocation}
+            onChange={(e) => setRemoteForm({ ...remoteForm, workLocation: e.target.value })}
+            required
+          />
+          <TextField
+            label="📨 Assigned By"
+            value={remoteForm.assignedBy}
+            onChange={(e) => setRemoteForm({ ...remoteForm, assignedBy: e.target.value })}
+            required
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRemoteDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={() => {
-            if (!remoteForm.customer || !remoteForm.workLocation || !remoteForm.assignedBy) {
-              setSnackbar({ open: true, message: 'All fields are required.', severity: 'warning' });
-              return;
-            }
-            markAttendance('Remote Work', remoteForm);
-          }}>Submit</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (!remoteForm.customer || !remoteForm.workLocation || !remoteForm.assignedBy) {
+                setSnackbar({ open: true, message: 'All fields are required.', severity: 'warning' });
+                return;
+              }
+              markAttendance('Remote Work', remoteForm);
+            }}
+          >
+            Submit
+          </Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
         <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar({ ...snackbar, open: false })}>
           {snackbar.message}
         </Alert>
