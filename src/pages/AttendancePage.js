@@ -7,6 +7,10 @@ import {
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import axios from 'api/axios';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
@@ -34,6 +38,9 @@ const AttendancePage = () => {
 
   const token = localStorage.getItem('token');
   const userName = localStorage.getItem('userName') || '👤 User';
+
+  // ⏰ Add timer check for 9:45 AM IST
+  const isAfter945IST = dayjs().tz('Asia/Kolkata').isAfter(dayjs().tz('Asia/Kolkata').hour(9).minute(45));
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -84,7 +91,6 @@ const AttendancePage = () => {
     };
     fetchAttendance();
   }, [token]);
-
   const isWithinOffice = (lat, lng) => {
     const officeLat = 18.641478153875, officeLng = 73.79522807016143, radius = 1;
     const toRad = (val) => (val * Math.PI) / 180;
@@ -212,7 +218,6 @@ const AttendancePage = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
     XLSX.writeFile(workbook, 'attendance.xlsx');
   };
-
   return (
     <>
       <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundImage: `url(${backgroundImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(50px)', zIndex: -1 }} />
@@ -224,9 +229,30 @@ const AttendancePage = () => {
         <Paper sx={{ p: 2, mb: 3, textAlign: 'center' }}>
           <Typography variant="subtitle1" gutterBottom>Welcome {userName}, mark your attendance below 👇</Typography>
           <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap">
-            <Button variant="contained" color="success" disabled={alreadyMarked || loading} onClick={() => handleMarkAttendance('Present')}>Mark Present</Button>
-            <Button variant="contained" color="warning" disabled={alreadyMarked || loading} onClick={() => handleMarkAttendance('Half Day')}>Mark Half Day</Button>
-            <Button variant="contained" color="info" disabled={alreadyMarked || loading} onClick={() => handleMarkAttendance('Remote Work')}>Remote Work</Button>
+            <Button
+              variant="contained"
+              color="success"
+              disabled={alreadyMarked || loading || isAfter945IST}
+              onClick={() => handleMarkAttendance('Present')}
+            >
+              Mark Present
+            </Button>
+            <Button
+              variant="contained"
+              color="warning"
+              disabled={alreadyMarked || loading}
+              onClick={() => handleMarkAttendance('Half Day')}
+            >
+              Mark Half Day
+            </Button>
+            <Button
+              variant="contained"
+              color="info"
+              disabled={alreadyMarked || loading}
+              onClick={() => handleMarkAttendance('Remote Work')}
+            >
+              Remote Work
+            </Button>
           </Stack>
         </Paper>
 
@@ -270,7 +296,6 @@ const AttendancePage = () => {
           <TextField label="🔍 Search" value={search} onChange={(e) => setSearch(e.target.value)} size="small" />
           <Button variant="outlined" onClick={() => { setFilterDate(null); setSearch(''); setFilterStatus('All'); }}>Clear</Button>
         </Stack>
-
         {loading ? (
           <Box textAlign="center" py={5}><CircularProgress /></Box>
         ) : paginatedRecords.length === 0 ? (

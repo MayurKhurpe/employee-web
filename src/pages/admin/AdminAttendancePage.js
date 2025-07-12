@@ -50,18 +50,17 @@ const AdminAttendancePage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
-  // ✅ Fetch users for user dropdown
   const fetchUsers = async () => {
-  try {
-    const token = localStorage.getItem('token'); // ✅ Get token
-    const res = await axios.get('/users/all', {
-      headers: { Authorization: `Bearer ${token}` }, // ✅ Add token
-    });
-    setUsers(res.data || []);
-  } catch (err) {
-    console.error('❌ Failed to load users:', err.response?.data || err.message);
-  }
-};
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('/users/all', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsers(res.data || []);
+    } catch (err) {
+      console.error('❌ Failed to load users:', err.response?.data || err.message);
+    }
+  };
 
   const fetchAllAttendance = async (pg = 1) => {
     setLoading(true);
@@ -104,7 +103,7 @@ const AdminAttendancePage = () => {
     doc.text('📋 All Employee Attendance', 14, 20);
     autoTable(doc, {
       startY: 30,
-      head: [['#', 'Name', 'Email', 'Date', 'Status', 'Location', 'Check In', 'Check Out', 'Customer', 'Work Location', 'Assigned By']],
+      head: [['#', 'Name', 'Email', 'Date', 'Status', 'Location', 'Check In', 'Check Out']],
       body: records.map((rec, i) => [
         i + 1,
         rec.name,
@@ -118,9 +117,6 @@ const AdminAttendancePage = () => {
           : 'N/A',
         rec.checkInTime || 'N/A',
         rec.checkOutTime || 'N/A',
-        rec.status === 'Remote Work' ? rec.customer || '—' : '—',
-        rec.status === 'Remote Work' ? rec.workLocation || '—' : '—',
-        rec.status === 'Remote Work' ? rec.assignedBy || '—' : '—',
       ]),
       theme: 'striped',
     });
@@ -143,9 +139,6 @@ const AdminAttendancePage = () => {
           : 'N/A',
       CheckIn: r.checkInTime || 'N/A',
       CheckOut: r.checkOutTime || 'N/A',
-      Customer: r.status === 'Remote Work' ? r.customer || '—' : '—',
-      WorkLocation: r.status === 'Remote Work' ? r.workLocation || '—' : '—',
-      AssignedBy: r.status === 'Remote Work' ? r.assignedBy || '—' : '—',
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -252,9 +245,6 @@ const AdminAttendancePage = () => {
                     <TableCell>Email</TableCell>
                     <TableCell>Date</TableCell>
                     <TableCell colSpan={4}>Status / Details</TableCell>
-                    <TableCell>Customer</TableCell>
-                    <TableCell>Work Location</TableCell>
-                    <TableCell>Assigned By</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -276,20 +266,15 @@ const AdminAttendancePage = () => {
                       <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
 
                       {rec.status === 'Remote Work' ? (
-                        <>
-                          <TableCell colSpan={4}>
-                            <Box sx={{ whiteSpace: 'pre-line' }}>
-                              🖥️ <strong>Remote Work</strong>{"\n"}
-                              👤 <strong>Customer:</strong> {rec.customer || '—'}{"\n"}
-                              🏢 <strong>Location:</strong> {rec.workLocation || '—'}{"\n"}
-                              📨 <strong>Assigned By:</strong> {rec.assignedBy || '—'}{"\n"}
-                              🕒 <strong>In:</strong> {rec.checkInTime || 'N/A'} | <strong>Out:</strong> {rec.checkOutTime || 'N/A'}
-                            </Box>
-                          </TableCell>
-                          <TableCell>—</TableCell>
-                          <TableCell>—</TableCell>
-                          <TableCell>—</TableCell>
-                        </>
+                        <TableCell colSpan={4}>
+                          <Box sx={{ whiteSpace: 'pre-line' }}>
+                            🖥️ <strong>Remote Work</strong>{"\n"}
+                            👤 <strong>Customer:</strong> {rec.customer || '—'}{"\n"}
+                            🏢 <strong>Location:</strong> {rec.workLocation || '—'}{"\n"}
+                            📨 <strong>Assigned By:</strong> {rec.assignedBy || '—'}{"\n"}
+                            🕒 <strong>In:</strong> {rec.checkInTime || 'N/A'} | <strong>Out:</strong> {rec.checkOutTime || 'N/A'}
+                          </Box>
+                        </TableCell>
                       ) : (
                         <>
                           <TableCell>{rec.status}</TableCell>
@@ -302,9 +287,6 @@ const AdminAttendancePage = () => {
                           </TableCell>
                           <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
                           <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
-                          <TableCell>—</TableCell>
-                          <TableCell>—</TableCell>
-                          <TableCell>—</TableCell>
                         </>
                       )}
                     </TableRow>
