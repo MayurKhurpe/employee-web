@@ -37,6 +37,8 @@ const AttendancePage = () => {
   const [location, setLocation] = useState({ lat: null, lng: null });
   const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
   const [remoteForm, setRemoteForm] = useState({ customer: '', workLocation: '', assignedBy: '' });
+  const [nowIST, setNowIST] = useState(dayjs().tz('Asia/Kolkata'));
+
 
   const token = localStorage.getItem('token');
   const userName = localStorage.getItem('userName') || '👤 User';
@@ -92,6 +94,14 @@ const AttendancePage = () => {
     };
     fetchAttendance();
   }, [token]);
+
+  // ✅ THIS SHOULD BE OUTSIDE, NOT NESTED
+useEffect(() => {
+  const interval = setInterval(() => {
+    setNowIST(dayjs().tz('Asia/Kolkata'));
+  }, 1000);
+  return () => clearInterval(interval);
+}, []);
 
   const isWithinOffice = (lat, lng) => {
     const officeLat = 18.641478153875, officeLng = 73.79522807016143, radius = 1;
