@@ -293,6 +293,22 @@ useEffect(() => {
               Remote Work
             </Button>
           </Stack>
+
+<Typography variant="body2" sx={{ mt: 2 }}>
+  🕒 IST Time Now: {nowIST.format('HH:mm:ss')}
+</Typography>
+
+{alreadyMarked ? (
+  <Typography variant="body2" color="success" sx={{ mt: 1 }}>
+    ✅ You've already marked your attendance for today.
+  </Typography>
+) : isAfter945IST ? (
+  <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+    ⚠ Attendance marking is closed (after 9:45 AM).
+  </Typography>
+) : null}
+
+          
         </Paper>
 
         <Paper sx={{ p: 3, mb: 4 }}>
