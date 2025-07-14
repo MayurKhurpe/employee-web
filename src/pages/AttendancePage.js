@@ -306,15 +306,37 @@ useEffect(() => {
             >
               Mark Present
             </Button>
-            {isAfter945IST && nowIST.isBefore(dayjs().tz('Asia/Kolkata').hour(11)) && (
-<Button
-  variant="contained"
-  color={lateMarkCount >= 3 ? "error" : "secondary"}
-  disabled={alreadyMarked || loading || lateMarkCount >= 3}
-  onClick={() => handleMarkAttendance('Late Mark')}
->
-  Mark Late
-</Button>
+{nowIST.isBefore(dayjs().tz('Asia/Kolkata').hour(9).minute(45)) ? (
+  <Button
+    variant="outlined"
+    disabled
+    title="⏳ Late Mark will be available after 9:45 AM"
+    sx={{
+      animation: 'fadeIn 0.5s',
+      '@keyframes fadeIn': {
+        from: { opacity: 0 },
+        to: { opacity: 1 },
+      },
+    }}
+  >
+    Late Mark
+  </Button>
+) : isAfter945IST && nowIST.isBefore(dayjs().tz('Asia/Kolkata').hour(11)) && (
+  <Button
+    variant="contained"
+    color={lateMarkCount >= 3 ? "error" : "secondary"}
+    disabled={alreadyMarked || loading || lateMarkCount >= 3}
+    onClick={() => handleMarkAttendance('Late Mark')}
+    sx={{
+      animation: 'slideIn 0.4s ease-in-out',
+      '@keyframes slideIn': {
+        from: { transform: 'translateY(-10px)', opacity: 0 },
+        to: { transform: 'translateY(0)', opacity: 1 },
+      },
+    }}
+  >
+    Mark Late
+  </Button>
 )}
             <Button
               variant="contained"
