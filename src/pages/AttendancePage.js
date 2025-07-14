@@ -21,7 +21,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const PAGE_SIZE = 5;
-const COLORS = ['#4caf50', '#f44336', '#ff9800', '#2196f3'];
+const COLORS = ['#4caf50', '#f44336', '#ff9800', '#2196f3', '#9c27b0']; // Purple for Late Mark
 const backgroundImageUrl = 'https://i.postimg.cc/7Z3grwLw/MES.jpg';
 
 const AttendancePage = () => {
@@ -232,6 +232,7 @@ useEffect(() => {
     { name: 'Absent', value: monthYearRecords.filter((r) => r.status === 'Absent').length },
     { name: 'Half Day', value: monthYearRecords.filter((r) => r.status === 'Half Day').length },
     { name: 'Remote Work', value: monthYearRecords.filter((r) => r.status === 'Remote Work').length },
+    { name: 'Late Mark', value: monthYearRecords.filter((r) => r.status === 'Late Mark').length },
   ];
 
   const exportToPDF = () => {
@@ -403,18 +404,20 @@ useEffect(() => {
         </Paper>
 
         <Stack direction="row" spacing={2} alignItems="center" mb={2} flexWrap="wrap">
-          <ToggleButtonGroup
-            value={filterStatus}
-            exclusive
-            onChange={(e, val) => val && setFilterStatus(val)}
-            size="small"
-          >
-            <ToggleButton value="All">All</ToggleButton>
-            <ToggleButton value="Present">Present</ToggleButton>
-            <ToggleButton value="Absent">Absent</ToggleButton>
-            <ToggleButton value="Half Day">Half Day</ToggleButton>
-            <ToggleButton value="Remote Work">Remote</ToggleButton>
-          </ToggleButtonGroup>
+<ToggleButtonGroup
+  value={filterStatus}
+  exclusive
+  onChange={(e, val) => val && setFilterStatus(val)}
+  size="small"
+>
+  <ToggleButton value="All">All</ToggleButton>
+  <ToggleButton value="Present">Present</ToggleButton>
+  <ToggleButton value="Absent">Absent</ToggleButton>
+  <ToggleButton value="Half Day">Half Day</ToggleButton>
+  <ToggleButton value="Remote Work">Remote</ToggleButton>
+  <ToggleButton value="Late Mark">Late Mark</ToggleButton> {/* ✅ NEW */}
+</ToggleButtonGroup>
+
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker label="📅 Filter by Date" value={filterDate} onChange={(val) => setFilterDate(val)} />
           </LocalizationProvider>
