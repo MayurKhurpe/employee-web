@@ -207,6 +207,30 @@ export default function Dashboard() {
                       <Typography variant="body2" color="text.secondary">Present</Typography>
                     </Box>
                   </Grid>
+ <Grid item xs={12}>
+  <Box textAlign="center">
+    <TimelapseIcon sx={{ fontSize: 36, color: "#607d8b" }} />
+    <Typography
+      variant="h6"
+      sx={{
+        color: (summary.lateMarks ?? 0) >= 3 ? "#f44336" : "#607d8b",
+        fontWeight: 600,
+      }}
+    >
+      Late Marks: {summary.lateMarks ?? 0} / 3
+    </Typography>
+    <Typography variant="body2" color="text.secondary">
+      Max Allowed
+    </Typography>
+
+    {(summary.lateMarks ?? 0) >= 3 && (
+      <Typography variant="body2" color="#f44336" mt={1}>
+        ⚠️ You have exceeded the maximum allowed late marks this month!
+      </Typography>
+    )}
+  </Box>
+</Grid>
+
                   <Grid item xs={6}>
                     <Box textAlign="center">
                       <CancelIcon sx={{ fontSize: 40, color: "#f44336" }} />

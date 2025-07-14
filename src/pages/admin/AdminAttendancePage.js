@@ -146,6 +146,27 @@ const AdminAttendancePage = () => {
     XLSX.writeFile(wb, 'all-attendance.xlsx');
     setExporting(false);
   };
+// 🔄 Count Late Marks per user for current month
+const countLateMarksByUser = () => {
+  const currentMonth = dayjs().month();  // Example: July = 6 (starts from 0)
+  const currentYear = dayjs().year();    // Example: 2025
+  const counts = {};
+
+  records.forEach((rec) => {
+    const recDate = dayjs(rec.date);
+    if (
+      rec.status === 'Late Mark' &&
+      recDate.month() === currentMonth &&
+      recDate.year() === currentYear
+    ) {
+      counts[rec.email] = (counts[rec.email] || 0) + 1;
+    }
+  });
+
+  return counts;
+};
+
+const lateMarkCounts = countLateMarksByUser(); // call the helper function to get result
 
   return (
     <Box sx={{ background: 'linear-gradient(to bottom right, #e0f7fa, #e1f5fe)', minHeight: '100vh', py: 4 }}>
@@ -262,7 +283,16 @@ const AdminAttendancePage = () => {
                     >
                       <TableCell>{(page - 1) * PAGE_SIZE + idx + 1}</TableCell>
                       <TableCell>{rec.name}</TableCell>
-                      <TableCell>{rec.email}</TableCell>
+                      <TableCell>
+  {rec.email}
+  <Typography
+    variant="body2"
+    color={lateMarkCounts[rec.email] >= 3 ? 'error' : 'textSecondary'}
+  >
+    🚨 Late Marks: {lateMarkCounts[rec.email] || 0} / 3
+  </Typography>
+</TableCell>
+
                       <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
 
                       {rec.status === 'Remote Work' ? (

@@ -38,6 +38,7 @@ const AttendancePage = () => {
   const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
   const [remoteForm, setRemoteForm] = useState({ customer: '', workLocation: '', assignedBy: '' });
   const [nowIST, setNowIST] = useState(dayjs().tz('Asia/Kolkata'));
+  const [lateMarkCount, setLateMarkCount] = useState(0);
 
 
   const token = localStorage.getItem('token');
@@ -94,6 +95,27 @@ const AttendancePage = () => {
     };
     fetchAttendance();
   }, [token]);
+  useEffect(() => {
+  const countLateMarks = () => {
+    const currentMonth = dayjs().month();
+    const currentYear = dayjs().year();
+
+    const lateMarks = records.filter((rec) => {
+      const recDate = dayjs(rec.date);
+      return (
+        rec.status === 'Late Mark' &&
+        recDate.month() === currentMonth &&
+        recDate.year() === currentYear
+      );
+    });
+
+    setLateMarkCount(lateMarks.length);
+  };
+
+  if (records.length > 0) {
+    countLateMarks();
+  }
+}, [records]);
 
   // ✅ THIS SHOULD BE OUTSIDE, NOT NESTED
 useEffect(() => {
@@ -129,6 +151,14 @@ useEffect(() => {
       setRemoteDialogOpen(true);
       return;
     }
+    if (status === 'Late Mark' && lateMarkCount >= 3) {
+  return setSnackbar({
+    open: true,
+    message: '❌ You’ve reached your Late Mark limit for this month. Be on time.',
+    severity: 'error',
+  });
+}
+
 
     const outside = location.lat && location.lng && !isWithinOffice(location.lat, location.lng);
 
@@ -276,6 +306,16 @@ useEffect(() => {
             >
               Mark Present
             </Button>
+            {isAfter945IST && nowIST.isBefore(dayjs().tz('Asia/Kolkata').hour(11)) && (
+<Button
+  variant="contained"
+  color={lateMarkCount >= 3 ? "error" : "secondary"}
+  disabled={alreadyMarked || loading || lateMarkCount >= 3}
+  onClick={() => handleMarkAttendance('Late Mark')}
+>
+  Mark Late
+</Button>
+)}
             <Button
               variant="contained"
               color="warning"
@@ -297,6 +337,10 @@ useEffect(() => {
 <Typography variant="body2" sx={{ mt: 2 }}>
   🕒 IST Time Now: {nowIST.format('HH:mm:ss')}
 </Typography>
+<Typography variant="body2" color={lateMarkCount >= 3 ? 'error' : 'textSecondary'}>
+  🚨 Late Marks Used: {lateMarkCount} / 3
+</Typography>
+
 
 {alreadyMarked ? (
   <Typography variant="body2" color="success" sx={{ mt: 1 }}>
@@ -307,7 +351,6 @@ useEffect(() => {
     ⚠ Attendance marking is closed (after 9:45 AM).
   </Typography>
 ) : null}
-
           
         </Paper>
 
