@@ -1,3 +1,4 @@
+/** @jsxImportSource @emotion/react */
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Container, Paper, Typography, Stack, Button, Snackbar, Alert, ToggleButtonGroup,
@@ -19,7 +20,6 @@ import {
 // Extend dayjs plugins AFTER imports
 dayjs.extend(utc);
 dayjs.extend(timezone);
-/** @jsxImportSource @emotion/react */
 import { keyframes } from '@emotion/react';
 
 const PAGE_SIZE = 5;
