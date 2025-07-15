@@ -54,6 +54,7 @@ const AttendancePage = () => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [location, setLocation] = useState({ lat: null, lng: null });
+  const locationReady = location.lat !== null && location.lng !== null && !isNaN(location.lat) && !isNaN(location.lng);
   const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
   const [remoteForm, setRemoteForm] = useState({ customer: '', workLocation: '', assignedBy: '' });
   const [nowIST, setNowIST] = useState(dayjs().tz('Asia/Kolkata'));
@@ -80,6 +81,7 @@ useEffect(() => {
     async (pos) => {
       const gpsLat = pos.coords.latitude;
       const gpsLng = pos.coords.longitude;
+      setLocation({ lat: gpsLat, lng: gpsLng }); // ✅ Set location immediately
 
       try {
         const ipRes = await fetch('https://ipapi.co/json/');
@@ -89,16 +91,16 @@ useEffect(() => {
         const ipLng = parseFloat(ipData.longitude);
 
         const gpsDistance = getDistance(gpsLat, gpsLng, ipLat, ipLng);
-        if (gpsDistance > 30) {
-          setSnackbar({
-            open: true,
-            message: '⚠️ Location mismatch, Come Office',
-            severity: 'error',
-          });
-          return;
-        }
+setLocation({ lat: gpsLat, lng: gpsLng }); // ✅ Set once before the check
 
-        setLocation({ lat: gpsLat, lng: gpsLng });
+if (gpsDistance > 30) {
+  setSnackbar({
+    open: true,
+    message: '⚠️ Location mismatch, Come Office',
+    severity: 'error',
+  });
+  return;
+}
       } catch {
         setLocation({ lat: gpsLat, lng: gpsLng });
       }
@@ -418,7 +420,7 @@ AssignedBy: r.status === 'Remote Work' ? r.assignedBy || '' : '',
             <Button
   variant="contained"
   color="success"
-  disabled={alreadyMarked || loading || isAfter945IST}
+  disabled={alreadyMarked || loading || isAfter945IST || (!locationReady && !isOnOfficeWiFi)}
   title={isAfter945IST ? '⏰ Present marking closes at 9:45 AM' : ''}
   onClick={() => handleMarkAttendance('Present')}
 >
@@ -440,7 +442,7 @@ sx={{
   <Button
     variant="contained"
     color={lateMarkCount >= 3 ? "error" : "secondary"}
-    disabled={alreadyMarked || loading || lateMarkCount >= 3 || nowIST.isBefore(dayjs().tz('Asia/Kolkata').hour(9).minute(45))}
+    disabled={alreadyMarked || loading || lateMarkCount >= 3 || nowIST.isBefore(dayjs().tz('Asia/Kolkata').hour(9).minute(45)) || (!locationReady && !isOnOfficeWiFi)}
     onClick={() => handleMarkAttendance('Late Mark')}
 sx={{
   animation: `${slideIn} 0.4s ease-in-out`,
@@ -452,7 +454,7 @@ sx={{
             <Button
               variant="contained"
               color="warning"
-              disabled={alreadyMarked || loading}
+              disabled={alreadyMarked || loading || (!locationReady && !isOnOfficeWiFi)}
               onClick={() => handleMarkAttendance('Half Day')}
             >
               Mark Half Day
@@ -466,6 +468,23 @@ sx={{
               Remote Work
             </Button>
           </Stack>
+{/* ✨ Extra Info Divider & Tip */}
+<Stack spacing={1} mt={2} alignItems="center">
+  <Box width="100%" borderBottom="1px dashed #ccc" />
+  <Typography variant="body2" color="text.secondary">
+    💡 You can only mark attendance once per day. Remote Work requires customer details.
+  </Typography>
+</Stack>
+
+{/* 📍 Show if location is not ready and not on Office WiFi */}
+{!locationReady && !isOnOfficeWiFi && (
+  <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} mt={1}>
+    <CircularProgress size={16} color="warning" />
+    <Typography variant="body2" color="warning.main">
+      📍 Detecting your location... please wait
+    </Typography>
+  </Stack>
+)}
 
 <Typography variant="body2" sx={{ mt: 2 }}>
   🕒 IST Time Now: {nowIST.format('HH:mm:ss')}
