@@ -213,7 +213,7 @@ const handleMarkAttendance = async (status) => {
     const ipData = await ipRes.json();
     const userIP = ipData.ip;
 
-    const officePrefixes = ['103.146.241.237', '2401:4900:8fea', '2401:4900'];
+    const officePrefixes = ['103.146.241.237', '2401:4900:8fea'];
     const isOnOfficeWiFi = officePrefixes.some(prefix =>
       userIP?.includes(prefix)
     );
