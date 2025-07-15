@@ -59,6 +59,7 @@ const AttendancePage = () => {
   const [remoteForm, setRemoteForm] = useState({ customer: '', workLocation: '', assignedBy: '' });
   const [nowIST, setNowIST] = useState(dayjs().tz('Asia/Kolkata'));
   const [lateMarkCount, setLateMarkCount] = useState(0);
+  
 
   // Haversine formula for distance in km
 const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -221,7 +222,7 @@ const handleMarkAttendance = async (status) => {
     );
 
     // ✅ If on Office WiFi, skip location check
-    if (isOnOfficeWiFi) {
+    if (isConnectedToOfficeWiFi) {
       markAttendance(status, {
         note: '📶 Verified via Office WiFi IP (Location not available)',
       });
