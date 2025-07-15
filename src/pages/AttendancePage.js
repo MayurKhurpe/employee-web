@@ -19,10 +19,22 @@ import {
 // Extend dayjs plugins AFTER imports
 dayjs.extend(utc);
 dayjs.extend(timezone);
+/** @jsxImportSource @emotion/react */
+import { keyframes } from '@emotion/react';
 
 const PAGE_SIZE = 5;
 const COLORS = ['#4caf50', '#f44336', '#ff9800', '#2196f3', '#9c27b0']; // Purple for Late Mark
 const backgroundImageUrl = 'https://i.postimg.cc/7Z3grwLw/MES.jpg';
+// ✅ Reusable animations (avoid duplicate keyframes)
+const slideIn = keyframes`
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+`;
+
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
 
 const AttendancePage = () => {
   const [records, setRecords] = useState([]);
@@ -40,18 +52,54 @@ const AttendancePage = () => {
   const [nowIST, setNowIST] = useState(dayjs().tz('Asia/Kolkata'));
   const [lateMarkCount, setLateMarkCount] = useState(0);
 
+  // Haversine formula for distance in km
+const getDistance = (lat1, lon1, lat2, lon2) => {
+  const toRad = (val) => (val * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+};
 
   const token = localStorage.getItem('token');
   const userName = localStorage.getItem('userName') || '👤 User';
 
   const isAfter945IST = dayjs().tz('Asia/Kolkata').isAfter(dayjs().tz('Asia/Kolkata').hour(9).minute(45));
 
-  useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => setLocation({ lat: 'Permission denied', lng: '' })
-    );
-  }, []);
+useEffect(() => {
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const gpsLat = pos.coords.latitude;
+      const gpsLng = pos.coords.longitude;
+
+      try {
+        const ipRes = await fetch('https://ipapi.co/json/');
+        const ipData = await ipRes.json();
+
+        const ipLat = parseFloat(ipData.latitude);
+        const ipLng = parseFloat(ipData.longitude);
+
+        const gpsDistance = getDistance(gpsLat, gpsLng, ipLat, ipLng);
+        if (gpsDistance > 10) {
+          setSnackbar({
+            open: true,
+            message: '⚠️ Location mismatch between GPS and IP. Please disable spoofing tools.',
+            severity: 'error',
+          });
+          return;
+        }
+
+        setLocation({ lat: gpsLat, lng: gpsLng });
+      } catch {
+        setLocation({ lat: gpsLat, lng: gpsLng });
+      }
+    },
+    () => setLocation({ lat: 'Permission denied', lng: '' }),
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}, []);
 
   useEffect(() => {
     const fetchAttendance = async () => {
@@ -87,8 +135,9 @@ const AttendancePage = () => {
         const today = dayjs().startOf('day');
         const marked = res.data.some((rec) => dayjs(rec.date).isSame(today, 'day'));
         setAlreadyMarked(marked);
-      } catch {
-        setSnackbar({ open: true, message: 'Failed to fetch attendance', severity: 'error' });
+      } catch (err) {
+  console.error('Fetch attendance error:', err);
+  setSnackbar({ open: true, message: 'Failed to fetch attendance', severity: 'error' });
       } finally {
         setLoading(false);
       }
@@ -139,7 +188,7 @@ useEffect(() => {
   const handleMarkAttendance = async (status) => {
     if (loading) return;
 
-    if (!location.lat || !location.lng || location.lat === 'Permission denied') {
+    if (typeof location.lat !== 'number' || typeof location.lng !== 'number') {
       return setSnackbar({
         open: true,
         message: '📍 Please enable your device location to mark attendance.',
@@ -176,7 +225,7 @@ useEffect(() => {
 
   const markAttendance = async (status, extra = {}) => {
     setLoading(true);
-    const now = dayjs();
+    const now = dayjs().tz('Asia/Kolkata');
     const formattedTime = now.format('HH:mm');
 
     try {
@@ -312,13 +361,9 @@ useEffect(() => {
     variant="outlined"
     disabled
     title="⏳ Late Mark will be available after 9:45 AM"
-    sx={{
-      animation: 'fadeIn 0.5s',
-      '@keyframes fadeIn': {
-        from: { opacity: 0 },
-        to: { opacity: 1 },
-      },
-    }}
+sx={{
+  animation: `${fadeIn} 0.5s`,
+}}
   >
     Late Mark
   </Button>
@@ -328,13 +373,9 @@ useEffect(() => {
     color={lateMarkCount >= 3 ? "error" : "secondary"}
     disabled={alreadyMarked || loading || lateMarkCount >= 3}
     onClick={() => handleMarkAttendance('Late Mark')}
-    sx={{
-      animation: 'slideIn 0.4s ease-in-out',
-      '@keyframes slideIn': {
-        from: { transform: 'translateY(-10px)', opacity: 0 },
-        to: { transform: 'translateY(0)', opacity: 1 },
-      },
-    }}
+sx={{
+  animation: `${slideIn} 0.4s ease-in-out`,
+}}
   >
     Mark Late
   </Button>
