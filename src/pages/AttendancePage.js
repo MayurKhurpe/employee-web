@@ -184,40 +184,59 @@ useEffect(() => {
     return distance <= radius;
   };
 
-  const handleMarkAttendance = async (status) => {
-    if (loading) return;
+const handleMarkAttendance = async (status) => {
+  if (loading) return;
 
-if (
-  !location ||
-  location.lat === null ||
-  location.lng === null ||
-  isNaN(location.lat) ||
-  isNaN(location.lng)
-) {
   try {
     const ipRes = await fetch('https://ipapi.co/json/');
     const ipData = await ipRes.json();
     const userIP = ipData.ip;
 
-    console.log("📡 Your IP address:", userIP);
-
-    const officePrefixes = ['103.146.241.237', '2401:4900:8fea', '2401:4900'];// Add your real office IP prefixes
-
+    const officePrefixes = ['103.146.241.237', '2401:4900:8fea', '2401:4900'];
     const isOnOfficeWiFi = officePrefixes.some(prefix =>
       userIP?.toLowerCase().trim().startsWith(prefix)
     );
 
-    if (isOnOfficeWiFi) {
-      return markAttendance(status, {
-        note: '📶 Verified via Office WiFi IP (Location not available)',
+    // ✅ If on Office WiFi, mark attendance without location
+if (isOnOfficeWiFi) {
+  markAttendance(status, {
+    note: '📶 Verified via Office WiFi IP (Location not available)',
+  });
+  return setSnackbar({
+    open: true,
+    message: `📶 Verified via Office WiFi. Marked as ${status}!`,
+    severity: 'success',
+  });
+}
+
+    // ❌ If not on office WiFi, location is required
+    if (
+      !location ||
+      location.lat === null ||
+      location.lng === null ||
+      isNaN(location.lat) ||
+      isNaN(location.lng)
+    ) {
+return setSnackbar({
+  open: true,
+  message: '📍 Location needed (not on Office WiFi)',
+  severity: 'warning',
+});
+    }
+
+    // 📍 Validate if outside allowed range
+    const outside = !isWithinOffice(location.lat, location.lng);
+    if (outside && (status === 'Present' || status === 'Half Day')) {
+      markAttendance(status);
+      return setSnackbar({
+        open: true,
+        message: `⚠️ Outside office area. Marked as ${status} & admin notified.`,
+        severity: 'warning',
       });
     }
 
-    return setSnackbar({
-      open: true,
-      message: '📍 GPS disabled. Not on office WiFi. Please enable location or connect to office network.',
-      severity: 'error',
-    });
+    // ✅ Inside location range
+    markAttendance(status);
   } catch (err) {
     return setSnackbar({
       open: true,
@@ -239,7 +258,6 @@ if (
   });
 }
 
-
     const outside = location.lat && location.lng && !isWithinOffice(location.lat, location.lng);
 
     if (outside && (status === 'Present' || status === 'Half Day')) {
@@ -254,24 +272,35 @@ if (
     markAttendance(status);
   };
 
-  const markAttendance = async (status, extra = {}) => {
-    setLoading(true);
-    const now = dayjs().tz('Asia/Kolkata');
-    const formattedTime = now.format('HH:mm');
+ const markAttendance = async (status, extra = {}) => {
+  setLoading(true);
+  const now = dayjs().tz('Asia/Kolkata');
+  const formattedTime = now.format('HH:mm');
 
-    try {
-      const res = await axios.post(
-        '/attendance/mark',
-        {
-          status,
-          location,
-          date: now.toISOString(),
-          checkInTime: formattedTime,
-          checkOutTime: '',
-          ...extra,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  const token = localStorage.getItem('token');
+  console.log("🛂 Sending attendance with:", {
+    status,
+    location,
+    date: now.toISOString(),
+    checkInTime: formattedTime,
+    token,
+    ...extra
+  });
+
+  try {
+    const res = await axios.post(
+      '/attendance/mark',
+      {
+        status,
+        location,
+        date: now.toISOString(),
+        checkInTime: formattedTime,
+        checkOutTime: '',
+        ...extra,
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
       setRecords((prev) => [res.data.attendance, ...prev.filter((r) => !dayjs(r.date).isSame(now, 'day'))]);
       setSnackbar({ open: true, message: `✅ Marked as ${status}!`, severity: 'success' });
       setAlreadyMarked(true);
@@ -620,6 +649,5 @@ sx={{
       </Snackbar>
     </>
   );
-};
 
 export default AttendancePage;
