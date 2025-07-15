@@ -187,13 +187,32 @@ useEffect(() => {
   const handleMarkAttendance = async (status) => {
     if (loading) return;
 
-    if (typeof location.lat !== 'number' || typeof location.lng !== 'number') {
-      return setSnackbar({
-        open: true,
-        message: '📍 Please enable your device location to mark attendance.',
-        severity: 'warning',
+if (typeof location.lat !== 'number' || typeof location.lng !== 'number') {
+  try {
+    const ipRes = await fetch('https://ipapi.co/json/');
+    const ipData = await ipRes.json();
+    const userIP = ipData.ip;
+    const officeWiFiIP = '2401:4900:8fea:d8f6';
+
+    if (userIP === officeWiFiIP) {
+      return markAttendance(status, {
+        note: '📶 Location failed but verified via Office WiFi IP',
       });
     }
+
+    return setSnackbar({
+      open: true,
+      message: '📍 Location not detected. Connect to Office WiFi to mark attendance.',
+      severity: 'error',
+    });
+  } catch (err) {
+    return setSnackbar({
+      open: true,
+      message: '❌ Error checking fallback WiFi. Try again.',
+      severity: 'error',
+    });
+  }
+}
 
     if (status === 'Remote Work') {
       setRemoteDialogOpen(true);
@@ -411,7 +430,7 @@ sx={{
   </Typography>
 ) : isAfter945IST ? (
   <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-    ⚠ Attendance marking is closed (after 9:45 AM).
+    ⚠️ Present option disabled after 9:45 AM. Use Late Mark if still available.
   </Typography>
 ) : null}
           
