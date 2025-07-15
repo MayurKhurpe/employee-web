@@ -194,38 +194,37 @@ if (
   isNaN(location.lat) ||
   isNaN(location.lng)
 ) {
+  try {
+    const ipRes = await fetch('https://ipapi.co/json/');
+    const ipData = await ipRes.json();
+    const userIP = ipData.ip;
 
-try {
-  const ipRes = await fetch('https://ipapi.co/json/');
-  const ipData = await ipRes.json();
-  const userIP = ipData.ip;
+    console.log("📡 Your IP address:", userIP);
 
-  console.log("📡 Your IP address:", userIP);
+    const officePrefixes = ['103.146.241.237', '2401:4900:8fea', '2401:4900'];// Add your real office IP prefixes
 
-  const officePrefixes = ['2401:4900:8fea', '2401:4900'];
+    const isOnOfficeWiFi = officePrefixes.some(prefix =>
+      userIP?.toLowerCase().trim().startsWith(prefix)
+    );
 
-  const isOnOfficeWiFi = officePrefixes.some(prefix =>
-  userIP?.toLowerCase().trim().startsWith(prefix)
-);
+    if (isOnOfficeWiFi) {
+      return markAttendance(status, {
+        note: '📶 Verified via Office WiFi IP (Location not available)',
+      });
+    }
 
-  if (isOnOfficeWiFi) {
-    return markAttendance(status, {
-      note: '📶 Location failed but verified via Office WiFi IP',
+    return setSnackbar({
+      open: true,
+      message: '📍 GPS disabled. Not on office WiFi. Please enable location or connect to office network.',
+      severity: 'error',
+    });
+  } catch (err) {
+    return setSnackbar({
+      open: true,
+      message: '❌ Network error. Try again.',
+      severity: 'error',
     });
   }
-
-  return setSnackbar({
-    open: true,
-    message: '📍 Location failed. Connect to Office WiFi or enable location.',
-    severity: 'error',
-  });
-} catch (err) {
-  return setSnackbar({
-    open: true,
-    message: '❌ Network error. Try again.',
-    severity: 'error',
-  });
-}
 }
 
     if (status === 'Remote Work') {
