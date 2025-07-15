@@ -24,6 +24,13 @@ dayjs.extend(timezone);
 
 const PAGE_SIZE = 5;
 const COLORS = ['#4caf50', '#f44336', '#ff9800', '#2196f3', '#9c27b0']; // Purple for Late Mark
+const STATUS_COLORS = {
+  Present: '#4caf50',       // Green
+  Absent: '#f44336',        // Red
+  'Half Day': '#ff9800',    // Orange
+  'Remote Work': '#2196f3', // Blue
+  'Late Mark': '#9c27b0',   // Purple
+};
 const backgroundImageUrl = 'https://i.postimg.cc/7Z3grwLw/MES.jpg';
 // ✅ Reusable animations (avoid duplicate keyframes)
 const slideIn = keyframes`
