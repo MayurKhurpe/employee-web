@@ -187,6 +187,20 @@ useEffect(() => {
 const handleMarkAttendance = async (status) => {
   if (loading) return;
 
+  // ✅ Remote Work form before any network
+  if (status === 'Remote Work') {
+    setRemoteDialogOpen(true);
+    return;
+  }
+
+  if (status === 'Late Mark' && lateMarkCount >= 3) {
+    return setSnackbar({
+      open: true,
+      message: '❌ You’ve reached your Late Mark limit for this month. Be on time.',
+      severity: 'error',
+    });
+  }
+
   try {
     const ipRes = await fetch('https://ipapi.co/json/');
     const ipData = await ipRes.json();
@@ -194,22 +208,22 @@ const handleMarkAttendance = async (status) => {
 
     const officePrefixes = ['103.146.241.237', '2401:4900:8fea', '2401:4900'];
     const isOnOfficeWiFi = officePrefixes.some(prefix =>
-      userIP?.toLowerCase().trim().startsWith(prefix)
+      userIP?.includes(prefix)
     );
 
-    // ✅ If on Office WiFi, mark attendance without location
-if (isOnOfficeWiFi) {
-  markAttendance(status, {
-    note: '📶 Verified via Office WiFi IP (Location not available)',
-  });
-  return setSnackbar({
-    open: true,
-    message: `📶 Verified via Office WiFi. Marked as ${status}!`,
-    severity: 'success',
-  });
-}
+    // ✅ If on Office WiFi, skip location check
+    if (isOnOfficeWiFi) {
+      markAttendance(status, {
+        note: '📶 Verified via Office WiFi IP (Location not available)',
+      });
+      return setSnackbar({
+        open: true,
+        message: `📶 Verified via Office WiFi. Marked as ${status}!`,
+        severity: 'success',
+      });
+    }
 
-    // ❌ If not on office WiFi, location is required
+    // ❌ If not on WiFi, ensure location exists
     if (
       !location ||
       location.lat === null ||
@@ -217,25 +231,24 @@ if (isOnOfficeWiFi) {
       isNaN(location.lat) ||
       isNaN(location.lng)
     ) {
-return setSnackbar({
-  open: true,
-  message: '📍 Location needed (not on Office WiFi)',
-  severity: 'warning',
-});
-    }
-
-    // 📍 Validate if outside allowed range
-    const outside = !isWithinOffice(location.lat, location.lng);
-    if (outside && (status === 'Present' || status === 'Half Day')) {
-      markAttendance(status);
       return setSnackbar({
         open: true,
-        message: `⚠️ Outside office area. Marked as ${status} & admin notified.`,
+        message: '📍 Location needed (not on Office WiFi)',
         severity: 'warning',
       });
     }
 
-    // ✅ Inside location range
+    const outside = !isWithinOffice(location.lat, location.lng);
+    if (outside) {
+      return setSnackbar({
+        open: true,
+        message: '📍 GPS disabled. Not on office WiFi. Please enable location or connect to office network.',
+        severity: 'error',
+      });
+    }
+
+
+    // ✅ Final attendance mark
     markAttendance(status);
   } catch (err) {
     return setSnackbar({
@@ -244,32 +257,7 @@ return setSnackbar({
       severity: 'error',
     });
   }
-}
-
-    if (status === 'Remote Work') {
-      setRemoteDialogOpen(true);
-      return;
-    }
-    if (status === 'Late Mark' && lateMarkCount >= 3) {
-  return setSnackbar({
-    open: true,
-    message: '❌ You’ve reached your Late Mark limit for this month. Be on time.',
-    severity: 'error',
-  });
-}
-
-    const outside = location.lat && location.lng && !isWithinOffice(location.lat, location.lng);
-
-    if (outside && (status === 'Present' || status === 'Half Day')) {
-      markAttendance(status);
-      return setSnackbar({
-        open: true,
-        message: `⚠ Outside office boundary. Attendance marked as ${status} & admin notified.`,
-        severity: 'warning',
-      });
-    }
-
-    markAttendance(status);
+};
   };
 
  const markAttendance = async (status, extra = {}) => {
@@ -302,7 +290,11 @@ return setSnackbar({
     );
 
       setRecords((prev) => [res.data.attendance, ...prev.filter((r) => !dayjs(r.date).isSame(now, 'day'))]);
-      setSnackbar({ open: true, message: `✅ Marked as ${status}!`, severity: 'success' });
+      setSnackbar({
+  open: true,
+  message: `✅ Attendance marked as: ${status}${status === 'Remote Work' ? ' 🏠' : ''}`,
+  severity: 'success',
+});
       setAlreadyMarked(true);
       setRemoteForm({ customer: '', workLocation: '', assignedBy: '' });
       setRemoteDialogOpen(false);
@@ -324,6 +316,9 @@ return setSnackbar({
     if (search) temp = temp.filter((r) => r.status.toLowerCase().includes(search.toLowerCase()));
     return temp;
   }, [records, filterStatus, filterDate, search]);
+  useEffect(() => {
+  setPage(1);
+}, [filterStatus, filterDate, search]);
 
   const paginatedRecords = useMemo(() => {
     return filteredRecords.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -358,9 +353,9 @@ return setSnackbar({
       filteredRecords.map((r) => ({
         Date: dayjs(r.date).format('DD MMM YYYY'),
         Status: r.status,
-        Customer: r.customer || '',
-        Location: r.workLocation || '',
-        AssignedBy: r.assignedBy || '',
+Customer: r.status === 'Remote Work' ? r.customer || '' : '',
+Location: r.status === 'Remote Work' ? r.workLocation || '' : '',
+AssignedBy: r.status === 'Remote Work' ? r.assignedBy || '' : '',
         CheckIn: r.checkInTime || 'N/A',
         CheckOut: r.checkOutTime || 'N/A',
       }))
@@ -407,15 +402,22 @@ return setSnackbar({
           <Typography variant="subtitle1" gutterBottom>
             Welcome {userName}, mark your attendance below 👇
           </Typography>
-          <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap">
+          <Stack
+  direction={{ xs: 'column', sm: 'row' }}
+  spacing={2}
+  justifyContent="center"
+  alignItems="center"
+>
             <Button
-              variant="contained"
-              color="success"
-              disabled={alreadyMarked || loading || isAfter945IST}
-              onClick={() => handleMarkAttendance('Present')}
-            >
-              Mark Present
-            </Button>
+  variant="contained"
+  color="success"
+  disabled={alreadyMarked || loading || isAfter945IST}
+  title={isAfter945IST ? '⏰ Present marking closes at 9:45 AM' : ''}
+  onClick={() => handleMarkAttendance('Present')}
+>
+  Mark Present
+</Button>
+
 {nowIST.isBefore(dayjs().tz('Asia/Kolkata').hour(9).minute(45)) ? (
   <Button
     variant="outlined"
@@ -431,7 +433,7 @@ sx={{
   <Button
     variant="contained"
     color={lateMarkCount >= 3 ? "error" : "secondary"}
-    disabled={alreadyMarked || loading || lateMarkCount >= 3}
+    disabled={alreadyMarked || loading || lateMarkCount >= 3 || nowIST.isBefore(dayjs().tz('Asia/Kolkata').hour(9).minute(45))}
     onClick={() => handleMarkAttendance('Late Mark')}
 sx={{
   animation: `${slideIn} 0.4s ease-in-out`,
@@ -504,7 +506,7 @@ sx={{
           </ResponsiveContainer>
         </Paper>
 
-        <Stack direction="row" spacing={2} alignItems="center" mb={2} flexWrap="wrap">
+        <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap" useFlexGap rowGap={2}>
 <ToggleButtonGroup
   value={filterStatus}
   exclusive
@@ -522,7 +524,13 @@ sx={{
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker label="📅 Filter by Date" value={filterDate} onChange={(val) => setFilterDate(val)} />
           </LocalizationProvider>
-          <TextField label="🔍 Search" value={search} onChange={(e) => setSearch(e.target.value)} size="small" />
+          <TextField
+  label="🔍 Search"
+  placeholder="Search by status..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  size="small"
+/>
           <Button
             variant="outlined"
             onClick={() => {
@@ -539,9 +547,16 @@ sx={{
             <CircularProgress />
           </Box>
         ) : paginatedRecords.length === 0 ? (
-          <Typography variant="body1" align="center">
-            No attendance records found.
-          </Typography>
+<Box
+  display="flex"
+  alignItems="center"
+  justifyContent="center"
+  height="200px"
+>
+  <Typography variant="body1" align="center">
+    No attendance records found.
+  </Typography>
+</Box>
         ) : (
           <Paper sx={{ p: 2 }}>
             {paginatedRecords.map((rec) => (
@@ -551,20 +566,9 @@ sx={{
                 </Typography>
                 <Typography variant="body1">
                   📌 Status:{' '}
-                  <strong
-                    style={{
-                      color:
-                        rec.status === 'Present'
-                          ? '#4caf50'
-                          : rec.status === 'Absent'
-                          ? '#f44336'
-                          : rec.status === 'Half Day'
-                          ? '#ff9800'
-                          : '#2196f3',
-                    }}
-                  >
-                    {rec.status}
-                  </strong>
+<strong style={{ color: STATUS_COLORS[rec.status] || '#000' }}>
+  {rec.status}
+</strong>
                 </Typography>
                 {rec.status === 'Remote Work' && (
                   <>
@@ -582,7 +586,10 @@ sx={{
               <Pagination
                 count={Math.ceil(filteredRecords.length / PAGE_SIZE)}
                 page={page}
-                onChange={(e, val) => setPage(val)}
+                onChange={(e, val) => {
+  setPage(val);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}}
               />
             </Stack>
           </Paper>
