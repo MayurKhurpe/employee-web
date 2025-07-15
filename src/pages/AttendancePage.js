@@ -165,7 +165,6 @@ useEffect(() => {
     countLateMarks();
   }
 }, [records]);
-
   // ✅ THIS SHOULD BE OUTSIDE, NOT NESTED
 useEffect(() => {
   const interval = setInterval(() => {
