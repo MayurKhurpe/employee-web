@@ -96,7 +96,7 @@ useEffect(() => {
         setLocation({ lat: gpsLat, lng: gpsLng });
       }
     },
-    () => setLocation({ lat: 'Permission denied', lng: '' }),
+    () => setLocation({ lat: NaN, lng: NaN }),
     { enableHighAccuracy: true, timeout: 10000 }
   );
 }, []);
@@ -187,7 +187,14 @@ useEffect(() => {
   const handleMarkAttendance = async (status) => {
     if (loading) return;
 
-if (!location || isNaN(location.lat) || isNaN(location.lng)) {
+if (
+  !location ||
+  location.lat === null ||
+  location.lng === null ||
+  isNaN(location.lat) ||
+  isNaN(location.lng)
+) {
+
 try {
   const ipRes = await fetch('https://ipapi.co/json/');
   const ipData = await ipRes.json();
@@ -197,7 +204,9 @@ try {
 
   const officePrefixes = ['2401:4900:8fea', '2401:4900'];
 
-  const isOnOfficeWiFi = officePrefixes.some(prefix => userIP?.startsWith(prefix));
+  const isOnOfficeWiFi = officePrefixes.some(prefix =>
+  userIP?.toLowerCase().trim().startsWith(prefix)
+);
 
   if (isOnOfficeWiFi) {
     return markAttendance(status, {
