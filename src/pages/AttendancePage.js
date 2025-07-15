@@ -228,6 +228,7 @@ const handleMarkAttendance = async (status) => {
         message: `📶 Verified via Office WiFi. Marked as ${status}!`,
         severity: 'success',
       });
+       return;
     }
 
     // ❌ If not on WiFi, ensure location exists
