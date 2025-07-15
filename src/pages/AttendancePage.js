@@ -82,7 +82,7 @@ useEffect(() => {
         const ipLng = parseFloat(ipData.longitude);
 
         const gpsDistance = getDistance(gpsLat, gpsLng, ipLat, ipLng);
-        if (gpsDistance > 10) {
+        if (gpsDistance > 20) {
           setSnackbar({
             open: true,
             message: '⚠️ Location mismatch between GPS and IP. Please disable spoofing tools.',
