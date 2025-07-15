@@ -82,10 +82,10 @@ useEffect(() => {
         const ipLng = parseFloat(ipData.longitude);
 
         const gpsDistance = getDistance(gpsLat, gpsLng, ipLat, ipLng);
-        if (gpsDistance > 20) {
+        if (gpsDistance > 30) {
           setSnackbar({
             open: true,
-            message: '⚠️ Location mismatch between GPS and IP. Please disable spoofing tools.',
+            message: '⚠️ Location mismatch, Come Office',
             severity: 'error',
           });
           return;
@@ -192,9 +192,11 @@ if (typeof location.lat !== 'number' || typeof location.lng !== 'number') {
     const ipRes = await fetch('https://ipapi.co/json/');
     const ipData = await ipRes.json();
     const userIP = ipData.ip;
-    const officeWiFiIP = '2401:4900:8fea:d8f6';
+    const officeWiFiPrefix = '2401:4900:8fea:d8f6';
 
-    if (userIP === officeWiFiIP) {
+    console.log('🧪 Detected IP:', userIP); // optional debugging
+
+    if (userIP && userIP.startsWith(officeWiFiPrefix)) {
       return markAttendance(status, {
         note: '📶 Location failed but verified via Office WiFi IP',
       });
