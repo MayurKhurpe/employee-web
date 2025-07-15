@@ -258,7 +258,6 @@ const handleMarkAttendance = async (status) => {
     });
   }
 };
-  };
 
  const markAttendance = async (status, extra = {}) => {
   setLoading(true);
@@ -656,5 +655,5 @@ sx={{
       </Snackbar>
     </>
   );
-
+};
 export default AttendancePage;
