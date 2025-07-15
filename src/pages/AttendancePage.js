@@ -187,33 +187,36 @@ useEffect(() => {
   const handleMarkAttendance = async (status) => {
     if (loading) return;
 
-if (typeof location.lat !== 'number' || typeof location.lng !== 'number') {
-  try {
-    const ipRes = await fetch('https://ipapi.co/json/');
-    const ipData = await ipRes.json();
-    const userIP = ipData.ip;
-    const officeWiFiPrefix = '2401:4900:8fea:d8f6';
+if (!location || isNaN(location.lat) || isNaN(location.lng)) {
+try {
+  const ipRes = await fetch('https://ipapi.co/json/');
+  const ipData = await ipRes.json();
+  const userIP = ipData.ip;
 
-    console.log('🧪 Detected IP:', userIP); // optional debugging
+  console.log("📡 Your IP address:", userIP);
 
-    if (userIP && userIP.startsWith(officeWiFiPrefix)) {
-      return markAttendance(status, {
-        note: '📶 Location failed but verified via Office WiFi IP',
-      });
-    }
+  const officePrefixes = ['2401:4900:8fea', '2401:4900'];
 
-    return setSnackbar({
-      open: true,
-      message: '📍 Location not detected. Connect to Office WiFi to mark attendance.',
-      severity: 'error',
-    });
-  } catch (err) {
-    return setSnackbar({
-      open: true,
-      message: '❌ Error checking fallback WiFi. Try again.',
-      severity: 'error',
+  const isOnOfficeWiFi = officePrefixes.some(prefix => userIP?.startsWith(prefix));
+
+  if (isOnOfficeWiFi) {
+    return markAttendance(status, {
+      note: '📶 Location failed but verified via Office WiFi IP',
     });
   }
+
+  return setSnackbar({
+    open: true,
+    message: '📍 Location failed. Connect to Office WiFi or enable location.',
+    severity: 'error',
+  });
+} catch (err) {
+  return setSnackbar({
+    open: true,
+    message: '❌ Network error. Try again.',
+    severity: 'error',
+  });
+}
 }
 
     if (status === 'Remote Work') {
