@@ -185,7 +185,7 @@ useEffect(() => {
 }, []);
 
   const isWithinOffice = (lat, lng) => {
-    const officeLat = 18.641478153875, officeLng = 73.79522807016143, radius = 1;
+    const officeLat = 18.641478153875, officeLng = 73.79522807016143, radius = 0.1;
     const toRad = (val) => (val * Math.PI) / 180;
     const R = 6371;
     const dLat = toRad(officeLat - lat);
