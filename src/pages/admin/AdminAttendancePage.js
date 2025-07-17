@@ -310,7 +310,11 @@ const AdminAttendancePage = () => {
                     <TableCell>Name</TableCell>
                     <TableCell>Email</TableCell>
                     <TableCell>Date</TableCell>
-                    <TableCell colSpan={5}>Status / Details</TableCell>
+                    <TableCell>Status</TableCell>
+<TableCell>Location</TableCell>
+<TableCell>In</TableCell>
+<TableCell>Out</TableCell>
+<TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
