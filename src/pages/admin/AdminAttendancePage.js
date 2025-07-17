@@ -37,19 +37,24 @@ const AdminAttendancePage = () => {
     todayHalfDay: 0,
     todayRemote: 0,
     totalEmployees: 0,
+    todayLateMark: 0,
   });
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
   const [users, setUsers] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectTargetId, setRejectTargetId] = useState(null);
+
   const navigate = useNavigate();
 
+  // ✅ Fetch users
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -62,6 +67,7 @@ const AdminAttendancePage = () => {
     }
   };
 
+  // ✅ Fetch all attendance
   const fetchAllAttendance = async (pg = 1) => {
     setLoading(true);
     try {
@@ -91,11 +97,64 @@ const AdminAttendancePage = () => {
     }
   };
 
+  const reloadCurrentPage = () => {
+    fetchAllAttendance(page);
+  };
+
+  // ✅ Approve record
+  const approveRecord = async (attendanceId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`/attendance/approve/${attendanceId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSnackbar({ open: true, message: '✅ Attendance approved.', severity: 'success' });
+      reloadCurrentPage();
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err.response?.data?.message || '❌ Failed to approve.',
+        severity: 'error',
+      });
+    }
+  };
+
+  // ✅ Reject flow
+  const handleOpenReject = (attendanceId) => {
+    setRejectTargetId(attendanceId);
+    setRejectReason('');
+    setRejectDialogOpen(true);
+  };
+
+  const submitReject = async () => {
+    if (!rejectTargetId) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `/attendance/reject/${rejectTargetId}`,
+        { reason: rejectReason },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSnackbar({ open: true, message: '❌ Attendance rejected.', severity: 'warning' });
+      setRejectDialogOpen(false);
+      setRejectReason('');
+      setRejectTargetId(null);
+      reloadCurrentPage();
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err.response?.data?.message || '❌ Failed to reject.',
+        severity: 'error',
+      });
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
     fetchAllAttendance(page);
   }, [page, selectedDate, selectedMonth, selectedUser]);
 
+  // ✅ Export to PDF
   const exportToPDF = () => {
     setExporting(true);
     const doc = new jsPDF();
@@ -124,6 +183,7 @@ const AdminAttendancePage = () => {
     setExporting(false);
   };
 
+  // ✅ Export to Excel
   const exportToExcel = () => {
     setExporting(true);
     const data = records.map((r) => ({
@@ -146,7 +206,7 @@ const AdminAttendancePage = () => {
     XLSX.writeFile(wb, 'all-attendance.xlsx');
     setExporting(false);
   };
-  
+
   return (
     <Box sx={{ background: 'linear-gradient(to bottom right, #e0f7fa, #e1f5fe)', minHeight: '100vh', py: 4 }}>
       <Container>
@@ -157,6 +217,7 @@ const AdminAttendancePage = () => {
           </Button>
         </Box>
 
+        {/* Filters */}
         <Grid container spacing={2} mb={3}>
           <Grid item xs={12} sm={4}>
             <TextField
@@ -207,14 +268,16 @@ const AdminAttendancePage = () => {
           </Grid>
         </Grid>
 
+        {/* Summary */}
         <Grid container spacing={2} mb={3}>
-          {[{ label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
-  { label: '❌ Absent', value: summary.todayAbsent, bg: '#ffebee' },
-  { label: '🕒 Half Day', value: summary.todayHalfDay, bg: '#fff3e0' },
-  { label: '🏃 Remote', value: summary.todayRemote, bg: '#f1f8e9' },
-  { label: '🚨 Late Marks Today', value: summary.todayLateMark ?? 0, bg: '#fffde7' },
-  { label: '👥 Total', value: summary.totalEmployees, bg: '#e8f5e9' },
-].map((item, index) => (
+          {[
+            { label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
+            { label: '❌ Absent', value: summary.todayAbsent, bg: '#ffebee' },
+            { label: '🕒 Half Day', value: summary.todayHalfDay, bg: '#fff3e0' },
+            { label: '🏃 Remote', value: summary.todayRemote, bg: '#f1f8e9' },
+            { label: '🚨 Late Marks Today', value: summary.todayLateMark ?? 0, bg: '#fffde7' },
+            { label: '👥 Total', value: summary.totalEmployees, bg: '#e8f5e9' },
+          ].map((item, index) => (
             <Grid item xs={12} sm={6} md={2.4} key={index}>
               <Paper sx={{ p: 2, textAlign: 'center', backgroundColor: item.bg, boxShadow: 2 }}>
                 <Typography variant="h6">{item.label}</Typography>
@@ -224,11 +287,13 @@ const AdminAttendancePage = () => {
           ))}
         </Grid>
 
+        {/* Export Buttons */}
         <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
           <Button variant="outlined" onClick={exportToPDF} disabled={exporting}>🧾 Export PDF</Button>
           <Button variant="outlined" onClick={exportToExcel} disabled={exporting}>📊 Export Excel</Button>
         </Stack>
 
+        {/* Attendance Table */}
         {loading ? (
           <Box display="flex" justifyContent="center" mt={5}><CircularProgress /></Box>
         ) : records.length === 0 ? (
@@ -245,47 +310,61 @@ const AdminAttendancePage = () => {
                     <TableCell>Name</TableCell>
                     <TableCell>Email</TableCell>
                     <TableCell>Date</TableCell>
-                    <TableCell colSpan={4}>Status / Details</TableCell>
+                    <TableCell colSpan={5}>Status / Details</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {records.map((rec, idx) => (
-                    <TableRow
-                      key={rec._id}
-                      sx={{
-                        backgroundColor:
-                          rec.status === 'Not Marked Yet'
-                            ? '#fff3e0'
-                            : rec.status === 'Remote Work'
-                            ? '#f1f8e9'
-                            : 'inherit',
-                      }}
-                    >
+                    <TableRow key={rec._id}>
                       <TableCell>{(page - 1) * PAGE_SIZE + idx + 1}</TableCell>
                       <TableCell>{rec.name}</TableCell>
                       <TableCell>
-  {rec.email}
-  {typeof rec.lateMarks !== 'undefined' && (
-    <Typography
-      variant="body2"
-      color={rec.lateMarks >= 3 ? 'error' : 'textSecondary'}
-    >
-      🚨 Late Marks: {rec.lateMarks} / 3
-    </Typography>
-  )}
-</TableCell>
-
+                        {rec.email}
+                        {typeof rec.lateMarks !== 'undefined' && (
+                          <Typography
+                            variant="body2"
+                            color={rec.lateMarks >= 3 ? 'error' : 'textSecondary'}
+                          >
+                            🚨 Late Marks: {rec.lateMarks} / 3
+                          </Typography>
+                        )}
+                      </TableCell>
                       <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
 
+                      {/* Remote Work Handling */}
                       {rec.status === 'Remote Work' ? (
-                        <TableCell colSpan={4}>
+                        <TableCell colSpan={5}>
                           <Box sx={{ whiteSpace: 'pre-line' }}>
                             🖥️ <strong>Remote Work</strong>{"\n"}
                             👤 <strong>Customer:</strong> {rec.customer || '—'}{"\n"}
                             🏢 <strong>Location:</strong> {rec.workLocation || '—'}{"\n"}
                             📨 <strong>Assigned By:</strong> {rec.assignedBy || '—'}{"\n"}
-                            🕒 <strong>In:</strong> {rec.checkInTime || 'N/A'} | <strong>Out:</strong> {rec.checkOutTime || 'N/A'}
+                            🕒 <strong>In:</strong> {rec.checkInTime || 'N/A'} | <strong>Out:</strong> {rec.checkOutTime || 'N/A'}{"\n"}
+                            {rec.approvalStatus === 'Pending' && `Status: Pending Approval`}
+                            {rec.approvalStatus === 'Approved' && `Status: Approved`}
+                            {rec.approvalStatus === 'Rejected' && `Status: Rejected (${rec.rejectionReason || 'No reason'})`}
                           </Box>
+
+                          {rec.approvalStatus === 'Pending' && (
+                            <Stack direction="row" spacing={1} mt={1}>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="success"
+                                onClick={() => approveRecord(rec._id)}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="error"
+                                onClick={() => handleOpenReject(rec._id)}
+                              >
+                                Reject
+                              </Button>
+                            </Stack>
+                          )}
                         </TableCell>
                       ) : (
                         <>
@@ -299,6 +378,15 @@ const AdminAttendancePage = () => {
                           </TableCell>
                           <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
                           <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
+                          <TableCell>
+                            {rec.approvalStatus === 'Approved' ? (
+                              <Typography color="success.main">Approved</Typography>
+                            ) : rec.approvalStatus === 'Rejected' ? (
+                              <Typography color="error">Rejected</Typography>
+                            ) : (
+                              <Typography color="textSecondary">—</Typography>
+                            )}
+                          </TableCell>
                         </>
                       )}
                     </TableRow>
@@ -317,6 +405,7 @@ const AdminAttendancePage = () => {
           </>
         )}
 
+        {/* Snackbar */}
         <Snackbar
           open={snackbar.open}
           autoHideDuration={3000}
@@ -332,6 +421,55 @@ const AdminAttendancePage = () => {
           </Alert>
         </Snackbar>
       </Container>
+
+      {/* Reject Dialog */}
+      {rejectDialogOpen && (
+        <Box
+          sx={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1300,
+          }}
+        >
+          <Paper sx={{ p: 3, width: 320 }}>
+            <Typography variant="h6" gutterBottom>
+              Reject Attendance
+            </Typography>
+            <TextField
+              label="Reason"
+              fullWidth
+              multiline
+              minRows={2}
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <Stack direction="row" spacing={2} justifyContent="flex-end">
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setRejectDialogOpen(false);
+                  setRejectReason('');
+                  setRejectTargetId(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={submitReject}
+              >
+                Reject
+              </Button>
+            </Stack>
+          </Paper>
+        </Box>
+      )}
     </Box>
   );
 };

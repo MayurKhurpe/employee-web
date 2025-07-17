@@ -30,7 +30,10 @@ const STATUS_COLORS = {
   'Half Day': '#ff9800',    // Orange
   'Remote Work': '#2196f3', // Blue
   'Late Mark': '#9c27b0',   // Purple
+  Pending: '#9e9e9e',       // Grey
+  Rejected: '#000',         // Black (or deep red if you prefer)
 };
+
 const backgroundImageUrl = 'https://i.postimg.cc/7Z3grwLw/MES.jpg';
 // ✅ Reusable animations (avoid duplicate keyframes)
 const slideIn = keyframes`
@@ -60,6 +63,7 @@ const AttendancePage = () => {
   const [nowIST, setNowIST] = useState(dayjs().tz('Asia/Kolkata'));
   const [lateMarkCount, setLateMarkCount] = useState(0);
   const [isOnOfficeWiFi, setIsOnOfficeWiFi] = useState(false);
+  const [todayRec, setTodayRec] = useState(null);
   
 
   // Haversine formula for distance in km
@@ -128,24 +132,55 @@ if (gpsDistance > 30) {
         }
 
         const markedMap = new Map(
-          res.data.map((rec) => [dayjs(rec.date).format('YYYY-MM-DD'), rec])
-        );
+  res.data.map((rec) => {
+    const dateKey = dayjs(rec.date).format('YYYY-MM-DD');
+
+    // derive displayStatus
+    let displayStatus = rec.status; // fallback
+    if (rec.approvalStatus === 'Pending') displayStatus = 'Pending';
+    else if (rec.approvalStatus === 'Rejected') displayStatus = 'Rejected';
+    // else Approved -> use saved status (Present/Late/etc.)
+
+    return [
+      dateKey,
+      {
+        ...rec,
+        displayStatus,
+        requestedStatus: rec.requestedStatus || rec.status,
+        rejectionReason: rec.rejectionReason || '',
+      },
+    ];
+  })
+);
+
         const filled = allDates.map((dateStr) => {
-          return markedMap.get(dateStr) || {
-            _id: dateStr,
-            date: dateStr,
-            status: 'Absent',
-            checkInTime: '',
-            checkOutTime: '',
-          };
+          const existing = markedMap.get(dateStr);
+if (existing) return existing;
+
+return {
+  _id: dateStr,
+  date: dateStr,
+  status: 'Absent',
+  displayStatus: 'Absent',
+  requestedStatus: '',
+  rejectionReason: '',
+  checkInTime: '',
+  checkOutTime: '',
+};
         });
 
         const sorted = filled.sort((a, b) => new Date(b.date) - new Date(a.date));
         setRecords(sorted);
 
         const today = dayjs().startOf('day');
-        const marked = res.data.some((rec) => dayjs(rec.date).isSame(today, 'day'));
-        setAlreadyMarked(marked);
+ const todaysRec = res.data.find((rec) => dayjs(rec.date).isSame(today, 'day'));
+setTodayRec(todaysRec || null);
+
+// If it's Pending or Approved, mark as already marked (disable buttons)
+// If it's Rejected, allow marking again
+const marked = todaysRec && todaysRec.approvalStatus !== 'Rejected';
+setAlreadyMarked(marked);
+
       } catch (err) {
   console.error('Fetch attendance error:', err);
   setSnackbar({ open: true, message: 'Failed to fetch attendance', severity: 'error' });
@@ -221,17 +256,17 @@ const handleMarkAttendance = async (status) => {
     setIsOnOfficeWiFi(officePrefixes.some(prefix => userIP?.includes(prefix)));
 
     // ✅ If on Office WiFi, skip location check
-   if (isOnOfficeWiFi) {
-      markAttendance(status, {
-        note: '📶 Verified via Office WiFi IP (Location not available)',
-      });
-      return setSnackbar({
-        open: true,
-        message: `📶 Verified via Office WiFi. Marked as ${status}!`,
-        severity: 'success',
-      });
-       return;
-    }
+if (isOnOfficeWiFi) {
+  markAttendance(status, {
+    note: '📶 Verified via Office WiFi IP (Location not available)',
+  });
+  setSnackbar({
+    open: true,
+    message: `📶 Verified via Office WiFi. Marked as ${status}!`,
+    severity: 'success',
+  });
+  return;
+}
 
     // ❌ If not on WiFi, ensure location exists
     if (
@@ -320,9 +355,14 @@ const handleMarkAttendance = async (status) => {
 
   const filteredRecords = useMemo(() => {
     let temp = [...records];
-    if (filterStatus !== 'All') temp = temp.filter((r) => r.status === filterStatus);
+    if (filterStatus !== 'All') {
+  temp = temp.filter((r) => (r.displayStatus || r.status) === filterStatus);
+}
     if (filterDate) temp = temp.filter((r) => dayjs(r.date).isSame(filterDate, 'day'));
-    if (search) temp = temp.filter((r) => r.status.toLowerCase().includes(search.toLowerCase()));
+    if (search) {
+  const s = search.toLowerCase();
+  temp = temp.filter((r) => (r.displayStatus || r.status).toLowerCase().includes(s));
+}
     return temp;
   }, [records, filterStatus, filterDate, search]);
   useEffect(() => {
@@ -494,10 +534,21 @@ sx={{
 </Typography>
 
 
-{alreadyMarked ? (
-  <Typography variant="body2" color="success" sx={{ mt: 1 }}>
-    ✅ You've already marked your attendance for today.
+{/* ✅ Status banner for today */}
+{todayRec?.approvalStatus === 'Rejected' ? (
+  <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+    ❌ Your attendance request was rejected. Reason: {todayRec.rejectionReason || 'Not provided'}. Please re‑mark your attendance.
   </Typography>
+) : alreadyMarked ? (
+  todayRec?.approvalStatus === 'Pending' ? (
+    <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+      ⏳ Attendance submitted. Waiting for HR approval.
+    </Typography>
+  ) : (
+    <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
+      ✅ You've already marked your attendance for today.
+    </Typography>
+  )
 ) : isAfter945IST ? (
   <Typography variant="body2" color="error" sx={{ mt: 1 }}>
     ⚠️ Present option disabled after 9:45 AM. Use Late Mark if still available.
@@ -545,6 +596,8 @@ sx={{
   <ToggleButton value="Half Day">Half Day</ToggleButton>
   <ToggleButton value="Remote Work">Remote</ToggleButton>
   <ToggleButton value="Late Mark">Late Mark</ToggleButton> {/* ✅ NEW */}
+  <ToggleButton value="Pending">Pending</ToggleButton>
+<ToggleButton value="Rejected">Rejected</ToggleButton>
 </ToggleButtonGroup>
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -592,9 +645,29 @@ sx={{
                 </Typography>
                 <Typography variant="body1">
                   📌 Status:{' '}
-<strong style={{ color: STATUS_COLORS[rec.status] || '#000' }}>
-  {rec.status}
+<strong style={{ color: STATUS_COLORS[rec.displayStatus || rec.status] || '#000' }}>
+  {rec.displayStatus || rec.status}
 </strong>
+{rec.displayStatus === 'Pending' && rec.requestedStatus && (
+  <Typography variant="body2" color="text.secondary">
+    Requested: {rec.requestedStatus}
+  </Typography>
+)}
+
+{rec.displayStatus === 'Rejected' && (
+  <>
+    {rec.requestedStatus && (
+      <Typography variant="body2" color="error">
+        Requested: {rec.requestedStatus}
+      </Typography>
+    )}
+    {rec.rejectionReason && (
+      <Typography variant="caption" color="error">
+        Reason: {rec.rejectionReason}
+      </Typography>
+    )}
+  </>
+)}
                 </Typography>
                 {rec.status === 'Remote Work' && (
                   <>
