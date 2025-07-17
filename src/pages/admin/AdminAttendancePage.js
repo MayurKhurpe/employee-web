@@ -74,7 +74,7 @@ const AdminAttendancePage = () => {
 
       const [recordsRes, summaryRes] = await Promise.all([
         axios.get(`/attendance/all?${query.toString()}`),
-        axios.get(`/attendance/summary?${selectedMonth ? `month=${selectedMonth}` : `date=${selectedDate}`}`),
+        axios.get(`/attendance/summary?date=${selectedMonth ? `${selectedMonth}-01` : selectedDate}`),
       ]);
 
       setRecords(recordsRes.data.records || []);
@@ -146,28 +146,7 @@ const AdminAttendancePage = () => {
     XLSX.writeFile(wb, 'all-attendance.xlsx');
     setExporting(false);
   };
-// 🔄 Count Late Marks per user for current month
-const countLateMarksByUser = () => {
-  const currentMonth = dayjs().month();  // Example: July = 6 (starts from 0)
-  const currentYear = dayjs().year();    // Example: 2025
-  const counts = {};
-
-  records.forEach((rec) => {
-    const recDate = dayjs(rec.date);
-    if (
-      rec.status === 'Late Mark' &&
-      recDate.month() === currentMonth &&
-      recDate.year() === currentYear
-    ) {
-      counts[rec.email] = (counts[rec.email] || 0) + 1;
-    }
-  });
-
-  return counts;
-};
-
-const lateMarkCounts = countLateMarksByUser(); // call the helper function to get result
-
+  
   return (
     <Box sx={{ background: 'linear-gradient(to bottom right, #e0f7fa, #e1f5fe)', minHeight: '100vh', py: 4 }}>
       <Container>
@@ -230,11 +209,12 @@ const lateMarkCounts = countLateMarksByUser(); // call the helper function to ge
 
         <Grid container spacing={2} mb={3}>
           {[{ label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
-            { label: '❌ Absent', value: summary.todayAbsent, bg: '#ffebee' },
-            { label: '🕒 Half Day', value: summary.todayHalfDay, bg: '#fff3e0' },
-            { label: '🏃 Remote', value: summary.todayRemote, bg: '#f1f8e9' },
-            { label: '👥 Total', value: summary.totalEmployees, bg: '#e8f5e9' },
-          ].map((item, index) => (
+  { label: '❌ Absent', value: summary.todayAbsent, bg: '#ffebee' },
+  { label: '🕒 Half Day', value: summary.todayHalfDay, bg: '#fff3e0' },
+  { label: '🏃 Remote', value: summary.todayRemote, bg: '#f1f8e9' },
+  { label: '🚨 Late Marks Today', value: summary.todayLateMark ?? 0, bg: '#fffde7' },
+  { label: '👥 Total', value: summary.totalEmployees, bg: '#e8f5e9' },
+].map((item, index) => (
             <Grid item xs={12} sm={6} md={2.4} key={index}>
               <Paper sx={{ p: 2, textAlign: 'center', backgroundColor: item.bg, boxShadow: 2 }}>
                 <Typography variant="h6">{item.label}</Typography>
@@ -285,12 +265,14 @@ const lateMarkCounts = countLateMarksByUser(); // call the helper function to ge
                       <TableCell>{rec.name}</TableCell>
                       <TableCell>
   {rec.email}
-  <Typography
-    variant="body2"
-    color={lateMarkCounts[rec.email] >= 3 ? 'error' : 'textSecondary'}
-  >
-    🚨 Late Marks: {lateMarkCounts[rec.email] || 0} / 3
-  </Typography>
+  {typeof rec.lateMarks !== 'undefined' && (
+    <Typography
+      variant="body2"
+      color={rec.lateMarks >= 3 ? 'error' : 'textSecondary'}
+    >
+      🚨 Late Marks: {rec.lateMarks} / 3
+    </Typography>
+  )}
 </TableCell>
 
                       <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
