@@ -411,13 +411,15 @@ const exportToPDF = async () => {
 <TableCell>
   {(() => {
     const lm =
-      typeof rec.lateMarks === 'number'
-        ? rec.lateMarks
-        : typeof rec.lateMarkCount === 'number'
-        ? rec.lateMarkCount
-        : typeof rec.late_mark === 'number'
-        ? rec.late_mark
-        : null;
+  Array.isArray(rec.lateMarksHistory)
+    ? rec.lateMarksHistory.length
+    : typeof rec.lateMarks === 'number'
+    ? rec.lateMarks
+    : typeof rec.lateMarkCount === 'number'
+    ? rec.lateMarkCount
+    : typeof rec.late_mark === 'number'
+    ? rec.late_mark
+    : 0;
 
 return lm !== null ? (
   <Typography
