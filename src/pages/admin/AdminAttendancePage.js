@@ -30,19 +30,21 @@ import { useNavigate } from 'react-router-dom';
 const PAGE_SIZE = 10;
 
 const AdminAttendancePage = () => {
+  console.log('AdminAttendancePage v2 loaded');
   const [records, setRecords] = useState([]);
   const [summary, setSummary] = useState({
+    
     todayPresent: 0,
     todayAbsent: 0,
     todayHalfDay: 0,
     todayRemote: 0,
     totalEmployees: 0,
-    todayLateMark: 0,
   });
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedUser, setSelectedUser] = useState('');
   const [users, setUsers] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
@@ -51,10 +53,8 @@ const AdminAttendancePage = () => {
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectTargetId, setRejectTargetId] = useState(null);
-
   const navigate = useNavigate();
 
-  // ✅ Fetch users
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -67,7 +67,6 @@ const AdminAttendancePage = () => {
     }
   };
 
-  // ✅ Fetch all attendance
   const fetchAllAttendance = async (pg = 1) => {
     setLoading(true);
     try {
@@ -86,6 +85,7 @@ const AdminAttendancePage = () => {
       setRecords(recordsRes.data.records || []);
       setTotalPages(recordsRes.data.totalPages || 1);
       setSummary(summaryRes.data || {});
+      console.log('ADMIN attendance records:', recordsRes.data.records);
     } catch (err) {
       setSnackbar({
         open: true,
@@ -97,11 +97,8 @@ const AdminAttendancePage = () => {
     }
   };
 
-  const reloadCurrentPage = () => {
-    fetchAllAttendance(page);
-  };
+  const reloadCurrentPage = () => fetchAllAttendance(page);
 
-  // ✅ Approve record
   const approveRecord = async (attendanceId) => {
     try {
       const token = localStorage.getItem('token');
@@ -119,7 +116,6 @@ const AdminAttendancePage = () => {
     }
   };
 
-  // ✅ Reject flow
   const handleOpenReject = (attendanceId) => {
     setRejectTargetId(attendanceId);
     setRejectReason('');
@@ -130,11 +126,9 @@ const AdminAttendancePage = () => {
     if (!rejectTargetId) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.put(
-        `/attendance/reject/${rejectTargetId}`,
-        { reason: rejectReason },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.put(`/attendance/reject/${rejectTargetId}`, { reason: rejectReason }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setSnackbar({ open: true, message: '❌ Attendance rejected.', severity: 'warning' });
       setRejectDialogOpen(false);
       setRejectReason('');
@@ -154,7 +148,6 @@ const AdminAttendancePage = () => {
     fetchAllAttendance(page);
   }, [page, selectedDate, selectedMonth, selectedUser]);
 
-  // ✅ Export to PDF
   const exportToPDF = () => {
     setExporting(true);
     const doc = new jsPDF();
@@ -172,8 +165,8 @@ const AdminAttendancePage = () => {
         typeof rec.location === 'string'
           ? rec.location
           : rec.location?.lat
-          ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
-          : 'N/A',
+            ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
+            : 'N/A',
         rec.checkInTime || 'N/A',
         rec.checkOutTime || 'N/A',
       ]),
@@ -183,7 +176,6 @@ const AdminAttendancePage = () => {
     setExporting(false);
   };
 
-  // ✅ Export to Excel
   const exportToExcel = () => {
     setExporting(true);
     const data = records.map((r) => ({
@@ -195,8 +187,8 @@ const AdminAttendancePage = () => {
         typeof r.location === 'string'
           ? r.location
           : r.location?.lat
-          ? `${r.location.lat}, ${r.location.lng}`
-          : 'N/A',
+            ? `${r.location.lat}, ${r.location.lng}`
+            : 'N/A',
       CheckIn: r.checkInTime || 'N/A',
       CheckOut: r.checkOutTime || 'N/A',
     }));
@@ -217,7 +209,6 @@ const AdminAttendancePage = () => {
           </Button>
         </Box>
 
-        {/* Filters */}
         <Grid container spacing={2} mb={3}>
           <Grid item xs={12} sm={4}>
             <TextField
@@ -268,10 +259,8 @@ const AdminAttendancePage = () => {
           </Grid>
         </Grid>
 
-        {/* Summary */}
         <Grid container spacing={2} mb={3}>
-          {[
-            { label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
+          {[{ label: '✅ Present', value: summary.todayPresent, bg: '#e3f2fd' },
             { label: '❌ Absent', value: summary.todayAbsent, bg: '#ffebee' },
             { label: '🕒 Half Day', value: summary.todayHalfDay, bg: '#fff3e0' },
             { label: '🏃 Remote', value: summary.todayRemote, bg: '#f1f8e9' },
@@ -287,13 +276,11 @@ const AdminAttendancePage = () => {
           ))}
         </Grid>
 
-        {/* Export Buttons */}
         <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
           <Button variant="outlined" onClick={exportToPDF} disabled={exporting}>🧾 Export PDF</Button>
           <Button variant="outlined" onClick={exportToExcel} disabled={exporting}>📊 Export Excel</Button>
         </Stack>
 
-        {/* Attendance Table */}
         {loading ? (
           <Box display="flex" justifyContent="center" mt={5}><CircularProgress /></Box>
         ) : records.length === 0 ? (
@@ -311,91 +298,63 @@ const AdminAttendancePage = () => {
                     <TableCell>Email</TableCell>
                     <TableCell>Date</TableCell>
                     <TableCell>Status</TableCell>
-<TableCell>Location</TableCell>
-<TableCell>In</TableCell>
-<TableCell>Out</TableCell>
-<TableCell>Actions</TableCell>
+                    <TableCell>Location</TableCell>
+                    <TableCell>Check In</TableCell>
+                    <TableCell>Check Out</TableCell>
+                    <TableCell>Approval</TableCell>
                   </TableRow>
                 </TableHead>
-                <TableBody>
-                  {records.map((rec, idx) => (
-                    <TableRow key={rec._id}>
-                      <TableCell>{(page - 1) * PAGE_SIZE + idx + 1}</TableCell>
-                      <TableCell>{rec.name}</TableCell>
-                      <TableCell>
-                        {rec.email}
-                        {typeof rec.lateMarks !== 'undefined' && (
-                          <Typography
-                            variant="body2"
-                            color={rec.lateMarks >= 3 ? 'error' : 'textSecondary'}
-                          >
-                            🚨 Late Marks: {rec.lateMarks} / 3
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
-
-                      {/* Remote Work Handling */}
-                      {rec.status === 'Remote Work' ? (
-                        <TableCell colSpan={5}>
-                          <Box sx={{ whiteSpace: 'pre-line' }}>
-                            🖥️ <strong>Remote Work</strong>{"\n"}
-                            👤 <strong>Customer:</strong> {rec.customer || '—'}{"\n"}
-                            🏢 <strong>Location:</strong> {rec.workLocation || '—'}{"\n"}
-                            📨 <strong>Assigned By:</strong> {rec.assignedBy || '—'}{"\n"}
-                            🕒 <strong>In:</strong> {rec.checkInTime || 'N/A'} | <strong>Out:</strong> {rec.checkOutTime || 'N/A'}{"\n"}
-                            {rec.approvalStatus === 'Pending' && `Status: Pending Approval`}
-                            {rec.approvalStatus === 'Approved' && `Status: Approved`}
-                            {rec.approvalStatus === 'Rejected' && `Status: Rejected (${rec.rejectionReason || 'No reason'})`}
-                          </Box>
-
-                          {rec.approvalStatus === 'Pending' && (
-                            <Stack direction="row" spacing={1} mt={1}>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color="success"
-                                onClick={() => approveRecord(rec._id)}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                color="error"
-                                onClick={() => handleOpenReject(rec._id)}
-                              >
-                                Reject
-                              </Button>
-                            </Stack>
-                          )}
-                        </TableCell>
-                      ) : (
-                        <>
-                          <TableCell>{rec.status}</TableCell>
-                          <TableCell>
-                            {typeof rec.location === 'string'
-                              ? rec.location
-                              : rec.location?.lat
-                              ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
-                              : 'N/A'}
-                          </TableCell>
-                          <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
-                          <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
-                          <TableCell>
-                            {rec.approvalStatus === 'Approved' ? (
-                              <Typography color="success.main">Approved</Typography>
-                            ) : rec.approvalStatus === 'Rejected' ? (
-                              <Typography color="error">Rejected</Typography>
-                            ) : (
-                              <Typography color="textSecondary">—</Typography>
-                            )}
-                          </TableCell>
-                        </>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
+<TableBody>
+  {records.map((rec, idx) => {
+    console.log('Row rec:', rec._id, rec.status, rec.approvalStatus, rec.requestedStatus);
+    return (
+      <TableRow key={rec._id}>
+        <TableCell>{(page - 1) * PAGE_SIZE + idx + 1}</TableCell>
+        <TableCell>{rec.name}</TableCell>
+        <TableCell>{rec.email}</TableCell>
+        <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
+        <TableCell>{rec.status}</TableCell>
+        <TableCell>
+          {typeof rec.location === 'string'
+            ? rec.location
+            : rec.location?.lat
+              ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
+              : 'N/A'}
+        </TableCell>
+        <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
+        <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
+        <TableCell>
+          {rec.approvalStatus === 'Pending' ? (
+            <Stack direction="row" spacing={1}>
+              <Button
+                size="small"
+                variant="contained"
+                color="success"
+                onClick={() => approveRecord(rec._id)}
+              >
+                Approve
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                onClick={() => handleOpenReject(rec._id)}
+              >
+                Reject
+              </Button>
+            </Stack>
+          ) : rec.approvalStatus === 'Approved' ? (
+            <Typography variant="body2" color="success.main">Approved</Typography>
+          ) : rec.approvalStatus === 'Rejected' ? (
+            <Typography variant="body2" color="error">
+              Rejected{rec.rejectionReason ? `: ${rec.rejectionReason}` : ''}
+            </Typography>
+          ) : '—'}
+        </TableCell>
+      </TableRow>
+    );
+  })}
+</TableBody>
               </Table>
             </TableContainer>
             <Stack direction="row" justifyContent="center" mt={3}>
@@ -409,7 +368,6 @@ const AdminAttendancePage = () => {
           </>
         )}
 
-        {/* Snackbar */}
         <Snackbar
           open={snackbar.open}
           autoHideDuration={3000}
@@ -424,56 +382,55 @@ const AdminAttendancePage = () => {
             {snackbar.message}
           </Alert>
         </Snackbar>
-      </Container>
 
-      {/* Reject Dialog */}
-      {rejectDialogOpen && (
-        <Box
-          sx={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1300,
-          }}
-        >
-          <Paper sx={{ p: 3, width: 320 }}>
-            <Typography variant="h6" gutterBottom>
-              Reject Attendance
-            </Typography>
-            <TextField
-              label="Reason"
-              fullWidth
-              multiline
-              minRows={2}
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              sx={{ mb: 2 }}
-            />
-            <Stack direction="row" spacing={2} justifyContent="flex-end">
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setRejectDialogOpen(false);
-                  setRejectReason('');
-                  setRejectTargetId(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={submitReject}
-              >
-                Reject
-              </Button>
-            </Stack>
-          </Paper>
-        </Box>
-      )}
+        {rejectDialogOpen && (
+          <Box
+            sx={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1300,
+            }}
+          >
+            <Paper sx={{ p: 3, width: 320 }}>
+              <Typography variant="h6" gutterBottom>
+                Reject Attendance
+              </Typography>
+              <TextField
+                label="Reason"
+                fullWidth
+                multiline
+                minRows={2}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                sx={{ mb: 2 }}
+              />
+              <Stack direction="row" spacing={2} justifyContent="flex-end">
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setRejectDialogOpen(false);
+                    setRejectReason('');
+                    setRejectTargetId(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={submitReject}
+                >
+                  Reject
+                </Button>
+              </Stack>
+            </Paper>
+          </Box>
+        )}
+      </Container>
     </Box>
   );
 };
