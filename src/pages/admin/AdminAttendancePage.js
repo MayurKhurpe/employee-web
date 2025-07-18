@@ -83,6 +83,7 @@ const AdminAttendancePage = () => {
   const [rejectTargetId, setRejectTargetId] = useState(null);
   const navigate = useNavigate();
   const [userEmail, setUserEmail] = useState(() => localStorage.getItem('userEmail') || '');
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const fetchUsers = async () => {
     try {
@@ -97,127 +98,196 @@ const AdminAttendancePage = () => {
   };
 
   const fetchAllAttendance = async (pg = 1) => {
-    setLoading(true);
-    try {
-      const query = new URLSearchParams();
-      query.append('page', pg);
-      query.append('limit', PAGE_SIZE);
-      if (selectedMonth) query.append('month', selectedMonth);
-      else query.append('date', selectedDate);
-      if (selectedUser) query.append('userId', selectedUser);
+  setLoading(true);
+  try {
+    const query = new URLSearchParams();
+    query.append('page', pg);
+    query.append('limit', PAGE_SIZE);
+    if (selectedMonth) query.append('month', selectedMonth);
+    else query.append('date', selectedDate);
+    if (selectedUser) query.append('userId', selectedUser);
 
-      const [recordsRes, summaryRes] = await Promise.all([
-        axios.get(`/attendance/all?${query.toString()}`),
-        axios.get(`/attendance/summary?date=${selectedMonth ? `${selectedMonth}-01` : selectedDate}`),
-      ]);
+    const [recordsRes, summaryRes] = await Promise.all([
+      axios.get(`/attendance/all?${query.toString()}`),
+      axios.get(`/attendance/summary?date=${selectedMonth ? `${selectedMonth}-01` : selectedDate}`),
+    ]);
 
-      setRecords(recordsRes.data.records || []);
-      setTotalPages(recordsRes.data.totalPages || 1);
-      setSummary(summaryRes.data || {});
-      console.log('ADMIN attendance records:', recordsRes.data.records);
-    } catch (err) {
-      setSnackbar({
-        open: true,
-        message: err.response?.data?.error || '❌ Failed to load attendance.',
-        severity: 'error',
-      });
-    } finally {
-      setLoading(false);
+    setRecords(recordsRes.data.records || []);
+    const recs = recordsRes.data.records || [];
+
+    let todayPresent = 0,
+      todayAbsent = 0,
+      todayHalfDay = 0,
+      todayRemote = 0,
+      todayLateMark = 0;
+
+    recs.forEach(r => {
+      const status = r.status || '';
+      if (status === 'Present') todayPresent++;
+      if (status === 'Absent') todayAbsent++;
+      if (status === 'Half Day') todayHalfDay++;
+      if (status.toLowerCase().includes('remote')) todayRemote++;
+      const lm =
+        typeof r.lateMarks === 'number'
+          ? r.lateMarks
+          : typeof r.lateMarkCount === 'number'
+          ? r.lateMarkCount
+          : typeof r.late_mark === 'number'
+          ? r.late_mark
+          : 0;
+      if (lm > 0) todayLateMark++;
+    });
+
+    setSummary({
+      todayPresent,
+      todayAbsent,
+      todayHalfDay,
+      todayRemote,
+      todayLateMark,
+      totalEmployees: recs.length,
+    });
+
+    setTotalPages(recordsRes.data.totalPages || 1);
+
+    // If backend summary exists, merge it in
+    if (summaryRes?.data && Object.keys(summaryRes.data).length > 0) {
+      setSummary(prev => ({ ...prev, ...summaryRes.data }));
     }
-  };
 
+    console.log('ADMIN attendance records:', recordsRes.data.records);
+  } catch (err) {
+    setSnackbar({
+      open: true,
+      message: err.response?.data?.error || '❌ Failed to load attendance.',
+      severity: 'error',
+    });
+  } finally {
+    setLoading(false);
+  }
+};
   const reloadCurrentPage = () => fetchAllAttendance(page);
 
-  const approveRecord = async (attendanceId) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(`/attendance/approve/${attendanceId}`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setSnackbar({ open: true, message: '✅ Attendance approved.', severity: 'success' });
-      reloadCurrentPage();
-    } catch (err) {
-      setSnackbar({
-        open: true,
-        message: err.response?.data?.message || '❌ Failed to approve.',
-        severity: 'error',
-      });
-    }
-  };
-
+const approveRecord = async (attendanceId) => {
+  try {
+    setActionLoadingId(attendanceId); // ✅ show loading for this row
+    const token = localStorage.getItem('token');
+    await axios.put(`/attendance/approve/${attendanceId}`, {}, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setSnackbar({ open: true, message: '✅ Attendance approved.', severity: 'success' });
+    reloadCurrentPage();
+  } catch (err) {
+    setSnackbar({
+      open: true,
+      message: err.response?.data?.message || '❌ Failed to approve.',
+      severity: 'error',
+    });
+  } finally {
+    setActionLoadingId(null); // ✅ clear loading after action
+  }
+};
   const handleOpenReject = (attendanceId) => {
     setRejectTargetId(attendanceId);
     setRejectReason('');
     setRejectDialogOpen(true);
   };
 
-  const submitReject = async () => {
-    if (!rejectTargetId) return;
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(`/attendance/reject/${rejectTargetId}`, { reason: rejectReason }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setSnackbar({ open: true, message: '❌ Attendance rejected.', severity: 'warning' });
-      setRejectDialogOpen(false);
-      setRejectReason('');
-      setRejectTargetId(null);
-      reloadCurrentPage();
-    } catch (err) {
-      setSnackbar({
-        open: true,
-        message: err.response?.data?.message || '❌ Failed to reject.',
-        severity: 'error',
-      });
-    }
-  };
+const submitReject = async () => {
+  if (!rejectTargetId) return;
+  try {
+    setActionLoadingId(rejectTargetId); // loading for this ID
+    const token = localStorage.getItem('token');
+    await axios.put(`/attendance/reject/${rejectTargetId}`, { reason: rejectReason }, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setSnackbar({ open: true, message: '❌ Attendance rejected.', severity: 'warning' });
+    setRejectDialogOpen(false);
+    setRejectReason('');
+    setRejectTargetId(null);
+    reloadCurrentPage();
+  } catch (err) {
+    setSnackbar({
+      open: true,
+      message: err.response?.data?.message || '❌ Failed to reject.',
+      severity: 'error',
+    });
+  } finally {
+    setActionLoadingId(null);
+  }
+};
 
   useEffect(() => {
     fetchUsers();
     fetchAllAttendance(page);
   }, [page, selectedDate, selectedMonth, selectedUser]);
 
-  const exportToPDF = () => {
-    setExporting(true);
+const exportToPDF = async () => {
+  setExporting(true);
+  try {
+    const query = new URLSearchParams();
+    if (selectedMonth) query.append('month', selectedMonth);
+    else query.append('date', selectedDate);
+    if (selectedUser) query.append('userId', selectedUser);
+
+    const res = await axios.get(`/attendance/all?${query.toString()}&limit=10000`); // Fetch all
+    const allRecords = res.data.records || [];
+
     const doc = new jsPDF();
     doc.setFontSize(14);
-    doc.text('📋 All Employee Attendance', 14, 20);
+    doc.text('📋 Employee Attendance (Filtered)', 14, 20);
     autoTable(doc, {
       startY: 30,
       head: [['#', 'Name', 'Email', 'Date', 'Status', 'Location', 'Check In', 'Check Out']],
-      body: records.map((rec, i) => [
-          i + 1,
-  rec.name,
-  rec.email,
-  dayjs(rec.date).format('DD MMM YYYY'),
-  rec.status,
-  formatAttendanceLocation(rec).replace(/\n/g, ' | '), // flatten for PDF row
-  rec.checkInTime || 'N/A',
-  rec.checkOutTime || 'N/A',
+      body: allRecords.map((rec, i) => [
+        i + 1,
+        rec.name,
+        rec.email,
+        dayjs(rec.date).format('DD MMM YYYY'),
+        rec.status,
+        formatAttendanceLocation(rec).replace(/\n/g, ' | '),
+        rec.checkInTime || 'N/A',
+        rec.checkOutTime || 'N/A',
       ]),
       theme: 'striped',
     });
-    doc.save('all-attendance.pdf');
+    doc.save('filtered-attendance.pdf');
+  } catch (err) {
+    console.error('Export PDF failed:', err);
+  } finally {
     setExporting(false);
-  };
+  }
+};
 
-  const exportToExcel = () => {
-    setExporting(true);
-    const data = records.map((r) => ({
+  const exportToExcel = async () => {
+  setExporting(true);
+  try {
+    const query = new URLSearchParams();
+    if (selectedMonth) query.append('month', selectedMonth);
+    else query.append('date', selectedDate);
+    if (selectedUser) query.append('userId', selectedUser);
+
+    const res = await axios.get(`/attendance/all?${query.toString()}&limit=10000`);
+    const allRecords = res.data.records || [];
+
+    const data = allRecords.map((r) => ({
       Name: r.name,
       Email: r.email,
       Date: dayjs(r.date).format('DD MMM YYYY'),
       Status: r.status,
-Location: formatAttendanceLocation(r).replace(/\n/g, ' | '),
+      Location: formatAttendanceLocation(r).replace(/\n/g, ' | '),
       CheckIn: r.checkInTime || 'N/A',
       CheckOut: r.checkOutTime || 'N/A',
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
-    XLSX.writeFile(wb, 'all-attendance.xlsx');
+    XLSX.writeFile(wb, 'filtered-attendance.xlsx');
+  } catch (err) {
+    console.error('Export Excel failed:', err);
+  } finally {
     setExporting(false);
-  };
+  }
+};
 
   return (
     <Box sx={{ background: 'linear-gradient(to bottom right, #e0f7fa, #e1f5fe)', minHeight: '100vh', py: 4 }}>
@@ -290,7 +360,12 @@ Location: formatAttendanceLocation(r).replace(/\n/g, ' | '),
             <Grid item xs={12} sm={6} md={2.4} key={index}>
               <Paper sx={{ p: 2, textAlign: 'center', backgroundColor: item.bg, boxShadow: 2 }}>
                 <Typography variant="h6">{item.label}</Typography>
-                <Typography variant="h4">{item.value}</Typography>
+                <Typography
+  variant="h4"
+  color={item.label.includes('Late Marks') && item.value >= 3 ? 'error' : 'textPrimary'}
+>
+  {item.value}
+</Typography>
               </Paper>
             </Grid>
           ))}
@@ -333,16 +408,27 @@ Location: formatAttendanceLocation(r).replace(/\n/g, ' | '),
   <TableCell>{(page - 1) * PAGE_SIZE + idx + 1}</TableCell>
   <TableCell>{rec.name}</TableCell>
   <TableCell>{rec.email}</TableCell>
-  <TableCell>
-    {typeof rec.lateMarks === 'number' ? (
+<TableCell>
+  {(() => {
+    const lm =
+      typeof rec.lateMarks === 'number'
+        ? rec.lateMarks
+        : typeof rec.lateMarkCount === 'number'
+        ? rec.lateMarkCount
+        : typeof rec.late_mark === 'number'
+        ? rec.late_mark
+        : null;
+
+    return lm !== null ? (
       <Typography
         variant="body2"
-        color={rec.lateMarks >= 3 ? 'error' : 'textSecondary'}
+        color={lm >= 3 ? 'error' : 'textSecondary'}
       >
-        {rec.lateMarks} / 3
+        {lm} / 3
       </Typography>
-    ) : '—'}
-  </TableCell>
+    ) : '—';
+  })()}
+</TableCell>
   <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
         <TableCell>{rec.status}</TableCell>
 <TableCell sx={{ whiteSpace: 'pre-line', maxWidth: 240 }}>
@@ -354,21 +440,23 @@ Location: formatAttendanceLocation(r).replace(/\n/g, ' | '),
           {rec.approvalStatus === 'Pending' && userEmail === 'hr.seekersautomation@gmail.com' ? (
             <Stack direction="row" spacing={1}>
               <Button
-                size="small"
-                variant="contained"
-                color="success"
-                onClick={() => approveRecord(rec._id)}
-              >
-                Approve
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                onClick={() => handleOpenReject(rec._id)}
-              >
-                Reject
-              </Button>
+  size="small"
+  variant="contained"
+  color="success"
+  onClick={() => approveRecord(rec._id)}
+  disabled={actionLoadingId === rec._id}
+>
+  {actionLoadingId === rec._id ? 'Processing...' : 'Approve'}
+</Button>
+<Button
+  size="small"
+  variant="contained"
+  color="error"
+  onClick={() => handleOpenReject(rec._id)}
+  disabled={actionLoadingId === rec._id}
+>
+  Reject
+</Button>
             </Stack>
           ) : rec.approvalStatus === 'Approved' ? (
             <Typography variant="body2" color="success.main">Approved</Typography>
@@ -446,13 +534,14 @@ Location: formatAttendanceLocation(r).replace(/\n/g, ' | '),
                 >
                   Cancel
                 </Button>
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={submitReject}
-                >
-                  Reject
-                </Button>
+<Button
+  variant="contained"
+  color="error"
+  onClick={submitReject}
+  disabled={actionLoadingId === rejectTargetId}
+>
+  {actionLoadingId === rejectTargetId ? 'Processing...' : 'Reject'}
+</Button>
               </Stack>
             </Paper>
           </Box>
