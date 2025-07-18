@@ -135,7 +135,7 @@ const AdminAttendancePage = () => {
           : typeof r.late_mark === 'number'
           ? r.late_mark
           : 0;
-      if (lm > 0) todayLateMark++;
+      if (lm > 0 || status === 'Late Mark') todayLateMark++;
     });
 
     setSummary({
@@ -419,14 +419,14 @@ const exportToPDF = async () => {
         ? rec.late_mark
         : null;
 
-    return lm !== null ? (
-      <Typography
-        variant="body2"
-        color={lm >= 3 ? 'error' : 'textSecondary'}
-      >
-        {lm} / 3
-      </Typography>
-    ) : '—';
+return lm !== null ? (
+  <Typography
+    variant="body2"
+    color={lm >= 3 ? 'error' : 'textSecondary'}
+  >
+    {lm} / 3
+  </Typography>
+) : (rec.status === 'Late Mark' ? '1 / 3' : '—');
   })()}
 </TableCell>
   <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
