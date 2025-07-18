@@ -16,12 +16,14 @@ import {
   Alert,
 } from '@mui/material';
 import axios from 'api/axios'; // ✅ Centralized Axios
+import { useNavigate } from 'react-router-dom';
 
 const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
 
   const token = localStorage.getItem('token');
+  const navigate = useNavigate();
 
   // ✅ Load Users from Backend
   const fetchUsers = async () => {
@@ -90,7 +92,15 @@ const AdminUsersPage = () => {
             {users.length > 0 ? (
               users.map((user) => (
                 <TableRow key={user._id}>
-                  <TableCell>{user.name}</TableCell>
+                  <TableCell>
+  <Button
+    variant="text"
+    sx={{ textTransform: 'none', fontWeight: 'bold', color: '#1565c0' }}
+    onClick={() => navigate(`/admin/users/${user._id}`)}
+  >
+    {user.name}
+  </Button>
+</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Chip

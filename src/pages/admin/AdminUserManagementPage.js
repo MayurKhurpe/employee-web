@@ -132,8 +132,6 @@ const AdminUserManagementPage = () => {
       Name: u.name,
       Email: u.email,
       Role: u.role,
-      'Blood Group': u.bloodGroup || '—',
-      'Joining Date': u.joiningDate ? new Date(u.joiningDate).toLocaleDateString('en-GB') : '—',
       Approved: u.isApproved ? 'Yes' : 'No',
       Verified: u.isVerified ? 'Yes' : 'No',
     }));
@@ -156,28 +154,43 @@ const AdminUserManagementPage = () => {
       u.isVerified ? 'Yes' : 'No',
     ]);
 
-    doc.autoTable({
-      head: [['Name', 'Email', 'Role', 'Blood Group', 'Joining Date', 'Approved', 'Verified']],
-      body: tableData,
-    });
-
+doc.autoTable({
+  head: [['Name', 'Email', 'Role', 'Approved', 'Verified']],
+  body: filteredUsers.map((u) => [
+    u.name,
+    u.email,
+    u.role,
+    u.isApproved ? 'Yes' : 'No',
+    u.isVerified ? 'Yes' : 'No',
+  ]),
+});
     doc.save('Seekers_Users.pdf');
   };
 
-  const columns = [
-    { field: 'name', headerName: '👤 Name', flex: 1, minWidth: 150 },
-    { field: 'email', headerName: '📧 Email', flex: 1.5, minWidth: 200 },
-    { field: 'bloodGroup', headerName: '🩸 Blood Group', width: 140 },
+const columns = [
     {
-      field: 'joiningDate',
-      headerName: '📅 Joining Date',
-      width: 160,
-      valueGetter: (params) =>
-  params?.row?.joiningDate
-    ? new Date(params.row.joiningDate).toLocaleDateString('en-GB')
-    : '—',
-
+      field: 'name',
+      headerName: '👤 Name',
+      flex: 1,
+      minWidth: 150,
+      renderCell: (params) => (
+        <Button
+  variant="text"
+  color="primary"
+  sx={{
+    textTransform: 'none',
+    fontWeight: 'bold',
+    textDecoration: 'underline',
+    '&:hover': { color: '#1565c0' }
+  }}
+  onClick={() => navigate(`/admin/users/${params.row._id}`)}
+>
+  {params.value || '—'}
+</Button>
+      ),
     },
+    { field: 'email', headerName: '📧 Email', flex: 1.5, minWidth: 200 },
+    // 🔻 Removed Blood Group + Joining Date columns from the grid
     { field: 'role', headerName: '🛡️ Role', width: 130 },
     {
       field: 'isApproved',

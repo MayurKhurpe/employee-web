@@ -29,6 +29,33 @@ import { useNavigate } from 'react-router-dom';
 
 const PAGE_SIZE = 10;
 
+// Format Location / Remote details for table + export
+const formatAttendanceLocation = (rec) => {
+  // If backend already sends a descriptive string, use it.
+  if (typeof rec.location === 'string' && rec.status !== 'Remote' && rec.status !== 'Remote Work') {
+    return rec.location;
+  }
+
+  // Detect remote
+  const isRemote =
+    (rec.status || '').toLowerCase().includes('remote') ||
+    rec.remoteWork === true;
+
+  if (isRemote) {
+    const customer = rec.remoteCustomer || rec.customer || rec.remote_client || '—';
+    const locLabel = rec.remoteLocation || rec.locationLabel || rec.remote_site || '—';
+    const assignedBy = rec.remoteAssignedBy || rec.assignedBy || rec.approvedBy || '—';
+    return `👤 Customer: ${customer}\n🏢 Location: ${locLabel}\n📨 Assigned By: ${assignedBy}`;
+  }
+
+  // Fallback to lat/lng object
+  if (rec.location?.lat != null && rec.location?.lng != null) {
+    return `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`;
+  }
+
+  return 'N/A';
+};
+
 const AdminAttendancePage = () => {
   console.log('AdminAttendancePage v2 loaded');
   const [records, setRecords] = useState([]);
@@ -38,6 +65,7 @@ const AdminAttendancePage = () => {
     todayAbsent: 0,
     todayHalfDay: 0,
     todayRemote: 0,
+    todayLateMark: 0,
     totalEmployees: 0,
   });
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
@@ -54,6 +82,7 @@ const AdminAttendancePage = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [rejectTargetId, setRejectTargetId] = useState(null);
   const navigate = useNavigate();
+  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('userEmail') || '');
 
   const fetchUsers = async () => {
     try {
@@ -83,7 +112,6 @@ const AdminAttendancePage = () => {
       ]);
 
       setRecords(recordsRes.data.records || []);
-      console.log('ADMIN attendance records:', recordsRes.data.records);
       setTotalPages(recordsRes.data.totalPages || 1);
       setSummary(summaryRes.data || {});
       console.log('ADMIN attendance records:', recordsRes.data.records);
@@ -158,18 +186,14 @@ const AdminAttendancePage = () => {
       startY: 30,
       head: [['#', 'Name', 'Email', 'Date', 'Status', 'Location', 'Check In', 'Check Out']],
       body: records.map((rec, i) => [
-        i + 1,
-        rec.name,
-        rec.email,
-        dayjs(rec.date).format('DD MMM YYYY'),
-        rec.status,
-        typeof rec.location === 'string'
-          ? rec.location
-          : rec.location?.lat
-            ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
-            : 'N/A',
-        rec.checkInTime || 'N/A',
-        rec.checkOutTime || 'N/A',
+          i + 1,
+  rec.name,
+  rec.email,
+  dayjs(rec.date).format('DD MMM YYYY'),
+  rec.status,
+  formatAttendanceLocation(rec).replace(/\n/g, ' | '), // flatten for PDF row
+  rec.checkInTime || 'N/A',
+  rec.checkOutTime || 'N/A',
       ]),
       theme: 'striped',
     });
@@ -184,12 +208,7 @@ const AdminAttendancePage = () => {
       Email: r.email,
       Date: dayjs(r.date).format('DD MMM YYYY'),
       Status: r.status,
-      Location:
-        typeof r.location === 'string'
-          ? r.location
-          : r.location?.lat
-            ? `${r.location.lat}, ${r.location.lng}`
-            : 'N/A',
+Location: formatAttendanceLocation(r).replace(/\n/g, ' | '),
       CheckIn: r.checkInTime || 'N/A',
       CheckOut: r.checkOutTime || 'N/A',
     }));
@@ -326,17 +345,13 @@ const AdminAttendancePage = () => {
   </TableCell>
   <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
         <TableCell>{rec.status}</TableCell>
-        <TableCell>
-          {typeof rec.location === 'string'
-            ? rec.location
-            : rec.location?.lat
-              ? `${rec.location.lat.toFixed(4)}, ${rec.location.lng.toFixed(4)}`
-              : 'N/A'}
-        </TableCell>
+<TableCell sx={{ whiteSpace: 'pre-line', maxWidth: 240 }}>
+  {formatAttendanceLocation(rec)}
+</TableCell>
         <TableCell>{rec.checkInTime || 'N/A'}</TableCell>
         <TableCell>{rec.checkOutTime || 'N/A'}</TableCell>
         <TableCell>
-          {rec.approvalStatus === 'Pending' ? (
+          {rec.approvalStatus === 'Pending' && userEmail === 'hr.seekersautomation@gmail.com' ? (
             <Stack direction="row" spacing={1}>
               <Button
                 size="small"

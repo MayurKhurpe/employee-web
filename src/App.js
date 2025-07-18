@@ -70,6 +70,7 @@ import LoFiMusic from './pages/LoFiMusic';
 import TextCaseConverter from './pages/TextCaseConverter';
 import DigitalCompass from './pages/DigitalCompass';
 import TypingSpeedTest from './pages/TypingSpeedTest';
+import AdminUserDetailPage from './pages/admin/AdminUserDetailPage';
 
 function BackendChecker({ onReady }) {
   const [loading, setLoading] = useState(true);
@@ -258,6 +259,7 @@ export default function App() {
             <Route path="/verify-otp" element={<VerifyOTPPage />} />
             <Route path="/set-password" element={<SetNewPasswordPage />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
+            
 
             {/* 🔒 Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Layout onLogout={handleLogout} user={user}><Dashboard /></Layout></ProtectedRoute>} />
@@ -300,9 +302,21 @@ export default function App() {
             <Route path="/admin/notifications" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminNotificationsPage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/attendance" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><AdminAttendancePage /></Layout></ProtectedAdminRoute>} />
             <Route path="/admin/leave-management" element={<ProtectedAdminRoute><Layout onLogout={handleLogout} user={user}><LeaveManagementPage /></Layout></ProtectedAdminRoute>} />
-
-            {/* Fallback */}
+        
+{/* ✅ New Admin User Detail Route */}
+<Route
+  path="/admin/users/:id"
+  element={
+    <ProtectedAdminRoute>
+      <Layout onLogout={handleLogout} user={user}>
+        <AdminUserDetailPage />
+      </Layout>
+    </ProtectedAdminRoute>
+  }
+/>
+{/* Fallback */}
             <Route path="*" element={<Navigate to="/" />} />
+
           </Routes>
         </Router>
       </LocalizationProvider>
