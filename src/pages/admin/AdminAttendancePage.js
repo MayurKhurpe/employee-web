@@ -83,6 +83,7 @@ const AdminAttendancePage = () => {
       ]);
 
       setRecords(recordsRes.data.records || []);
+      console.log('ADMIN attendance records:', recordsRes.data.records);
       setTotalPages(recordsRes.data.totalPages || 1);
       setSummary(summaryRes.data || {});
       console.log('ADMIN attendance records:', recordsRes.data.records);
@@ -296,6 +297,7 @@ const AdminAttendancePage = () => {
                     <TableCell>#</TableCell>
                     <TableCell>Name</TableCell>
                     <TableCell>Email</TableCell>
+                    <TableCell>Late Marks</TableCell>
                     <TableCell>Date</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Location</TableCell>
@@ -308,11 +310,21 @@ const AdminAttendancePage = () => {
   {records.map((rec, idx) => {
     console.log('Row rec:', rec._id, rec.status, rec.approvalStatus, rec.requestedStatus);
     return (
-      <TableRow key={rec._id}>
-        <TableCell>{(page - 1) * PAGE_SIZE + idx + 1}</TableCell>
-        <TableCell>{rec.name}</TableCell>
-        <TableCell>{rec.email}</TableCell>
-        <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
+<TableRow key={rec._id}>
+  <TableCell>{(page - 1) * PAGE_SIZE + idx + 1}</TableCell>
+  <TableCell>{rec.name}</TableCell>
+  <TableCell>{rec.email}</TableCell>
+  <TableCell>
+    {typeof rec.lateMarks === 'number' ? (
+      <Typography
+        variant="body2"
+        color={rec.lateMarks >= 3 ? 'error' : 'textSecondary'}
+      >
+        {rec.lateMarks} / 3
+      </Typography>
+    ) : '—'}
+  </TableCell>
+  <TableCell>{dayjs(rec.date).format('DD MMM YYYY')}</TableCell>
         <TableCell>{rec.status}</TableCell>
         <TableCell>
           {typeof rec.location === 'string'
