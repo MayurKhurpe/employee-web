@@ -519,7 +519,7 @@ AssignedBy: r.status === 'Remote Work' ? r.assignedBy || '' : '',
             <Button
               variant="contained"
               color="warning"
-              disabled={alreadyMarked || loading || isAfter945IST || (!isOnOfficeWiFi && !locationReady)}
+              disabled={alreadyMarked || loading || (!isOnOfficeWiFi && !locationReady)}
               onClick={() => handleMarkAttendance('Half Day')}
             >
               Mark Half Day
