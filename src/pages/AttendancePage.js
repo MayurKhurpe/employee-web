@@ -87,7 +87,7 @@ useEffect(() => {
     try {
       const ipRes = await fetch('https://ipapi.co/json/');
       const ipData = await ipRes.json();
-      const officePrefixes = ['103.146.241.237', '2401:4900:8fea'];
+      const officePrefixes = ['103.146.241.237', '2401:4900'];
       if (officePrefixes.some(p => ipData.ip?.startsWith(p) || ipData.ip?.includes(p))) {
         setIsOnOfficeWiFi(true);
       }
@@ -267,7 +267,7 @@ const handleMarkAttendance = async (status) => {
     const ipData = await ipRes.json();
     const userIP = ipData.ip;
 
-    const officePrefixes = ['103.146.241.237', '2401:4900:8fea'];
+    const officePrefixes = ['103.146.241.237', '2401:4900'];
     const onWiFi = officePrefixes.some(prefix => userIP?.includes(prefix));
 setIsOnOfficeWiFi(onWiFi);
 
