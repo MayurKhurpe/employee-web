@@ -23,7 +23,11 @@ import {
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const OFFICE_PREFIXES = ['103.146.241.237', '2401:4900'];
+const OFFICE_PREFIXES = ['103.146.241.', '2401:4900'];
+const isOfficeIP = (ip='') => {
+  const ipLower = ip.toLowerCase();
+  return OFFICE_PREFIXES.some(p => ipLower.startsWith(p)) || /2401:4900/i.test(ipLower);
+};
 
 const PAGE_SIZE = 5;
 const COLORS = ['#4caf50', '#f44336', '#ff9800', '#2196f3', '#9c27b0']; // Purple for Late Mark
@@ -67,7 +71,7 @@ const AttendancePage = () => {
   const [lateMarkCount, setLateMarkCount] = useState(0);
   const [isOnOfficeWiFi, setIsOnOfficeWiFi] = useState(false);
   const [todayRec, setTodayRec] = useState(null);
- const OFFICE_PREFIXES = ['103.146.241.237', '2401:4900'];
+
 
   // Haversine formula for distance in km
 const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -90,9 +94,8 @@ useEffect(() => {
     try {
       const ipRes = await fetch('https://ipapi.co/json/');
       const ipData = await ipRes.json();
-if (OFFICE_PREFIXES.some(p => ipData.ip?.includes(p))) {
-  setIsOnOfficeWiFi(true);
-}
+if (isOfficeIP(ipData.ip)) setIsOnOfficeWiFi(true);
+
     } catch (e) {
       // ignore
     }
@@ -111,7 +114,7 @@ try {
   const ipData = await ipRes.json();
 
   // Detect office WiFi again here (sometimes this effect runs before first one finishes)
-  const onWiFi = OFFICE_PREFIXES.some(p => ipData.ip?.includes(p));
+  const onWiFi = isOfficeIP(ipData.ip);
   if (onWiFi) {
     setIsOnOfficeWiFi(true);
     // ✅ Skip mismatch check (IP geolocation can be far)
@@ -275,7 +278,7 @@ const handleMarkAttendance = async (status) => {
     const ipData = await ipRes.json();
     const userIP = ipData.ip;
 
-const onWiFi = OFFICE_PREFIXES.some(prefix => userIP?.includes(prefix));
+const onWiFi = isOfficeIP(userIP);
 
 setIsOnOfficeWiFi(onWiFi);
 
