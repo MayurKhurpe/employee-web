@@ -14,6 +14,7 @@ import utc from 'dayjs/plugin/utc';
 import axios from 'api/axios';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
+import { useCallback } from 'react';
 import {
   PieChart, Pie, Cell, Legend, ResponsiveContainer, Tooltip as RechartsTooltip,
 } from 'recharts';
@@ -64,7 +65,7 @@ const AttendancePage = () => {
   const [lateMarkCount, setLateMarkCount] = useState(0);
   const [isOnOfficeWiFi, setIsOnOfficeWiFi] = useState(false);
   const [todayRec, setTodayRec] = useState(null);
-  
+  const tzNow = dayjs().tz('Asia/Kolkata');
 
   // Haversine formula for distance in km
 const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -97,12 +98,12 @@ useEffect(() => {
         const ipLng = parseFloat(ipData.longitude);
 
         const gpsDistance = getDistance(gpsLat, gpsLng, ipLat, ipLng);
-setLocation({ lat: gpsLat, lng: gpsLng }); // ✅ Set once before the check
+
 
 if (gpsDistance > 30) {
   setSnackbar({
     open: true,
-    message: '⚠️ Location mismatch, Come Office',
+    message: '⚠️ Location mismatch. Please come to office',
     severity: 'error',
   });
   return;
@@ -253,18 +254,15 @@ const handleMarkAttendance = async (status) => {
     const userIP = ipData.ip;
 
     const officePrefixes = ['103.146.241.237', '2401:4900:8fea'];
-    setIsOnOfficeWiFi(officePrefixes.some(prefix => userIP?.includes(prefix)));
+    const onWiFi = officePrefixes.some(prefix => userIP?.includes(prefix));
+setIsOnOfficeWiFi(onWiFi);
 
-    // ✅ If on Office WiFi, skip location check
-if (isOnOfficeWiFi) {
+// ✅ If on Office WiFi, skip location check
+if (onWiFi) {
   markAttendance(status, {
     note: '📶 Verified via Office WiFi IP (Location not available)',
   });
-  setSnackbar({
-    open: true,
-    message: `📶 Verified via Office WiFi. Marked as ${status}!`,
-    severity: 'success',
-  });
+
   return;
 }
 
@@ -304,12 +302,11 @@ if (isOnOfficeWiFi) {
   }
 };
 
- const markAttendance = async (status, extra = {}) => {
+const markAttendance = useCallback(async (status, extra = {}) => {
   setLoading(true);
   const now = dayjs().tz('Asia/Kolkata');
   const formattedTime = now.format('HH:mm');
 
-  const token = localStorage.getItem('token');
   console.log("🛂 Sending attendance with:", {
     status,
     location,
@@ -333,25 +330,25 @@ if (isOnOfficeWiFi) {
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-      setRecords((prev) => [res.data.attendance, ...prev.filter((r) => !dayjs(r.date).isSame(now, 'day'))]);
-      setSnackbar({
-  open: true,
-  message: `✅ Attendance marked as: ${status}${status === 'Remote Work' ? ' 🏠' : ''}`,
-  severity: 'success',
-});
-      setAlreadyMarked(true);
-      setRemoteForm({ customer: '', workLocation: '', assignedBy: '' });
-      setRemoteDialogOpen(false);
-    } catch (err) {
-      setSnackbar({
-        open: true,
-        message: err.response?.data?.message || '❌ Error marking attendance',
-        severity: 'error',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    setRecords((prev) => [res.data.attendance, ...prev.filter((r) => !dayjs(r.date).isSame(now, 'day'))]);
+    setSnackbar({
+      open: true,
+      message: `✅ Attendance marked as: ${status}${status === 'Remote Work' ? ' 🏠' : ''}`,
+      severity: 'success',
+    });
+    setAlreadyMarked(true);
+    setRemoteForm({ customer: '', workLocation: '', assignedBy: '' });
+    setRemoteDialogOpen(false);
+  } catch (err) {
+    setSnackbar({
+      open: true,
+      message: err.response?.data?.message || '❌ Error marking attendance',
+      severity: 'error',
+    });
+  } finally {
+    setLoading(false);
+  }
+}, [location, token]);
 
   const filteredRecords = useMemo(() => {
     let temp = [...records];
@@ -472,13 +469,30 @@ AssignedBy: r.status === 'Remote Work' ? r.assignedBy || '' : '',
     variant="outlined"
     disabled
     title="⏳ Late Mark will be available after 9:45 AM"
-sx={{
-  animation: `${fadeIn} 0.5s`,
-}}
+    sx={{ animation: `${fadeIn} 0.5s` }}
   >
     Late Mark
   </Button>
-) : isAfter945IST && nowIST.isBefore(dayjs().tz('Asia/Kolkata').hour(11)) && (
+) : nowIST.isBefore(dayjs().tz('Asia/Kolkata').hour(11)) ? (
+  <Button
+    variant="contained"
+    color={lateMarkCount >= 3 ? 'error' : 'secondary'}
+    disabled={
+      alreadyMarked ||
+      loading ||
+      lateMarkCount >= 3 ||
+      (!locationReady && !isOnOfficeWiFi)
+    }
+    onClick={() => handleMarkAttendance('Late Mark')}
+    sx={{ animation: `${slideIn} 0.4s ease-in-out` }}
+  >
+    Mark Late
+  </Button>
+) : (
+  <Button variant="outlined" disabled>
+    Late Mark Closed
+  </Button>
+)}
   <Button
     variant="contained"
     color={lateMarkCount >= 3 ? "error" : "secondary"}
@@ -490,7 +504,7 @@ sx={{
   >
     Mark Late
   </Button>
-)}
+)
             <Button
               variant="contained"
               color="warning"

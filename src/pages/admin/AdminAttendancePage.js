@@ -216,10 +216,14 @@ const submitReject = async () => {
   }
 };
 
-  useEffect(() => {
-    fetchUsers();
-    fetchAllAttendance(page);
-  }, [page, selectedDate, selectedMonth, selectedUser]);
+useEffect(() => {
+  let isMounted = true;
+  (async () => {
+    await fetchUsers();
+    if (isMounted) await fetchAllAttendance(page);
+  })();
+  return () => { isMounted = false; };
+}, [page, selectedDate, selectedMonth, selectedUser]);
 
 const exportToPDF = async () => {
   setExporting(true);
