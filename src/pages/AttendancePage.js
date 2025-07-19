@@ -65,7 +65,6 @@ const AttendancePage = () => {
   const [lateMarkCount, setLateMarkCount] = useState(0);
   const [isOnOfficeWiFi, setIsOnOfficeWiFi] = useState(false);
   const [todayRec, setTodayRec] = useState(null);
-  const tzNow = dayjs().tz('Asia/Kolkata');
 
   // Haversine formula for distance in km
 const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -81,9 +80,24 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
   const token = localStorage.getItem('token');
   const userName = localStorage.getItem('userName') || '👤 User';
 
-  const isAfter945IST = dayjs().tz('Asia/Kolkata').isAfter(dayjs().tz('Asia/Kolkata').hour(9).minute(45));
+  const isAfter945IST = nowIST.isAfter(nowIST.hour(9).minute(45));
 
 useEffect(() => {
+  (async () => {
+    try {
+      const ipRes = await fetch('https://ipapi.co/json/');
+      const ipData = await ipRes.json();
+      const officePrefixes = ['103.146.241.237', '2401:4900:8fea'];
+      if (officePrefixes.some(p => ipData.ip?.startsWith(p) || ipData.ip?.includes(p))) {
+        setIsOnOfficeWiFi(true);
+      }
+    } catch (e) {
+      // ignore
+    }
+  })();
+}, []);
+
+  useEffect(() => {
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
       const gpsLat = pos.coords.latitude;
@@ -232,7 +246,7 @@ useEffect(() => {
   };
 
 const handleMarkAttendance = async (status) => {
-  if (loading) return;
+  if (loading || alreadyMarked) return;
 
   // ✅ Remote Work form before any network
   if (status === 'Remote Work') {
@@ -448,16 +462,17 @@ AssignedBy: r.status === 'Remote Work' ? r.assignedBy || '' : '',
           <Typography variant="subtitle1" gutterBottom>
             Welcome {userName}, mark your attendance below 👇
           </Typography>
-          <Stack
+<Stack
   direction={{ xs: 'column', sm: 'row' }}
   spacing={2}
   justifyContent="center"
   alignItems="center"
+  flexWrap="wrap"
 >
             <Button
   variant="contained"
   color="success"
-  disabled={alreadyMarked || loading || isAfter945IST || (!locationReady && !isOnOfficeWiFi)}
+  disabled={alreadyMarked || loading || isAfter945IST || (!isOnOfficeWiFi && !locationReady)}
   title={isAfter945IST ? '⏰ Present marking closes at 9:45 AM' : ''}
   onClick={() => handleMarkAttendance('Present')}
 >
@@ -493,22 +508,10 @@ AssignedBy: r.status === 'Remote Work' ? r.assignedBy || '' : '',
     Late Mark Closed
   </Button>
 )}
-  <Button
-    variant="contained"
-    color={lateMarkCount >= 3 ? "error" : "secondary"}
-    disabled={alreadyMarked || loading || lateMarkCount >= 3 || nowIST.isBefore(dayjs().tz('Asia/Kolkata').hour(9).minute(45)) || (!locationReady && !isOnOfficeWiFi)}
-    onClick={() => handleMarkAttendance('Late Mark')}
-sx={{
-  animation: `${slideIn} 0.4s ease-in-out`,
-}}
-  >
-    Mark Late
-  </Button>
-)
             <Button
               variant="contained"
               color="warning"
-              disabled={alreadyMarked || loading || (!locationReady && !isOnOfficeWiFi)}
+              disabled={alreadyMarked || loading || isAfter945IST || (!isOnOfficeWiFi && !locationReady)}
               onClick={() => handleMarkAttendance('Half Day')}
             >
               Mark Half Day
@@ -701,7 +704,7 @@ sx={{
                 page={page}
                 onChange={(e, val) => {
   setPage(val);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 100, behavior: 'smooth' });
 }}
               />
             </Stack>

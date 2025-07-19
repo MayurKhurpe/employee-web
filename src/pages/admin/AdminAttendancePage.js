@@ -223,6 +223,7 @@ useEffect(() => {
     if (isMounted) await fetchAllAttendance(page);
   })();
   return () => { isMounted = false; };
+
 }, [page, selectedDate, selectedMonth, selectedUser]);
 
 const exportToPDF = async () => {
@@ -426,12 +427,14 @@ const exportToPDF = async () => {
     : 0;
 
 return lm !== null ? (
-  <Typography
-    variant="body2"
-    color={lm >= 3 ? 'error' : 'textSecondary'}
-  >
-    {lm} / 3
-  </Typography>
+ <Typography
+  variant="body2"
+  color={lm >= 3 ? 'error' : 'textSecondary'}
+  fontWeight={lm >= 3 ? 'bold' : 'normal'}
+>
+  {lm} / 3
+</Typography>
+
 ) : (rec.status === 'Late Mark' ? '1 / 3' : '—');
   })()}
 </TableCell>
