@@ -23,6 +23,8 @@ import {
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+const OFFICE_PREFIXES = ['103.146.241.237', '2401:4900'];
+
 const PAGE_SIZE = 5;
 const COLORS = ['#4caf50', '#f44336', '#ff9800', '#2196f3', '#9c27b0']; // Purple for Late Mark
 const STATUS_COLORS = {
@@ -65,6 +67,7 @@ const AttendancePage = () => {
   const [lateMarkCount, setLateMarkCount] = useState(0);
   const [isOnOfficeWiFi, setIsOnOfficeWiFi] = useState(false);
   const [todayRec, setTodayRec] = useState(null);
+ const OFFICE_PREFIXES = ['103.146.241.237', '2401:4900'];
 
   // Haversine formula for distance in km
 const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -87,10 +90,9 @@ useEffect(() => {
     try {
       const ipRes = await fetch('https://ipapi.co/json/');
       const ipData = await ipRes.json();
-      const officePrefixes = ['103.146.241.237', '2401:4900'];
-      if (officePrefixes.some(p => ipData.ip?.startsWith(p) || ipData.ip?.includes(p))) {
-        setIsOnOfficeWiFi(true);
-      }
+if (OFFICE_PREFIXES.some(p => ipData.ip?.includes(p))) {
+  setIsOnOfficeWiFi(true);
+}
     } catch (e) {
       // ignore
     }
@@ -104,27 +106,33 @@ useEffect(() => {
       const gpsLng = pos.coords.longitude;
       setLocation({ lat: gpsLat, lng: gpsLng }); // ✅ Set location immediately
 
-      try {
-        const ipRes = await fetch('https://ipapi.co/json/');
-        const ipData = await ipRes.json();
+try {
+  const ipRes = await fetch('https://ipapi.co/json/');
+  const ipData = await ipRes.json();
 
-        const ipLat = parseFloat(ipData.latitude);
-        const ipLng = parseFloat(ipData.longitude);
+  // Detect office WiFi again here (sometimes this effect runs before first one finishes)
+  const onWiFi = OFFICE_PREFIXES.some(p => ipData.ip?.includes(p));
+  if (onWiFi) {
+    setIsOnOfficeWiFi(true);
+    // ✅ Skip mismatch check (IP geolocation can be far)
+    return;
+  }
 
-        const gpsDistance = getDistance(gpsLat, gpsLng, ipLat, ipLng);
+  const ipLat = parseFloat(ipData.latitude);
+  const ipLng = parseFloat(ipData.longitude);
 
-
-if (gpsDistance > 30) {
-  setSnackbar({
-    open: true,
-    message: '⚠️ Location mismatch. Please come to office',
-    severity: 'error',
-  });
-  return;
+  // Only enforce mismatch if NOT on office WiFi
+  const gpsDistance = getDistance(gpsLat, gpsLng, ipLat, ipLng);
+  if (gpsDistance > 50) { // (optional) widened from 30 -> 50 km
+    setSnackbar({
+      open: true,
+      message: '⚠️ Location mismatch. Please enable accurate location or connect office WiFi',
+      severity: 'warning',
+    });
+  }
+} catch {
+  // ignore – keep GPS location
 }
-      } catch {
-        setLocation({ lat: gpsLat, lng: gpsLng });
-      }
     },
     () => setLocation({ lat: NaN, lng: NaN }),
     { enableHighAccuracy: true, timeout: 10000 }
@@ -267,8 +275,8 @@ const handleMarkAttendance = async (status) => {
     const ipData = await ipRes.json();
     const userIP = ipData.ip;
 
-    const officePrefixes = ['103.146.241.237', '2401:4900'];
-    const onWiFi = officePrefixes.some(prefix => userIP?.includes(prefix));
+const onWiFi = OFFICE_PREFIXES.some(prefix => userIP?.includes(prefix));
+
 setIsOnOfficeWiFi(onWiFi);
 
 // ✅ If on Office WiFi, skip location check
